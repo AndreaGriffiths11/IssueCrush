@@ -13,11 +13,16 @@ import {
   View,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import * as AuthSession from 'expo-auth-session';
 import Swiper from 'react-native-deck-swiper';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { fetchIssues, GitHubIssue, updateIssueState, extractRepoPath } from './src/api/github';
 import { deleteToken, getToken, saveToken } from './src/lib/tokenStorage';
+
+const CLIENT_ID = process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID ?? '';
+const DEFAULT_SCOPE = process.env.EXPO_PUBLIC_GITHUB_SCOPE || 'public_repo';
+const REDIRECT_URI = AuthSession.getRedirectUrl();
 
 type DeviceAuthState = {
   device_code: string;
@@ -26,9 +31,6 @@ type DeviceAuthState = {
   expires_in: number;
   interval: number;
 };
-
-const CLIENT_ID = process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID ?? '';
-const DEFAULT_SCOPE = process.env.EXPO_PUBLIC_GITHUB_SCOPE || 'public_repo';
 
 export default function App() {
   const [token, setToken] = useState<string | null>(null);
@@ -89,28 +91,81 @@ export default function App() {
     setDeviceAuth(null);
     if (pollTimeout.current) clearTimeout(pollTimeout.current);
 
-    const body = new URLSearchParams({
-      client_id: CLIENT_ID,
-      scope: DEFAULT_SCOPE,
-    }).toString();
+    if (Platform.OS === 'web') {
+      // Use Authorization Code Flow for web
+      try {
+        const result = await AuthSession.startAsync({
+          authUrl: `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=${encodeURIComponent(DEFAULT_SCOPE)}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`,
+          returnUrl: REDIRECT_URI,
+        });
 
-    const response = await fetch('https://github.com/login/device/code', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        Accept: 'application/json',
-      },
-      body,
-    });
+        if (result.type !== 'success') {
+          setAuthError('GitHub login cancelled.');
+          return;
+        }
 
-    if (!response.ok) {
-      setAuthError('Unable to start GitHub device login.');
-      return;
+        const params = new URL(result.url).searchParams;
+        const code = params.get('code');
+
+        if (!code) {
+          setAuthError('No authorization code received.');
+          return;
+        }
+
+        // Exchange code for token via GitHub
+        const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: JSON.stringify({
+            client_id: CLIENT_ID,
+            client_secret: '', // You'll need to handle this securely
+            code,
+          }),
+        });
+
+        const data = await tokenResponse.json();
+
+        if (data.error) {
+          setAuthError(data.error_description || 'GitHub OAuth failed.');
+          return;
+        }
+
+        if (data.access_token) {
+          await saveToken(data.access_token);
+          setToken(data.access_token);
+          setFeedback('Connected to GitHub');
+        }
+      } catch (error) {
+        setAuthError((error as Error).message);
+      }
+    } else {
+      // Use Device Flow for mobile
+      const body = new URLSearchParams({
+        client_id: CLIENT_ID,
+        scope: DEFAULT_SCOPE,
+      }).toString();
+
+      const response = await fetch('https://github.com/login/device/code', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Accept: 'application/json',
+        },
+        body,
+      });
+
+      if (!response.ok) {
+        setAuthError('Unable to start GitHub device login.');
+        return;
+      }
+
+      const data = (await response.json()) as DeviceAuthState;
+      setDeviceAuth(data);
+      schedulePoll(data, data.interval || 5);
     }
-
-    const data = (await response.json()) as DeviceAuthState;
-    setDeviceAuth(data);
-    schedulePoll(data, data.interval || 5);
   };
 
   const schedulePoll = (info: DeviceAuthState, intervalSeconds: number) => {
