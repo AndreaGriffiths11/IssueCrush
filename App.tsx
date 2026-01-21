@@ -13,11 +13,18 @@ import {
   View,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import * as AuthSession from 'expo-auth-session';
 import Swiper from 'react-native-deck-swiper';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { fetchIssues, GitHubIssue, updateIssueState, extractRepoPath } from './src/api/github';
 import { deleteToken, getToken, saveToken } from './src/lib/tokenStorage';
+
+const CLIENT_ID = process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID ?? '';
+const DEFAULT_SCOPE = process.env.EXPO_PUBLIC_GITHUB_SCOPE || 'public_repo';
+const REDIRECT_URI = typeof window !== 'undefined' 
+  ? `${window.location.protocol}//${window.location.host}` 
+  : AuthSession.getRedirectUrl();
 
 type DeviceAuthState = {
   device_code: string;
@@ -26,9 +33,6 @@ type DeviceAuthState = {
   expires_in: number;
   interval: number;
 };
-
-const CLIENT_ID = process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID ?? '';
-const DEFAULT_SCOPE = process.env.EXPO_PUBLIC_GITHUB_SCOPE || 'public_repo';
 
 export default function App() {
   const [token, setToken] = useState<string | null>(null);
@@ -43,6 +47,38 @@ export default function App() {
 
   const pollTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const exchangeCodeForToken = async (code: string) => {
+    try {
+      setAuthError('');
+      const tokenResponse = await fetch('http://localhost:3000/api/github-token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ code }),
+      });
+
+      const data = await tokenResponse.json();
+
+      if (data.error) {
+        setAuthError(data.error_description || data.error || 'GitHub OAuth failed.');
+        return;
+      }
+
+      if (data.access_token) {
+        await saveToken(data.access_token);
+        setToken(data.access_token);
+        setFeedback('Connected to GitHub');
+        // Clean up URL
+        if (typeof window !== 'undefined') {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      }
+    } catch (error) {
+      setAuthError((error as Error).message);
+    }
+  };
+
   useEffect(() => {
     const hydrate = async () => {
       const stored = await getToken();
@@ -53,6 +89,18 @@ export default function App() {
       if (pollTimeout.current) clearTimeout(pollTimeout.current);
     };
   }, []);
+
+  // Handle OAuth callback from GitHub on web
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+
+      if (code && !token) {
+        exchangeCodeForToken(code);
+      }
+    }
+  }, [token]);
 
   useEffect(() => {
     if (!token) {
@@ -89,28 +137,35 @@ export default function App() {
     setDeviceAuth(null);
     if (pollTimeout.current) clearTimeout(pollTimeout.current);
 
-    const body = new URLSearchParams({
-      client_id: CLIENT_ID,
-      scope: DEFAULT_SCOPE,
-    }).toString();
+    if (Platform.OS === 'web') {
+      // Use Authorization Code Flow for web - redirect to GitHub
+      const authUrl = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=${encodeURIComponent(DEFAULT_SCOPE)}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
+      window.location.href = authUrl;
+    } else {
+      // Use Device Flow for mobile
+      const body = new URLSearchParams({
+        client_id: CLIENT_ID,
+        scope: DEFAULT_SCOPE,
+      }).toString();
 
-    const response = await fetch('https://github.com/login/device/code', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        Accept: 'application/json',
-      },
-      body,
-    });
+      const response = await fetch('https://github.com/login/device/code', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Accept: 'application/json',
+        },
+        body,
+      });
 
-    if (!response.ok) {
-      setAuthError('Unable to start GitHub device login.');
-      return;
+      if (!response.ok) {
+        setAuthError('Unable to start GitHub device login.');
+        return;
+      }
+
+      const data = (await response.json()) as DeviceAuthState;
+      setDeviceAuth(data);
+      schedulePoll(data, data.interval || 5);
     }
-
-    const data = (await response.json()) as DeviceAuthState;
-    setDeviceAuth(data);
-    schedulePoll(data, data.interval || 5);
   };
 
   const schedulePoll = (info: DeviceAuthState, intervalSeconds: number) => {
