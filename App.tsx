@@ -48,7 +48,9 @@ export default function App() {
   const [aiSummary, setAiSummary] = useState<string>('');
   const [loadingAiSummary, setLoadingAiSummary] = useState(false);
   const [copilotAvailable, setCopilotAvailable] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
+  const swiperRef = useRef<Swiper<GitHubIssue>>(null);
   const pollTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const exchangeCodeForToken = async (code: string) => {
@@ -134,6 +136,8 @@ export default function App() {
       setIssues([]);
       return;
     }
+    setIssues([]); // Clear existing issues when reloading
+    setCurrentIndex(0); // Reset index
     loadIssues();
   }, [token]);
 
@@ -256,25 +260,28 @@ export default function App() {
   const handleSwipeLeft = async (cardIndex: number) => {
     const issue = issues[cardIndex];
     if (!issue || !token) return;
-    setIssues((prev) => prev.filter((_, idx) => idx !== cardIndex));
+    // Don't remove from array, let Swiper handle it
     setFeedback(`Closed #${issue.number} · ${repoLabel(issue)}`);
     setLastClosed(issue);
     setAiSummary('');
+    setCurrentIndex((prev) => prev + 1);
     try {
       await updateIssueState(token, issue, 'closed');
     } catch (error) {
       setFeedback(`Close failed: ${(error as Error).message}`);
-      setIssues((prev) => [issue, ...prev]);
       setLastClosed(null);
+      // Ideally we would swipe back here automatically if it failed, but simple alert is safer
     }
   };
 
   const handleSwipeRight = (cardIndex: number) => {
     const issue = issues[cardIndex];
     if (!issue) return;
-    setIssues((prev) => prev.filter((_, idx) => idx !== cardIndex));
+    // Don't remove from array
     setFeedback(`Kept open · #${issue.number}`);
     setAiSummary('');
+    setLastClosed(null); // Clear undo history for "Keep" actions to avoid mismatch
+    setCurrentIndex((prev) => prev + 1);
   };
 
   const handleUndo = async () => {
@@ -282,9 +289,10 @@ export default function App() {
     setUndoBusy(true);
     try {
       await updateIssueState(token, lastClosed, 'open');
-      setIssues((prev) => [lastClosed, ...prev]);
       setFeedback(`Reopened #${lastClosed.number}`);
       setLastClosed(null);
+      swiperRef.current?.swipeBack();
+      setCurrentIndex((prev) => Math.max(0, prev - 1));
     } catch (error) {
       setFeedback(`Undo failed: ${(error as Error).message}`);
     } finally {
@@ -329,7 +337,7 @@ export default function App() {
   const renderIssueCard = (issue: GitHubIssue | null, cardIndex?: number) => {
     if (!issue) return <View style={[styles.card, styles.cardEmpty]} />;
 
-    const isTopCard = cardIndex === 0 || cardIndex === undefined;
+    const isTopCard = cardIndex === currentIndex;
 
     return (
       <View style={styles.card}>
@@ -450,16 +458,19 @@ export default function App() {
             ) : issues.length ? (
               <View style={styles.swiperWrap}>
                 <Swiper
+                  ref={swiperRef}
                   cards={issues}
                   renderCard={renderIssueCard}
                   onSwipedLeft={handleSwipeLeft}
                   onSwipedRight={handleSwipeRight}
                   backgroundColor="transparent"
                   stackSize={3}
-                  stackSeparation={14}
+                  stackSeparation={15}
+                  stackScale={5}
                   animateCardOpacity
                   overlayLabels={overlayLabels}
-                  cardVerticalMargin={16}
+                  cardVerticalMargin={40}
+                  cardHorizontalMargin={20}
                   verticalSwipe={false}
                 />
               </View>
@@ -493,239 +504,303 @@ export default function App() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#050914',
-    paddingHorizontal: 16,
+    backgroundColor: '#010409', // GitHub Dark: Main bg
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#30363d', // GitHub Dark: Border
+    backgroundColor: '#161b22', // GitHub Dark: Header bg
   },
   brand: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#e2e8f0',
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#f0f6fc', // GitHub Dark: Headings
   },
   hero: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#e2e8f0',
-    marginBottom: 8,
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#f0f6fc',
+    marginBottom: 16,
+    textAlign: 'center',
   },
   authCard: {
-    backgroundColor: '#0b1224',
-    borderRadius: 16,
-    padding: 20,
+    backgroundColor: '#161b22',
+    margin: 16,
+    borderRadius: 6,
+    padding: 24,
     borderWidth: 1,
-    borderColor: '#1f2937',
-    marginTop: 8,
-    gap: 10,
+    borderColor: '#30363d',
+    alignItems: 'center',
+    gap: 16,
   },
   content: {
     flex: 1,
   },
   primaryButton: {
-    backgroundColor: '#10b981',
+    backgroundColor: '#238636', // GitHub Green
     paddingVertical: 12,
-    borderRadius: 12,
+    paddingHorizontal: 20,
+    borderRadius: 6,
     alignItems: 'center',
+    width: '100%',
   },
   primaryButtonSmall: {
-    backgroundColor: '#10b981',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 12,
+    backgroundColor: '#238636',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
   primaryButtonText: {
-    color: '#0b1224',
-    fontWeight: '700',
+    color: '#ffffff',
+    fontWeight: '600',
+    fontSize: 14,
   },
   secondaryButton: {
-    borderColor: '#334155',
+    backgroundColor: '#21262d', // GitHub Dark: Button bg
+    borderColor: '#363b42', // GitHub Dark: Button border
     borderWidth: 1,
-    paddingVertical: 10,
+    paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRadius: 12,
+    borderRadius: 6,
     alignItems: 'center',
-    justifyContent: 'center',
   },
   secondaryButtonText: {
-    color: '#e2e8f0',
-    fontWeight: '600',
+    color: '#c9d1d9', // GitHub Dark: Text
+    fontWeight: '500',
+    fontSize: 14,
   },
   undoButton: {
-    marginBottom: 8,
+    alignSelf: 'center',
+    marginTop: 16,
   },
   copy: {
-    color: '#cbd5e1',
+    color: '#8b949e', // GitHub Dark: Secondary text
+    fontSize: 14,
     lineHeight: 20,
+    textAlign: 'center',
   },
   copyMuted: {
-    color: '#94a3b8',
+    color: '#8b949e',
+    fontSize: 13,
   },
   mono: {
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    backgroundColor: 'rgba(110,118,129,0.4)',
+    paddingHorizontal: 4,
+    borderRadius: 4,
   },
   error: {
-    color: '#f87171',
-    marginTop: 4,
+    color: '#f85149', // GitHub Dark: Error
+    fontSize: 14,
+    textAlign: 'center',
   },
   deviceBox: {
-    backgroundColor: '#0f172a',
-    padding: 14,
-    borderRadius: 12,
+    backgroundColor: '#0d1117',
+    padding: 16,
+    borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#1f2937',
-    gap: 6,
+    borderColor: '#30363d',
+    alignItems: 'center',
+    width: '100%',
+    gap: 8,
   },
   codeLabel: {
-    color: '#94a3b8',
+    color: '#8b949e',
     fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   code: {
-    fontSize: 24,
-    letterSpacing: 2,
-    color: '#e2e8f0',
-    fontWeight: '700',
+    fontSize: 32,
+    letterSpacing: 4,
+    color: '#f0f6fc',
+    fontWeight: '600',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   linkButton: {
     paddingVertical: 8,
   },
   linkButtonText: {
-    color: '#38bdf8',
-    fontWeight: '600',
+    color: '#58a6ff', // GitHub Dark: Link
+    fontSize: 14,
   },
   controls: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginBottom: 12,
+    gap: 8,
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#30363d',
   },
   inputWrap: {
     flex: 1,
-    backgroundColor: '#0f172a',
-    borderRadius: 12,
+    backgroundColor: '#0d1117',
+    borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#1f2937',
+    borderColor: '#30363d',
     paddingHorizontal: 12,
-    paddingVertical: 2,
+    height: 32,
+    justifyContent: 'center',
   },
   input: {
-    height: 40,
-    color: '#e2e8f0',
+    color: '#c9d1d9',
+    fontSize: 14,
+    height: '100%',
+    padding: 0,
   },
   swiperWrap: {
     flex: 1,
+    marginTop: -20, // Adjust for Swiper's default positioning
   },
   card: {
-    flex: 1,
-    backgroundColor: '#0b1224',
-    borderRadius: 18,
-    padding: 18,
+    flex: 0.7,
+    backgroundColor: '#161b22',
+    borderRadius: 12,
+    padding: 24,
     borderWidth: 1,
-    borderColor: '#1f2937',
-    justifyContent: 'space-between',
+    borderColor: '#30363d',
+    justifyContent: 'flex-start',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
   },
   cardEmpty: {
-    backgroundColor: '#0f172a',
+    backgroundColor: 'transparent',
+    borderWidth: 0,
   },
   repo: {
-    color: '#38bdf8',
-    fontWeight: '700',
-    marginBottom: 8,
+    color: '#8b949e',
+    fontSize: 14,
+    marginBottom: 12,
+    fontWeight: '400',
   },
   title: {
-    color: '#e2e8f0',
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 10,
+    color: '#c9d1d9',
+    fontSize: 20,
+    fontWeight: '600',
+    lineHeight: 28,
+    marginBottom: 16,
   },
   labels: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
-    marginBottom: 8,
+    marginBottom: 24,
   },
   label: {
-    paddingVertical: 4,
+    paddingVertical: 2,
     paddingHorizontal: 8,
-    borderRadius: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   labelText: {
-    color: '#0b1224',
-    fontWeight: '700',
+    color: '#000000', // Labels usually have dark text on light bg, or we calculate contrast
+    fontWeight: '500',
     fontSize: 12,
   },
   labelTextMuted: {
-    color: '#94a3b8',
+    color: '#8b949e',
+    fontSize: 12,
+    fontStyle: 'italic',
   },
   meta: {
-    color: '#94a3b8',
+    color: '#8b949e',
     fontSize: 12,
+    marginTop: 'auto', // Push to bottom
+    textAlign: 'center',
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#30363d',
   },
   loader: {
+    flex: 1,
     alignItems: 'center',
-    marginTop: 20,
-    gap: 8,
+    justifyContent: 'center',
+    gap: 16,
   },
   empty: {
-    paddingVertical: 40,
+    flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
   },
   overlayLeft: {
-    backgroundColor: '#ef4444',
-    borderRadius: 10,
-    padding: 8,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    height: '100%',
+    width: '100%',
+    paddingRight: 32,
+    borderRadius: 8,
   },
   overlayRight: {
-    backgroundColor: '#10b981',
-    borderRadius: 10,
-    padding: 8,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    height: '100%',
+    width: '100%',
+    paddingLeft: 32,
+    borderRadius: 8,
   },
   overlayLabel: {
-    color: '#0b1224',
+    color: '#ffffff',
+    fontSize: 24,
     fontWeight: '700',
+    textTransform: 'uppercase',
   },
   footer: {
-    paddingVertical: 8,
-  },
-  feedback: {
-    color: '#cbd5e1',
-  },
-  aiButton: {
-    backgroundColor: '#6366f1',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginVertical: 8,
+    padding: 16,
     alignItems: 'center',
   },
+  feedback: {
+    color: '#8b949e',
+    fontSize: 14,
+    marginTop: 8,
+  },
+  aiButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1f6feb', // GitHub Blue
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    marginBottom: 16,
+    gap: 8,
+  },
   aiButtonText: {
-    color: '#e2e8f0',
+    color: '#ffffff',
     fontWeight: '600',
-    fontSize: 13,
+    fontSize: 14,
   },
   aiSummaryBox: {
-    backgroundColor: '#1e293b',
-    borderRadius: 8,
-    padding: 10,
-    marginVertical: 8,
+    backgroundColor: '#0d1117',
+    borderRadius: 6,
+    padding: 16,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#475569',
+    borderColor: '#30363d',
   },
   aiSummaryLabel: {
-    color: '#818cf8',
-    fontSize: 11,
-    fontWeight: '700',
-    marginBottom: 4,
+    color: '#79c0ff',
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 8,
     textTransform: 'uppercase',
   },
   aiSummaryText: {
-    color: '#cbd5e1',
-    fontSize: 13,
-    lineHeight: 18,
+    color: '#c9d1d9',
+    fontSize: 14,
+    lineHeight: 20,
   },
 });
