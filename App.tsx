@@ -112,24 +112,19 @@ export default function App() {
           return;
         }
 
-        // Exchange code for token via GitHub
-        const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
+        // Exchange code for token via backend
+        const tokenResponse = await fetch('http://localhost:3000/api/github-token', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Accept: 'application/json',
           },
-          body: JSON.stringify({
-            client_id: CLIENT_ID,
-            client_secret: '', // You'll need to handle this securely
-            code,
-          }),
+          body: JSON.stringify({ code }),
         });
 
         const data = await tokenResponse.json();
 
         if (data.error) {
-          setAuthError(data.error_description || 'GitHub OAuth failed.');
+          setAuthError(data.error_description || data.error || 'GitHub OAuth failed.');
           return;
         }
 
