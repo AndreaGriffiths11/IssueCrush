@@ -19,11 +19,12 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { fetchIssues, GitHubIssue, updateIssueState, extractRepoPath } from './src/api/github';
 import { deleteToken, getToken, saveToken } from './src/lib/tokenStorage';
+import { copilotService } from './src/lib/copilotService';
 
 const CLIENT_ID = process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID ?? '';
 const DEFAULT_SCOPE = process.env.EXPO_PUBLIC_GITHUB_SCOPE || 'public_repo';
-const REDIRECT_URI = typeof window !== 'undefined' 
-  ? `${window.location.protocol}//${window.location.host}` 
+const REDIRECT_URI = Platform.OS === 'web'
+  ? 'http://localhost:8081'
   : AuthSession.getRedirectUrl();
 
 type DeviceAuthState = {
@@ -44,12 +45,17 @@ export default function App() {
   const [authError, setAuthError] = useState('');
   const [undoBusy, setUndoBusy] = useState(false);
   const [lastClosed, setLastClosed] = useState<GitHubIssue | null>(null);
+  const [aiSummary, setAiSummary] = useState<string>('');
+  const [loadingAiSummary, setLoadingAiSummary] = useState(false);
+  const [copilotAvailable, setCopilotAvailable] = useState(false);
 
   const pollTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const exchangeCodeForToken = async (code: string) => {
     try {
       setAuthError('');
+      console.log('Exchanging code for token...');
+
       const tokenResponse = await fetch('http://localhost:3000/api/github-token', {
         method: 'POST',
         headers: {
@@ -58,7 +64,15 @@ export default function App() {
         body: JSON.stringify({ code }),
       });
 
+      if (!tokenResponse.ok) {
+        const errorText = await tokenResponse.text();
+        console.error('Token exchange failed:', errorText);
+        setAuthError(`Server error: ${tokenResponse.status} - ${errorText}`);
+        return;
+      }
+
       const data = await tokenResponse.json();
+      console.log('Token exchange response:', { hasToken: !!data.access_token, hasError: !!data.error });
 
       if (data.error) {
         setAuthError(data.error_description || data.error || 'GitHub OAuth failed.');
@@ -69,13 +83,16 @@ export default function App() {
         await saveToken(data.access_token);
         setToken(data.access_token);
         setFeedback('Connected to GitHub');
-        // Clean up URL
+        console.log('Token saved successfully');
         if (typeof window !== 'undefined') {
           window.history.replaceState({}, document.title, window.location.pathname);
         }
+      } else {
+        setAuthError('No access token received from server');
       }
     } catch (error) {
-      setAuthError((error as Error).message);
+      console.error('Exchange error:', error);
+      setAuthError(`Failed to connect to auth server: ${(error as Error).message}. Make sure the server is running (npm run server).`);
     }
   };
 
@@ -83,10 +100,20 @@ export default function App() {
     const hydrate = async () => {
       const stored = await getToken();
       if (stored) setToken(stored);
+
+      try {
+        await copilotService.initialize();
+        setCopilotAvailable(true);
+        console.log('Copilot service available');
+      } catch (error) {
+        console.log('Copilot not available:', (error as Error).message);
+        setCopilotAvailable(false);
+      }
     };
     hydrate();
     return () => {
       if (pollTimeout.current) clearTimeout(pollTimeout.current);
+      copilotService.cleanup();
     };
   }, []);
 
@@ -232,6 +259,7 @@ export default function App() {
     setIssues((prev) => prev.filter((_, idx) => idx !== cardIndex));
     setFeedback(`Closed #${issue.number} · ${repoLabel(issue)}`);
     setLastClosed(issue);
+    setAiSummary('');
     try {
       await updateIssueState(token, issue, 'closed');
     } catch (error) {
@@ -246,6 +274,7 @@ export default function App() {
     if (!issue) return;
     setIssues((prev) => prev.filter((_, idx) => idx !== cardIndex));
     setFeedback(`Kept open · #${issue.number}`);
+    setAiSummary('');
   };
 
   const handleUndo = async () => {
@@ -263,6 +292,26 @@ export default function App() {
     }
   };
 
+  const handleGetAiSummary = async (issue: GitHubIssue) => {
+    if (!copilotAvailable) {
+      setFeedback('Copilot not available. Install GitHub Copilot CLI first.');
+      return;
+    }
+
+    setLoadingAiSummary(true);
+    setAiSummary('');
+
+    try {
+      const summary = await copilotService.summarizeIssue(issue);
+      setAiSummary(summary);
+    } catch (error) {
+      setFeedback(`AI summary failed: ${(error as Error).message}`);
+      setAiSummary('');
+    } finally {
+      setLoadingAiSummary(false);
+    }
+  };
+
   const overlayLabels = useMemo(
     () => ({
       left: {
@@ -277,8 +326,11 @@ export default function App() {
     []
   );
 
-  const renderIssueCard = (issue: GitHubIssue | null) => {
+  const renderIssueCard = (issue: GitHubIssue | null, cardIndex?: number) => {
     if (!issue) return <View style={[styles.card, styles.cardEmpty]} />;
+
+    const isTopCard = cardIndex === 0 || cardIndex === undefined;
+
     return (
       <View style={styles.card}>
         <Text style={styles.repo}>{repoLabel(issue)}</Text>
@@ -299,6 +351,26 @@ export default function App() {
             <Text style={styles.labelTextMuted}>No labels</Text>
           )}
         </View>
+
+        {copilotAvailable && isTopCard && (
+          <TouchableOpacity
+            style={styles.aiButton}
+            onPress={() => handleGetAiSummary(issue)}
+            disabled={loadingAiSummary}
+          >
+            <Text style={styles.aiButtonText}>
+              {loadingAiSummary ? 'Generating AI summary...' : '✨ Get AI Summary'}
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {aiSummary && isTopCard ? (
+          <View style={styles.aiSummaryBox}>
+            <Text style={styles.aiSummaryLabel}>AI Summary:</Text>
+            <Text style={styles.aiSummaryText}>{aiSummary}</Text>
+          </View>
+        ) : null}
+
         <Text style={styles.meta}>Swipe right to keep · left to close</Text>
       </View>
     );
@@ -622,5 +694,38 @@ const styles = StyleSheet.create({
   },
   feedback: {
     color: '#cbd5e1',
+  },
+  aiButton: {
+    backgroundColor: '#6366f1',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginVertical: 8,
+    alignItems: 'center',
+  },
+  aiButtonText: {
+    color: '#e2e8f0',
+    fontWeight: '600',
+    fontSize: 13,
+  },
+  aiSummaryBox: {
+    backgroundColor: '#1e293b',
+    borderRadius: 8,
+    padding: 10,
+    marginVertical: 8,
+    borderWidth: 1,
+    borderColor: '#475569',
+  },
+  aiSummaryLabel: {
+    color: '#818cf8',
+    fontSize: 11,
+    fontWeight: '700',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+  },
+  aiSummaryText: {
+    color: '#cbd5e1',
+    fontSize: 13,
+    lineHeight: 18,
   },
 });
