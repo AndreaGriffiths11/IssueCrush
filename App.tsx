@@ -455,8 +455,8 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar style="light" />
-        <RNStatusBar barStyle="light-content" />
+        <StatusBar style="dark" />
+        <RNStatusBar barStyle="dark-content" />
 
         <View style={styles.container}>
           <View style={styles.contentMax}>
@@ -610,16 +610,21 @@ export default function App() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#050914',
+    backgroundColor: '#f5f7fb',
   },
   container: {
     flex: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
+    width: '100%',
+    maxWidth: 960,
+    alignSelf: 'center',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
   },
   contentMax: {
     flex: 1,
     width: '100%',
-    maxWidth: 520,
+    maxWidth: 720,
     alignSelf: 'center',
   },
   header: {
@@ -631,22 +636,26 @@ const styles = StyleSheet.create({
   brand: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#e2e8f0',
+    color: '#0f172a',
   },
   hero: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#e2e8f0',
+    color: '#0f172a',
     marginBottom: 8,
   },
   authCard: {
-    backgroundColor: '#0b1224',
-    borderRadius: 16,
-    padding: 20,
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
+    padding: 22,
     borderWidth: 1,
-    borderColor: '#1f2937',
+    borderColor: '#e2e8f0',
     marginTop: 8,
     gap: 10,
+    shadowColor: '#0f172a',
+    shadowOpacity: 0.06,
+    shadowOffset: { width: 0, height: 10 },
+    shadowRadius: 18,
   },
   content: {
     flex: 1,
@@ -666,11 +675,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   primaryButtonText: {
-    color: '#0b1224',
+    color: '#ffffff',
     fontWeight: '700',
   },
   secondaryButton: {
-    borderColor: '#334155',
+    borderColor: '#cbd5e1',
     borderWidth: 1,
     paddingVertical: 10,
     paddingHorizontal: 12,
@@ -679,49 +688,49 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   secondaryButtonText: {
-    color: '#e2e8f0',
+    color: '#0f172a',
     fontWeight: '600',
   },
   undoButton: {
     marginBottom: 8,
   },
   copy: {
-    color: '#cbd5e1',
+    color: '#1f2937',
     lineHeight: 20,
   },
   copyMuted: {
-    color: '#94a3b8',
+    color: '#6b7280',
   },
   mono: {
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   error: {
-    color: '#f87171',
+    color: '#b91c1c',
     marginTop: 4,
   },
   deviceBox: {
-    backgroundColor: '#0f172a',
+    backgroundColor: '#f8fafc',
     padding: 14,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#1f2937',
+    borderColor: '#e2e8f0',
     gap: 6,
   },
   codeLabel: {
-    color: '#94a3b8',
+    color: '#6b7280',
     fontSize: 12,
   },
   code: {
     fontSize: 24,
     letterSpacing: 2,
-    color: '#e2e8f0',
+    color: '#0f172a',
     fontWeight: '700',
   },
   linkButton: {
     paddingVertical: 8,
   },
   linkButtonText: {
-    color: '#38bdf8',
+    color: '#0ea5e9',
     fontWeight: '600',
   },
   controls: {
@@ -733,17 +742,17 @@ const styles = StyleSheet.create({
   },
   inputWrap: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: '#ffffff',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#1f2937',
+    borderColor: '#e2e8f0',
     paddingHorizontal: 14,
     height: 44,
     justifyContent: 'center',
   },
   input: {
     height: 44,
-    color: '#e2e8f0',
+    color: '#0f172a',
   },
   swiperWrap: {
     flex: 1,
@@ -752,21 +761,20 @@ const styles = StyleSheet.create({
   },
   card: {
     flex: 1,
-    backgroundColor: '#0b1224',
-    borderRadius: 16,
-    padding: Platform.OS === 'ios' ? 24 : 20,
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
+    padding: Platform.OS === 'ios' ? 24 : 22,
     borderWidth: 1,
-    borderColor: '#1f2937',
+    borderColor: '#e5e7eb',
     justifyContent: 'space-between',
-    // Stronger shadow with iOS-specific adjustments
-    shadowColor: '#000',
+    shadowColor: '#0f172a',
     shadowOffset: { width: 0, height: Platform.OS === 'ios' ? 12 : 10 },
-    shadowOpacity: Platform.OS === 'ios' ? 0.35 : 0.3,
-    shadowRadius: Platform.OS === 'ios' ? 24 : 20,
-    elevation: 10,
+    shadowOpacity: Platform.OS === 'ios' ? 0.14 : 0.12,
+    shadowRadius: Platform.OS === 'ios' ? 18 : 16,
+    elevation: 8,
   },
   cardEmpty: {
-    backgroundColor: '#0f172a',
+    backgroundColor: '#eef2f7',
   },
   cardHeader: {
     gap: Platform.OS === 'ios' ? 12 : 8,
@@ -775,7 +783,7 @@ const styles = StyleSheet.create({
     gap: Platform.OS === 'ios' ? 16 : 12,
   },
   repo: {
-    color: '#38bdf8',
+    color: '#0ea5e9',
     fontWeight: '700',
     marginBottom: 4,
     fontSize: 13,
@@ -787,7 +795,7 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   title: {
-    color: '#e2e8f0',
+    color: '#0f172a',
     fontSize: 20,
     fontWeight: '700',
     lineHeight: Platform.OS === 'ios' ? 28 : 26,
@@ -820,7 +828,7 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
   },
   meta: {
-    color: '#94a3b8',
+    color: '#6b7280',
     fontSize: 12,
   },
   loader: {
@@ -833,21 +841,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   overlayLeft: {
-    backgroundColor: '#ef4444',
+    backgroundColor: '#fecdd3',
     borderRadius: 10,
     padding: 8,
   },
   overlayRight: {
-    backgroundColor: '#10b981',
+    backgroundColor: '#bbf7d0',
     borderRadius: 10,
     padding: 8,
   },
   overlayLabel: {
-    color: '#0b1224',
+    color: '#0f172a',
     fontWeight: '700',
   },
   feedbackError: {
-    color: '#ef4444',
+    color: '#b91c1c',
     fontWeight: '700',
   },
   actionBar: {
@@ -858,9 +866,9 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 24 : 20,
     paddingHorizontal: 24,
     borderTopWidth: 1,
-    borderTopColor: '#1f2937',
-    backgroundColor: '#0b0f14',
-    marginHorizontal: -16, // Bleed full width in container
+    borderTopColor: '#e5e7eb',
+    backgroundColor: '#ffffff',
+    marginHorizontal: -20, // Bleed full width in container
     // Add proper spacing for iOS devices with home indicator
     paddingBottom: Platform.OS === 'ios' ? 20 : 20,
   },
@@ -869,7 +877,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 100,
     borderWidth: Platform.OS === 'ios' ? 1.5 : 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: '#f8fafc',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: Platform.OS === 'ios' ? 6 : 4 },
     shadowOpacity: Platform.OS === 'ios' ? 0.25 : 0.2,
@@ -879,17 +887,17 @@ const styles = StyleSheet.create({
   fabClose: {
     width: Platform.OS === 'ios' ? 68 : 64,
     height: Platform.OS === 'ios' ? 68 : 64,
-    borderColor: '#7f1d1d',
+    borderColor: '#f87171',
   },
   fabKeep: {
     width: Platform.OS === 'ios' ? 68 : 64,
     height: Platform.OS === 'ios' ? 68 : 64,
-    borderColor: '#064e3b',
+    borderColor: '#22c55e',
   },
   fabUndo: {
     width: Platform.OS === 'ios' ? 52 : 48,
     height: Platform.OS === 'ios' ? 52 : 48,
-    borderColor: '#334155',
+    borderColor: '#cbd5e1',
   },
   toastWrap: {
     position: 'absolute',
@@ -902,22 +910,22 @@ const styles = StyleSheet.create({
   toast: {
     width: '100%',
     maxWidth: 520,
-    backgroundColor: '#161b22',
+    backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: '#30363d',
+    borderColor: '#e5e7eb',
     borderRadius: 12,
     paddingVertical: 14, // Increased padding
     paddingHorizontal: 16,
-    shadowColor: '#000',
+    shadowColor: '#0f172a',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.12,
     shadowRadius: 8,
     elevation: 6,
     flexDirection: 'row', // Ensure layout allows for text growth
     justifyContent: 'center',
   },
   toastText: {
-    color: '#e2e8f0',
+    color: '#0f172a',
     fontWeight: '600',
     textAlign: 'center',
   },
@@ -925,30 +933,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#1e293b',
+    backgroundColor: '#f1f5f9',
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
     alignSelf: 'flex-start',
   },
   aiButtonActive: {
-    backgroundColor: '#0f172a',
+    backgroundColor: '#e2e8f0',
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: '#cbd5e1',
   },
   aiButtonText: {
-    color: '#94a3b8',
+    color: '#0f172a',
     fontWeight: '600',
     fontSize: 13,
   },
   aiSummaryText: {
-    color: '#cbd5e1',
+    color: '#1f2937',
     lineHeight: Platform.OS === 'ios' ? 22 : 20,
     fontSize: Platform.OS === 'ios' ? 15 : 14,
     letterSpacing: Platform.OS === 'ios' ? 0.3 : 0,
   },
   tapHint: {
-    color: '#475569',
+    color: '#94a3b8',
     fontSize: Platform.OS === 'ios' ? 13 : 12,
     fontStyle: 'italic',
     marginTop: Platform.OS === 'ios' ? 8 : 4,
