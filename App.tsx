@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Linking,
   Platform,
+  SafeAreaView,
   StatusBar as RNStatusBar,
   StyleSheet,
   Text,
