@@ -49,7 +49,7 @@ export default function App() {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   // AI Summary State
-  const [aiSummary, setAiSummary] = useState('');
+  // Stored within issues array now
   const [loadingAiSummary, setLoadingAiSummary] = useState(false);
 
   const swiperRef = useRef<Swiper<GitHubIssue>>(null);
@@ -269,7 +269,6 @@ export default function App() {
 
   const onSwiped = (idx: number) => {
     setCurrentIndex(idx + 1);
-    setAiSummary('');
     setLoadingAiSummary(false);
   };
 
@@ -292,16 +291,27 @@ export default function App() {
   };
 
   const handleGetAiSummary = async () => {
-    const issue = issues[currentIndex];
+    const issueIndex = currentIndex;
+    const issue = issues[issueIndex];
     if (!issue) return;
+
+    // If we already have a summary, don't fetch again
+    if (issue.aiSummary) return;
 
     setLoadingAiSummary(true);
     try {
+      // Pass the fully typed issue including optional body/etc
       const summary = await copilotService.summarizeIssue(issue);
-      setAiSummary(summary);
+      
+      // Update the issue in the list to trigger re-render
+      setIssues(prevIssues => 
+        prevIssues.map((item, index) => 
+          index === issueIndex ? { ...item, aiSummary: summary } : item
+        )
+      );
     } catch (error) {
-      setAiSummary('Failed to generate summary. Make sure the server is running.');
       console.error('AI Summary error:', error);
+      // Optional: show error toast here using setFeedback
     } finally {
       setLoadingAiSummary(false);
     }
@@ -430,25 +440,25 @@ export default function App() {
 
           {/* AI Summary Section */}
           <TouchableOpacity
-            style={[styles.aiButton, aiSummary ? styles.aiButtonActive : null]}
-            onPress={handleGetAiSummary}
-            disabled={loadingAiSummary || !!aiSummary}
+            style={[styles.aiButton, issue.aiSummary ? styles.aiButtonActive : null]}
+            onPress={loadingAiSummary ? undefined : handleGetAiSummary}
+            disabled={loadingAiSummary || !!issue.aiSummary}
           >
-            {loadingAiSummary ? (
+            {loadingAiSummary && currentIndex === issues.indexOf(issue) ? (
               <ActivityIndicator color="#ffffff" size="small" />
             ) : (
               <>
                 <Sparkles size={18} color="#ffffff" />
                 <Text style={styles.aiButtonText}>
-                  {aiSummary ? "AI Summary" : "Get AI Summary"}
+                  {issue.aiSummary ? "AI Summary" : "Get AI Summary"}
                 </Text>
               </>
             )}
           </TouchableOpacity>
 
-          {aiSummary ? (
+          {issue.aiSummary ? (
             <Text style={styles.aiSummaryText} numberOfLines={3} ellipsizeMode="tail">
-              {aiSummary}
+              {issue.aiSummary}
             </Text>
           ) : null}
         </View>

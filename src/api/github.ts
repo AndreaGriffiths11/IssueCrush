@@ -19,6 +19,12 @@ export type GitHubIssue = {
     full_name: string;
   };
   pull_request?: unknown;
+  aiSummary?: string; // Client-side enhancement
+  body?: string;
+  created_at?: string;
+  user?: {
+    login: string;
+  };
 };
 
 const defaultHeaders = (token: string) => ({

@@ -12,6 +12,7 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@github/copilot-sdk": "^0.1.14",
     "@react-native-async-storage/async-storage": "2.2.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
