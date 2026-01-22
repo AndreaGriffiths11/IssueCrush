@@ -42,6 +42,7 @@ export default function App() {
   const [authError, setAuthError] = useState('');
   const [undoBusy, setUndoBusy] = useState(false);
   const [lastClosed, setLastClosed] = useState<GitHubIssue | null>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   const pollTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -59,6 +60,7 @@ export default function App() {
   useEffect(() => {
     if (!token) {
       setIssues([]);
+      setCurrentIndex(0);
       return;
     }
     loadIssues();
@@ -74,6 +76,7 @@ export default function App() {
     try {
       const data = await fetchIssues(token, repoFilter.trim() || undefined);
       setIssues(data);
+      setCurrentIndex(0);
       setFeedback(data.length ? `Loaded ${data.length} open issues` : 'No open issues found');
     } catch (error) {
       setAuthError((error as Error).message);
@@ -224,14 +227,13 @@ export default function App() {
   const handleSwipeLeft = async (cardIndex: number) => {
     const issue = issues[cardIndex];
     if (!issue || !token) return;
-    setIssues((prev) => prev.filter((_, idx) => idx !== cardIndex));
+    // Don't remove from issues list to keep indices stable with Swiper
     setFeedback(`Closed #${issue.number} · ${repoLabel(issue)}`);
     setLastClosed(issue);
     try {
       await updateIssueState(token, issue, 'closed');
     } catch (error) {
       setFeedback(`Close failed: ${(error as Error).message}`);
-      setIssues((prev) => [issue, ...prev]);
       setLastClosed(null);
     }
   };
@@ -239,7 +241,6 @@ export default function App() {
   const handleSwipeRight = (cardIndex: number) => {
     const issue = issues[cardIndex];
     if (!issue) return;
-    setIssues((prev) => prev.filter((_, idx) => idx !== cardIndex));
     setFeedback(`Kept open · #${issue.number}`);
   };
 
@@ -248,7 +249,9 @@ export default function App() {
     setUndoBusy(true);
     try {
       await updateIssueState(token, lastClosed, 'open');
-      setIssues((prev) => [lastClosed, ...prev]);
+      // To properly undo in the UI with Swiper, we'd need to decrement currentIndex
+      // and swipe back. For now, we'll just re-open in backend and give feedback.
+      // If we want to show it again, we might need to manipulate the stack or refresh.
       setFeedback(`Reopened #${lastClosed.number}`);
       setLastClosed(null);
     } catch (error) {
@@ -261,12 +264,48 @@ export default function App() {
   const overlayLabels = useMemo(
     () => ({
       left: {
-        title: 'Close',
-        style: { label: styles.overlayLabel, wrapper: styles.overlayLeft },
+        title: 'CLOSE',
+        style: { 
+          label: {
+            backgroundColor: 'transparent',
+            borderColor: '#ef4444',
+            color: '#ef4444',
+            borderWidth: 4,
+            fontSize: 24,
+            fontWeight: '800',
+            textAlign: 'center',
+            padding: 10,
+          },
+          wrapper: {
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            justifyContent: 'flex-start',
+            marginTop: 20,
+            marginLeft: -20,
+          }
+        },
       },
       right: {
-        title: 'Keep',
-        style: { label: styles.overlayLabel, wrapper: styles.overlayRight },
+        title: 'KEEP',
+        style: { 
+          label: {
+            backgroundColor: 'transparent',
+            borderColor: '#10b981',
+            color: '#10b981',
+            borderWidth: 4,
+            fontSize: 24,
+            fontWeight: '800',
+            textAlign: 'center',
+            padding: 10,
+          },
+          wrapper: {
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            justifyContent: 'flex-start',
+            marginTop: 20,
+            marginLeft: 20,
+          }
+        },
       },
     }),
     []
@@ -277,9 +316,11 @@ export default function App() {
     return (
       <View style={styles.card}>
         <Text style={styles.repo}>{repoLabel(issue)}</Text>
-        <Text style={styles.title} numberOfLines={3}>
-          #{issue.number} · {issue.title}
-        </Text>
+        <TouchableOpacity onPress={() => Linking.openURL(issue.html_url)}>
+          <Text style={styles.title} numberOfLines={3}>
+            #{issue.number} · {issue.title}
+          </Text>
+        </TouchableOpacity>
         <View style={styles.labels}>
           {issue.labels?.length ? (
             issue.labels.slice(0, 6).map((label) => (
@@ -370,11 +411,13 @@ export default function App() {
                 <ActivityIndicator color="#34d399" size="small" />
                 <Text style={styles.copyMuted}>Fetching issues…</Text>
               </View>
-            ) : issues.length ? (
+            ) : issues.length > currentIndex ? (
               <View style={styles.swiperWrap}>
                 <Swiper
                   cards={issues}
+                  cardIndex={currentIndex}
                   renderCard={renderIssueCard}
+                  onSwiped={(idx) => setCurrentIndex(idx + 1)}
                   onSwipedLeft={handleSwipeLeft}
                   onSwipedRight={handleSwipeRight}
                   backgroundColor="transparent"
@@ -384,6 +427,7 @@ export default function App() {
                   overlayLabels={overlayLabels}
                   cardVerticalMargin={16}
                   verticalSwipe={false}
+                  animateOverlayLabelsOpacity
                 />
               </View>
             ) : (
