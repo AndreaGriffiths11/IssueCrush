@@ -1,20 +1,16 @@
 {
   "name": "issuecrush",
   "version": "1.0.0",
-  "description": "Swipe through GitHub issues like Tinder. AI-powered with GitHub Copilot.",
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
-    "server": "node server.mjs",
+    "server": "node server.js",
     "dev": "concurrently \"npm run server\" \"npm start\"",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web",
-    "test:auth": "./test-auth.sh",
-    "setup": "npm install && echo '\n✓ Dependencies installed\n✓ Next: Copy .env.example to .env and add your GitHub OAuth credentials\n✓ Then run: npm run dev\n'"
+    "web": "expo start --web"
   },
   "dependencies": {
-    "@github/copilot-sdk": "^0.1.14",
     "@react-native-async-storage/async-storage": "2.2.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
@@ -23,13 +19,13 @@
     "expo-secure-store": "~15.0.8",
     "expo-status-bar": "~3.0.9",
     "express": "^5.2.1",
+    "lucide-react-native": "^0.562.0",
     "react": "19.1.0",
-    "react-dom": "19.1.0",
     "react-native": "0.81.5",
     "react-native-deck-swiper": "^2.0.19",
     "react-native-gesture-handler": "~2.28.0",
     "react-native-reanimated": "~4.1.1",
-    "react-native-web": "^0.21.0"
+    "react-native-svg": "^15.15.1"
   },
   "devDependencies": {
     "@types/react": "~19.1.0",

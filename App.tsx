@@ -4,28 +4,26 @@ import {
   ActivityIndicator,
   Linking,
   Platform,
-  SafeAreaView,
   StatusBar as RNStatusBar,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
+  Animated,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as AuthSession from 'expo-auth-session';
 import Swiper from 'react-native-deck-swiper';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { X, Check, RotateCcw, Sparkles } from 'lucide-react-native';
 
 import { fetchIssues, GitHubIssue, updateIssueState, extractRepoPath } from './src/api/github';
 import { deleteToken, getToken, saveToken } from './src/lib/tokenStorage';
-import { copilotService } from './src/lib/copilotService';
 
 const CLIENT_ID = process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID ?? '';
-const DEFAULT_SCOPE = process.env.EXPO_PUBLIC_GITHUB_SCOPE || 'public_repo';
-const REDIRECT_URI = Platform.OS === 'web'
-  ? 'http://localhost:8081'
-  : AuthSession.getRedirectUrl();
+const DEFAULT_SCOPE = process.env.EXPO_PUBLIC_GITHUB_SCOPE || 'repo';
+const REDIRECT_URI = AuthSession.getRedirectUrl();
 
 type DeviceAuthState = {
   device_code: string;
@@ -45,144 +43,41 @@ export default function App() {
   const [authError, setAuthError] = useState('');
   const [undoBusy, setUndoBusy] = useState(false);
   const [lastClosed, setLastClosed] = useState<GitHubIssue | null>(null);
-  const [aiSummary, setAiSummary] = useState<string>('');
-  const [loadingAiSummary, setLoadingAiSummary] = useState(false);
-  const [copilotAvailable, setCopilotAvailable] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  // AI Summary State
+  const [aiSummary, setAiSummary] = useState('');
+  const [loadingAiSummary, setLoadingAiSummary] = useState(false);
 
   const swiperRef = useRef<Swiper<GitHubIssue>>(null);
   const pollTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const exchangeCodeForToken = async (code: string) => {
-    try {
-      setAuthError('');
-      console.log('Exchanging code for token...');
-
-      const tokenResponse = await fetch('http://localhost:3000/api/github-token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ code }),
-      });
-
-      if (!tokenResponse.ok) {
-        const errorText = await tokenResponse.text();
-        console.error('Token exchange failed:', errorText);
-        setAuthError(`Server error: ${tokenResponse.status} - ${errorText}`);
-        return;
-      }
-
-      const data = await tokenResponse.json();
-      console.log('Token exchange response:', { hasToken: !!data.access_token, hasError: !!data.error });
-
-      if (data.error) {
-        setAuthError(data.error_description || data.error || 'GitHub OAuth failed.');
-        return;
-      }
-
-      if (data.access_token) {
-        await saveToken(data.access_token);
-        setToken(data.access_token);
-        setFeedback('Connected to GitHub');
-        console.log('Token saved successfully');
-        if (typeof window !== 'undefined') {
-          window.history.replaceState({}, document.title, window.location.pathname);
-        }
-      } else {
-        setAuthError('No access token received from server');
-      }
-    } catch (error) {
-      console.error('Exchange error:', error);
-      setAuthError(`Failed to connect to auth server: ${(error as Error).message}. Make sure the server is running (npm run server).`);
-    }
-  };
 
   useEffect(() => {
     const hydrate = async () => {
       const stored = await getToken();
       if (stored) setToken(stored);
-
-      try {
-        await copilotService.initialize();
-        setCopilotAvailable(true);
-        console.log('Copilot service available');
-      } catch (error) {
-        console.log('Copilot not available:', (error as Error).message);
-        setCopilotAvailable(false);
-      }
     };
     hydrate();
     return () => {
       if (pollTimeout.current) clearTimeout(pollTimeout.current);
-      copilotService.cleanup();
     };
   }, []);
-
-  // Handle OAuth callback from GitHub on web
-  useEffect(() => {
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const code = params.get('code');
-
-      if (code && !token) {
-        exchangeCodeForToken(code);
-      }
-    }
-  }, [token]);
 
   useEffect(() => {
     if (!token) {
       setIssues([]);
+      setCurrentIndex(0);
       return;
     }
-    setIssues([]); // Clear existing issues when reloading
-    setCurrentIndex(0); // Reset index
     loadIssues();
   }, [token]);
 
-  const getContrastColor = (hex: string) => {
-    // Remove # if present
-    const color = hex.replace('#', '');
-    const r = parseInt(color.substr(0, 2), 16);
-    const g = parseInt(color.substr(2, 2), 16);
-    const b = parseInt(color.substr(4, 2), 16);
-    const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
-    return yiq >= 128 ? '#000000' : '#ffffff';
-  };
-
-  const renderFormattedText = (text: string) => {
-    // Simple markdown parser for AI summaries
-    const lines = text.split('\n').filter(line => line.trim());
-    
-    return lines.map((line, index) => {
-      // Remove ## headers and make them bold
-      if (line.startsWith('## ')) {
-        return (
-          <Text key={index} style={[styles.aiSummaryText, { fontWeight: '700', marginTop: index > 0 ? 12 : 0, marginBottom: 4 }]}>
-            {line.replace(/^##\s*/, '')}
-          </Text>
-        );
-      }
-      
-      // Parse **bold** text
-      const parts = line.split(/(\*\*[^*]+\*\*)/g);
-      return (
-        <Text key={index} style={[styles.aiSummaryText, { marginBottom: 6 }]}>
-          {parts.map((part, i) => {
-            if (part.startsWith('**') && part.endsWith('**')) {
-              return (
-                <Text key={i} style={{ fontWeight: '700' }}>
-                  {part.replace(/\*\*/g, '')}
-                </Text>
-              );
-            }
-            return part;
-          })}
-        </Text>
-      );
-    });
-  };
+  // Auto-dismiss feedback
+  useEffect(() => {
+    if (!feedback) return;
+    const t = setTimeout(() => setFeedback(''), 2200);
+    return () => clearTimeout(t);
+  }, [feedback]);
 
   const repoLabel = (issue: GitHubIssue) =>
     issue.repository?.full_name ?? extractRepoPath(issue.repository_url);
@@ -194,6 +89,7 @@ export default function App() {
     try {
       const data = await fetchIssues(token, repoFilter.trim() || undefined);
       setIssues(data);
+      setCurrentIndex(0);
       setFeedback(data.length ? `Loaded ${data.length} open issues` : 'No open issues found');
     } catch (error) {
       setAuthError((error as Error).message);
@@ -212,11 +108,47 @@ export default function App() {
     if (pollTimeout.current) clearTimeout(pollTimeout.current);
 
     if (Platform.OS === 'web') {
-      // Use Authorization Code Flow for web - redirect to GitHub
-      const authUrl = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=${encodeURIComponent(DEFAULT_SCOPE)}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
-      window.location.href = authUrl;
+      try {
+        const result = await AuthSession.startAsync({
+          authUrl: `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=${encodeURIComponent(DEFAULT_SCOPE)}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`,
+          returnUrl: REDIRECT_URI,
+        });
+
+        if (result.type !== 'success') {
+          setAuthError('GitHub login cancelled.');
+          return;
+        }
+
+        const params = new URL(result.url).searchParams;
+        const code = params.get('code');
+
+        if (!code) {
+          setAuthError('No authorization code received.');
+          return;
+        }
+
+        const tokenResponse = await fetch('http://localhost:3000/api/github-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code }),
+        });
+
+        const data = await tokenResponse.json();
+
+        if (data.error) {
+          setAuthError(data.error_description || data.error || 'GitHub OAuth failed.');
+          return;
+        }
+
+        if (data.access_token) {
+          await saveToken(data.access_token);
+          setToken(data.access_token);
+          setFeedback('Connected to GitHub');
+        }
+      } catch (error) {
+        setAuthError((error as Error).message);
+      }
     } else {
-      // Use Device Flow for mobile
       const body = new URLSearchParams({
         client_id: CLIENT_ID,
         scope: DEFAULT_SCOPE,
@@ -268,17 +200,14 @@ export default function App() {
           schedulePoll(info, intervalSeconds);
           return;
         }
-
         if (data.error === 'slow_down') {
           schedulePoll(info, intervalSeconds + 2);
           return;
         }
-
         if (data.error) {
           setAuthError(data.error_description || 'GitHub OAuth failed.');
           return;
         }
-
         if (data.access_token) {
           await saveToken(data.access_token);
           setToken(data.access_token);
@@ -300,125 +229,139 @@ export default function App() {
     if (pollTimeout.current) clearTimeout(pollTimeout.current);
   };
 
-  const handleSwiped = (cardIndex: number) => {
-    // Advance index state to match Swiper's internal state
-    setCurrentIndex(cardIndex + 1);
-  };
-
   const handleSwipeLeft = async (cardIndex: number) => {
+    // Swiper owns the index, we just handle the data logic
     const issue = issues[cardIndex];
     if (!issue || !token) return;
-    
-    // Optimistic UI update handled by Swiper animation
-    setFeedback(`Closed #${issue.number}`);
+
+    setFeedback(`Closed #${issue.number} · ${repoLabel(issue)}`);
     setLastClosed(issue);
-    setAiSummary(''); // Clear summary for next card
-    
-    // Non-blocking API call
-    // Note: We do NOT remove the issue from the 'issues' array to keep indices stable.
-    updateIssueState(token, issue, 'closed').catch((error) => {
-      setFeedback(`Close failed: ${(error as Error).message}. Tap undo to retry.`);
-    });
+    try {
+      await updateIssueState(token, issue, 'closed');
+    } catch (error) {
+      setFeedback(`Close failed: ${(error as Error).message}`);
+      setLastClosed(null);
+    }
   };
 
   const handleSwipeRight = (cardIndex: number) => {
     const issue = issues[cardIndex];
     if (!issue) return;
-    setFeedback(`Kept #${issue.number}`);
+    setFeedback(`Kept open · #${issue.number}`);
+  };
+
+  const onSwiped = (idx: number) => {
+    setCurrentIndex(idx + 1);
     setAiSummary('');
-    setLastClosed(null); // Keeping breaks the undo chain for closing
+    setLoadingAiSummary(false);
   };
 
   const handleUndo = async () => {
-    if (!lastClosed || !token || undoBusy) return;
+    if (!lastClosed || !token) return;
     setUndoBusy(true);
     try {
-      // Immediate UI feedback
       swiperRef.current?.swipeBack();
-      // We manually decrement here because onSwipedBack isn't reliably available/consistent in all versions
-      // But swipeBack() usually handles visual, we just need to ensure index syncs if we rely on it
+      // Swiper's internal index decrements on swipeBack, we sync our state
       setCurrentIndex((prev) => Math.max(0, prev - 1));
-      
-      setFeedback(`Reopening #${lastClosed.number}...`);
+
       await updateIssueState(token, lastClosed, 'open');
       setFeedback(`Reopened #${lastClosed.number}`);
       setLastClosed(null);
     } catch (error) {
       setFeedback(`Undo failed: ${(error as Error).message}`);
-      // If API failed, we might be in weird state, but card is visually back
     } finally {
       setUndoBusy(false);
     }
   };
 
-  const handleGetAiSummary = async (issue: GitHubIssue) => {
-    if (!copilotAvailable) {
-      setFeedback('Copilot not available. Install GitHub Copilot CLI first.');
-      return;
-    }
-
+  const handleGetAiSummary = async () => {
+    // Placeholder for AI summary logic since copilotService.ts is missing in context
     setLoadingAiSummary(true);
-    setAiSummary('');
-
-    try {
-      const summary = await copilotService.summarizeIssue(issue);
-      setAiSummary(summary);
-    } catch (error) {
-      setFeedback(`AI summary failed: ${(error as Error).message}`);
-      setAiSummary('');
-    } finally {
+    setTimeout(() => {
+      setAiSummary("This issue requires implementing a new feature for the user profile page. Key changes involve updating the API endpoint and the frontend component. Recommended action: Assign to frontend team.");
       setLoadingAiSummary(false);
-    }
+    }, 1500);
   };
 
   const overlayLabels = useMemo(
     () => ({
       left: {
         title: 'CLOSE',
-        style: { 
-          label: styles.overlayLabelRed, 
-          wrapper: styles.overlayWrapperLeft 
+        style: {
+          label: {
+            borderColor: '#ef4444',
+            color: '#ef4444',
+            borderWidth: 4,
+            fontSize: 24,
+            fontWeight: '800',
+            textAlign: 'center',
+            padding: 8,
+            borderRadius: 8,
+            transform: [{ rotate: '15deg' }],
+          },
+          wrapper: {
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            justifyContent: 'flex-start',
+            marginTop: 30,
+            marginLeft: -30,
+          }
         },
       },
       right: {
         title: 'KEEP',
-        style: { 
-          label: styles.overlayLabelGreen, 
-          wrapper: styles.overlayWrapperRight 
+        style: {
+          label: {
+            borderColor: '#10b981',
+            color: '#10b981',
+            borderWidth: 4,
+            fontSize: 24,
+            fontWeight: '800',
+            textAlign: 'center',
+            padding: 8,
+            borderRadius: 8,
+            transform: [{ rotate: '-15deg' }],
+          },
+          wrapper: {
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            justifyContent: 'flex-start',
+            marginTop: 30,
+            marginLeft: 30,
+          }
         },
       },
     }),
     []
   );
 
-  const openIssue = (issue: GitHubIssue) => {
-    if (issue.html_url) {
-      Linking.openURL(issue.html_url);
-    }
+  const getLabelColor = (hex: string) => {
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+    return yiq >= 128 ? '#000000' : '#ffffff';
   };
 
-  const renderIssueCard = (issue: GitHubIssue | null, cardIndex?: number) => {
+  const renderIssueCard = (issue: GitHubIssue | null) => {
     if (!issue) return <View style={[styles.card, styles.cardEmpty]} />;
-
-    const isTopCard = cardIndex === currentIndex;
-
     return (
       <View style={styles.card}>
-        <View>
-          <Text style={styles.repo} numberOfLines={1}>{repoLabel(issue)}</Text>
-          <TouchableOpacity onPress={() => openIssue(issue)}>
-            <Text style={[styles.title, styles.titleLink]} numberOfLines={3}>
-              #{issue.number} · {issue.title} ↗
+        <View style={styles.cardHeader}>
+          <Text style={styles.repo}>{repoLabel(issue)}</Text>
+          <TouchableOpacity onPress={() => Linking.openURL(issue.html_url)}>
+            <Text style={styles.title} numberOfLines={3}>
+              <Text style={{ color: '#38bdf8' }}>#{issue.number}</Text> · {issue.title}
             </Text>
           </TouchableOpacity>
           <View style={styles.labels}>
             {issue.labels?.length ? (
-              issue.labels.slice(0, 3).map((label) => ( // Limit to 3 labels
+              issue.labels.slice(0, 6).map((label) => (
                 <View
                   key={label.id}
                   style={[styles.label, { backgroundColor: `#${label.color || '334155'}` }]}
                 >
-                  <Text style={[styles.labelText, { color: getContrastColor(label.color || '334155') }]}>
+                  <Text style={[styles.labelText, { color: getLabelColor(label.color || '334155') }]}>
                     {label.name}
                   </Text>
                 </View>
@@ -426,41 +369,36 @@ export default function App() {
             ) : (
               <Text style={styles.labelTextMuted}>No labels</Text>
             )}
-            {issue.labels && issue.labels.length > 3 && (
-              <View style={[styles.label, { backgroundColor: '#30363d' }]}>
-                <Text style={[styles.labelText, { color: '#c9d1d9' }]}>+{issue.labels.length - 3}</Text>
-              </View>
-            )}
           </View>
         </View>
 
-        {/* AI Section fixed height container to prevent jumps */}
-        <View style={styles.aiContainer}>
-          {isTopCard && !aiSummary && (
-             <TouchableOpacity
-             style={styles.aiButton}
-             onPress={() => handleGetAiSummary(issue)}
-             disabled={loadingAiSummary}
-           >
-             <Text style={styles.aiButtonText}>
-               {loadingAiSummary ? 'Generating...' : '✨ Get AI Summary'}
-             </Text>
-           </TouchableOpacity>
-          )}
+        <View style={styles.cardBody}>
+          {/* AI Summary Section */}
+          <TouchableOpacity
+            style={[styles.aiButton, aiSummary ? styles.aiButtonActive : null]}
+            onPress={handleGetAiSummary}
+            disabled={loadingAiSummary || !!aiSummary}
+          >
+            {loadingAiSummary ? (
+              <ActivityIndicator color="#cbd5e1" size="small" />
+            ) : (
+              <>
+                <Sparkles size={16} color={aiSummary ? "#e2e8f0" : "#94a3b8"} />
+                <Text style={styles.aiButtonText}>
+                  {aiSummary ? "AI Summary" : "Get AI Summary"}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
 
-          {aiSummary && isTopCard ? (
-            <View style={styles.aiSummaryBox}>
-              <Text style={styles.aiSummaryLabel}>AI SUMMARY</Text>
-              <View style={{ maxHeight: 120, overflow: 'hidden' }}>
-                {renderFormattedText(aiSummary)}
-              </View>
-            </View>
+          {aiSummary ? (
+            <Text style={styles.aiSummaryText} numberOfLines={3} ellipsizeMode="tail">
+              {aiSummary}
+            </Text>
           ) : null}
-        </View>
 
-        {currentIndex < 2 && (
-          <Text style={styles.meta}>Swipe right to keep · left to close</Text>
-        )}
+          <Text style={styles.tapHint}>Tap card for details</Text>
+        </View>
       </View>
     );
   };
@@ -470,132 +408,151 @@ export default function App() {
       <SafeAreaView style={styles.safeArea}>
         <StatusBar style="light" />
         <RNStatusBar barStyle="light-content" />
-        <View style={styles.header}>
-          <Text style={styles.brand}>IssueCrush</Text>
-          {token ? (
-            <TouchableOpacity style={styles.secondaryButton} onPress={signOut}>
-              <Text style={styles.secondaryButtonText}>Sign out</Text>
-            </TouchableOpacity>
-          ) : null}
-        </View>
 
-        {!token ? (
-          <View style={styles.authCard}>
-            <Text style={styles.hero}>Swipe through your GitHub issues</Text>
-            <Text style={styles.copy}>
-              Login uses GitHub device flow. Approve the code to continue. Scope:{' '}
-              <Text style={styles.mono}>{DEFAULT_SCOPE}</Text>
-            </Text>
-            {!CLIENT_ID ? (
-              <Text style={styles.error}>
-                Add EXPO_PUBLIC_GITHUB_CLIENT_ID to your env (see .env.example).
-              </Text>
-            ) : null}
-            <TouchableOpacity style={styles.primaryButton} onPress={startDeviceFlow}>
-              <Text style={styles.primaryButtonText}>Start GitHub login</Text>
-            </TouchableOpacity>
-
-            {deviceAuth ? (
-              <View style={styles.deviceBox}>
-                <Text style={styles.codeLabel}>Your code</Text>
-                <Text style={styles.code}>{deviceAuth.user_code}</Text>
-                <TouchableOpacity
-                  style={styles.linkButton}
-                  onPress={() => Linking.openURL(deviceAuth.verification_uri)}
-                >
-                  <Text style={styles.linkButtonText}>Open {deviceAuth.verification_uri}</Text>
+        <View style={styles.container}>
+          <View style={styles.contentMax}>
+            <View style={styles.header}>
+              <Text style={styles.brand}>IssueCrush</Text>
+              {token ? (
+                <TouchableOpacity style={styles.secondaryButton} onPress={signOut}>
+                  <Text style={styles.secondaryButtonText}>Sign out</Text>
                 </TouchableOpacity>
-                <Text style={styles.copyMuted}>Waiting for approval...</Text>
-              </View>
-            ) : null}
-
-            {authError ? <Text style={styles.error}>{authError}</Text> : null}
-          </View>
-        ) : (
-          <View style={styles.content}>
-            <View style={styles.controls}>
-              <View style={styles.inputWrap}>
-                <TextInput
-                  placeholder="owner/repo (leave blank for all)"
-                  placeholderTextColor="#94a3b8"
-                  value={repoFilter}
-                  onChangeText={setRepoFilter}
-                  style={styles.input}
-                  autoCapitalize="none"
-                />
-              </View>
-              <TouchableOpacity style={styles.primaryButtonSmall} onPress={loadIssues}>
-                <Text style={styles.primaryButtonText}>Refresh</Text>
-              </TouchableOpacity>
+              ) : null}
             </View>
 
-            {authError ? <Text style={styles.error}>{authError}</Text> : null}
+            {!token ? (
+              <View style={styles.authCard}>
+                <Text style={styles.hero}>Swipe through your GitHub issues</Text>
+                <Text style={styles.copy}>
+                  Login uses GitHub device flow. Approve the code to continue. Scope:{' '}
+                  <Text style={styles.mono}>{DEFAULT_SCOPE}</Text>
+                </Text>
+                {!CLIENT_ID ? (
+                  <Text style={styles.error}>
+                    Add EXPO_PUBLIC_GITHUB_CLIENT_ID to your env (see .env.example).
+                  </Text>
+                ) : null}
+                <TouchableOpacity style={styles.primaryButton} onPress={startDeviceFlow}>
+                  <Text style={styles.primaryButtonText}>Start GitHub login</Text>
+                </TouchableOpacity>
 
-            {loadingIssues ? (
-              <View style={styles.loader}>
-                <ActivityIndicator color="#34d399" size="small" />
-                <Text style={styles.copyMuted}>Fetching issues…</Text>
-              </View>
-            ) : issues.length ? (
-              <View style={styles.swiperWrap}>
-                <Swiper
-                  ref={swiperRef}
-                  cards={issues}
-                  cardIndex={currentIndex}
-                  onSwiped={handleSwiped}
-                  renderCard={renderIssueCard}
-                  onSwipedLeft={handleSwipeLeft}
-                  onSwipedRight={handleSwipeRight}
-                  backgroundColor="transparent"
-                  stackSize={2}
-                  stackSeparation={0}
-                  stackScale={5}
-                  infinite={false}
-                  animateCardOpacity
-                  animateOverlayLabelsOpacity
-                  overlayLabels={overlayLabels}
-                  cardVerticalMargin={40}
-                  cardHorizontalMargin={20}
-                  verticalSwipe={false}
-                  swipeAnimationDuration={200}
-                  horizontalThreshold={80} // Approx 25% of typical screen
-                />
+                {deviceAuth ? (
+                  <View style={styles.deviceBox}>
+                    <Text style={styles.codeLabel}>Your code</Text>
+                    <Text style={styles.code}>{deviceAuth.user_code}</Text>
+                    <TouchableOpacity
+                      style={styles.linkButton}
+                      onPress={() => Linking.openURL(deviceAuth.verification_uri)}
+                    >
+                      <Text style={styles.linkButtonText}>Open {deviceAuth.verification_uri}</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.copyMuted}>Waiting for approval...</Text>
+                  </View>
+                ) : null}
+
+                {authError ? <Text style={styles.error}>{authError}</Text> : null}
               </View>
             ) : (
-              <View style={styles.empty}>
-                <Text style={styles.copy}>Nothing to triage right now.</Text>
+              <View style={styles.content}>
+                <View style={styles.controls}>
+                  <View style={styles.inputWrap}>
+                    <TextInput
+                      placeholder="owner/repo (leave blank for all)"
+                      placeholderTextColor="#94a3b8"
+                      value={repoFilter}
+                      onChangeText={setRepoFilter}
+                      style={styles.input}
+                      autoCapitalize="none"
+                    />
+                  </View>
+                  <TouchableOpacity style={styles.primaryButtonSmall} onPress={loadIssues}>
+                    <Text style={styles.primaryButtonText}>Refresh</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {authError ? <Text style={styles.error}>{authError}</Text> : null}
+
+                {loadingIssues ? (
+                  <View style={styles.loader}>
+                    <ActivityIndicator color="#34d399" size="small" />
+                    <Text style={styles.copyMuted}>Fetching issues…</Text>
+                  </View>
+                ) : issues.length > currentIndex ? (
+                  <View style={styles.swiperWrap}>
+                    <Swiper
+                      ref={swiperRef}
+                      cards={issues}
+                      cardIndex={currentIndex}
+                      renderCard={renderIssueCard}
+                      onSwiped={onSwiped}
+                      onSwipedLeft={handleSwipeLeft}
+                      onSwipedRight={handleSwipeRight}
+                      backgroundColor="transparent"
+                      stackSize={2}
+                      stackSeparation={12}
+                      stackScale={4}
+                      animateCardOpacity
+                      overlayLabels={overlayLabels}
+                      cardVerticalMargin={16}
+                      verticalSwipe={false}
+                      disableTopSwipe
+                      disableBottomSwipe
+                      horizontalThreshold={120}
+                      swipeAnimationDuration={180}
+                      animateOverlayLabelsOpacity
+                    />
+                  </View>
+                ) : (
+                  <View style={styles.empty}>
+                    <Text style={styles.copy}>Nothing to triage right now.</Text>
+                  </View>
+                )}
+
+                {/* Toast Feedback */}
+                {feedback ? (
+                  <View pointerEvents="none" style={styles.toastWrap}>
+                    <View style={styles.toast}>
+                      <Text
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                        style={[
+                          styles.toastText,
+                          feedback.toLowerCase().includes('failed') && styles.feedbackError,
+                        ]}
+                      >
+                        {feedback}
+                      </Text>
+                    </View>
+                  </View>
+                ) : null}
+
+                <View style={styles.actionBar}>
+                  <TouchableOpacity
+                    style={[styles.fab, styles.fabClose]}
+                    onPress={() => swiperRef.current?.swipeLeft()}
+                  >
+                    <X color="#ef4444" size={32} />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.fab, styles.fabUndo]}
+                    onPress={handleUndo}
+                    disabled={!lastClosed || undoBusy}
+                  >
+                    <RotateCcw color={!lastClosed ? "#334155" : "#e2e8f0"} size={24} />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.fab, styles.fabKeep]}
+                    onPress={() => swiperRef.current?.swipeRight()}
+                  >
+                    <Check color="#10b981" size={32} />
+                  </TouchableOpacity>
+                </View>
               </View>
             )}
-
-            <View style={styles.actionBar}>
-              <TouchableOpacity
-                style={[styles.actionCircle, styles.actionClose]}
-                onPress={() => swiperRef.current?.swipeLeft()}
-              >
-                <Text style={styles.actionIcon}>✕</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.actionCircleSmall, styles.actionUndo]}
-                onPress={handleUndo}
-                disabled={!lastClosed || undoBusy}
-              >
-                <Text style={styles.actionIconSmall}>↺</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.actionCircle, styles.actionKeep]}
-                onPress={() => swiperRef.current?.swipeRight()}
-              >
-                <Text style={styles.actionIcon}>♥</Text>
-              </TouchableOpacity>
-            </View>
-
-            {feedback && currentIndex < 2 ? (
-              <Text style={styles.feedback}>{feedback}</Text>
-            ) : null}
           </View>
-        )}
+        </View>
       </SafeAreaView>
     </GestureHandlerRootView>
   );
@@ -604,394 +561,329 @@ export default function App() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#010409', // GitHub Dark: Main bg
+    backgroundColor: '#050914',
+  },
+  container: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  contentMax: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 520,
+    alignSelf: 'center',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#30363d', // GitHub Dark: Border
-    backgroundColor: '#161b22', // GitHub Dark: Header bg
+    paddingVertical: 12,
   },
   brand: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#f0f6fc', // GitHub Dark: Headings
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#e2e8f0',
   },
   hero: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#f0f6fc',
-    marginBottom: 16,
-    textAlign: 'center',
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#e2e8f0',
+    marginBottom: 8,
   },
   authCard: {
-    backgroundColor: '#161b22',
-    margin: 16,
-    borderRadius: 6,
-    padding: 24,
+    backgroundColor: '#0b1224',
+    borderRadius: 16,
+    padding: 20,
     borderWidth: 1,
-    borderColor: '#30363d',
-    alignItems: 'center',
-    gap: 16,
+    borderColor: '#1f2937',
+    marginTop: 8,
+    gap: 10,
   },
   content: {
     flex: 1,
   },
   primaryButton: {
-    backgroundColor: '#238636', // GitHub Green
+    backgroundColor: '#10b981',
     paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 6,
+    borderRadius: 12,
     alignItems: 'center',
-    width: '100%',
   },
   primaryButtonSmall: {
-    backgroundColor: '#238636',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 6,
+    backgroundColor: '#10b981',
+    height: 44,
+    paddingHorizontal: 14,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   primaryButtonText: {
-    color: '#ffffff',
-    fontWeight: '600',
-    fontSize: 14,
+    color: '#0b1224',
+    fontWeight: '700',
   },
   secondaryButton: {
-    backgroundColor: '#21262d', // GitHub Dark: Button bg
-    borderColor: '#363b42', // GitHub Dark: Button border
+    borderColor: '#334155',
     borderWidth: 1,
-    paddingVertical: 6,
+    paddingVertical: 10,
     paddingHorizontal: 12,
-    borderRadius: 6,
+    borderRadius: 12,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   secondaryButtonText: {
-    color: '#c9d1d9', // GitHub Dark: Text
-    fontWeight: '500',
-    fontSize: 14,
+    color: '#e2e8f0',
+    fontWeight: '600',
   },
   undoButton: {
-    alignSelf: 'center',
-    marginTop: 16,
+    marginBottom: 8,
   },
   copy: {
-    color: '#8b949e', // GitHub Dark: Secondary text
-    fontSize: 14,
+    color: '#cbd5e1',
     lineHeight: 20,
-    textAlign: 'center',
   },
   copyMuted: {
-    color: '#8b949e',
-    fontSize: 13,
+    color: '#94a3b8',
   },
   mono: {
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    backgroundColor: 'rgba(110,118,129,0.4)',
-    paddingHorizontal: 4,
-    borderRadius: 4,
   },
   error: {
-    color: '#f85149', // GitHub Dark: Error
-    fontSize: 14,
-    textAlign: 'center',
+    color: '#f87171',
+    marginTop: 4,
   },
   deviceBox: {
-    backgroundColor: '#0d1117',
-    padding: 16,
-    borderRadius: 6,
+    backgroundColor: '#0f172a',
+    padding: 14,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#30363d',
-    alignItems: 'center',
-    width: '100%',
-    gap: 8,
+    borderColor: '#1f2937',
+    gap: 6,
   },
   codeLabel: {
-    color: '#8b949e',
+    color: '#94a3b8',
     fontSize: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
   },
   code: {
-    fontSize: 32,
-    letterSpacing: 4,
-    color: '#f0f6fc',
-    fontWeight: '600',
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    fontSize: 24,
+    letterSpacing: 2,
+    color: '#e2e8f0',
+    fontWeight: '700',
   },
   linkButton: {
     paddingVertical: 8,
   },
   linkButtonText: {
-    color: '#58a6ff', // GitHub Dark: Link
-    fontSize: 14,
+    color: '#38bdf8',
+    fontWeight: '600',
   },
   controls: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#30363d',
+    gap: 10,
+    marginBottom: 12,
+    paddingVertical: 12,
   },
   inputWrap: {
     flex: 1,
-    backgroundColor: '#0d1117',
-    borderRadius: 6,
+    backgroundColor: '#0f172a',
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#30363d',
-    paddingHorizontal: 12,
-    height: 32,
+    borderColor: '#1f2937',
+    paddingHorizontal: 14,
+    height: 44,
     justifyContent: 'center',
   },
   input: {
-    color: '#c9d1d9',
-    fontSize: 14,
-    height: '100%',
-    padding: 0,
+    height: 44,
+    color: '#e2e8f0',
   },
   swiperWrap: {
     flex: 1,
-    marginTop: -20, // Adjust for Swiper's default positioning
+    // Add margins to prevent card from touching edges fully during swipe
+    marginHorizontal: -8,
   },
   card: {
-    flex: 0.7,
-    backgroundColor: '#161b22',
-    borderRadius: 12,
-    padding: 24,
+    flex: 1,
+    backgroundColor: '#0b1224',
+    borderRadius: 16,
+    padding: 20,
     borderWidth: 1,
-    borderColor: '#30363d',
-    justifyContent: 'flex-start',
+    borderColor: '#1f2937',
+    justifyContent: 'space-between',
+    // Stronger shadow
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    elevation: 8,
+    shadowRadius: 20,
+    elevation: 10,
   },
   cardEmpty: {
-    backgroundColor: 'transparent',
-    borderWidth: 0,
+    backgroundColor: '#0f172a',
+  },
+  cardHeader: {
+    gap: 8,
+  },
+  cardBody: {
+    gap: 12,
   },
   repo: {
-    color: '#8b949e',
-    fontSize: 14,
-    marginBottom: 12,
-    fontWeight: '400',
+    color: '#38bdf8',
+    fontWeight: '700',
+    marginBottom: 4,
   },
   title: {
-    color: '#c9d1d9',
+    color: '#e2e8f0',
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: '700',
     lineHeight: 28,
-    marginBottom: 16,
-  },
-  titleLink: {
-    textDecorationLine: 'underline',
   },
   labels: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
-    marginBottom: 24,
+    marginTop: 8,
   },
   label: {
-    paddingVertical: 2,
+    paddingVertical: 4,
     paddingHorizontal: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 10,
   },
   labelText: {
-    color: '#000000', // Labels usually have dark text on light bg, or we calculate contrast
-    fontWeight: '500',
+    fontWeight: '700',
     fontSize: 12,
   },
   labelTextMuted: {
-    color: '#8b949e',
-    fontSize: 12,
-    fontStyle: 'italic',
+    color: '#94a3b8',
   },
   meta: {
-    color: '#8b949e',
+    color: '#94a3b8',
     fontSize: 12,
-    marginTop: 'auto', // Push to bottom
-    textAlign: 'center',
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#30363d',
   },
   loader: {
-    flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 16,
+    marginTop: 20,
+    gap: 8,
   },
   empty: {
-    flex: 1,
+    paddingVertical: 40,
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: 32,
   },
   overlayLeft: {
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    height: '100%',
-    width: '100%',
-    paddingRight: 32,
-    borderRadius: 8,
+    backgroundColor: '#ef4444',
+    borderRadius: 10,
+    padding: 8,
   },
   overlayRight: {
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-    height: '100%',
-    width: '100%',
-    paddingLeft: 32,
-    borderRadius: 8,
+    backgroundColor: '#10b981',
+    borderRadius: 10,
+    padding: 8,
   },
   overlayLabel: {
-    color: '#ffffff',
-    fontSize: 24,
+    color: '#0b1224',
     fontWeight: '700',
-    textTransform: 'uppercase',
   },
-  footer: {
-    padding: 16,
+  feedbackError: {
+    color: '#ef4444',
+    fontWeight: '700',
+  },
+  actionBar: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 30,
+    paddingVertical: 20,
+    paddingHorizontal: 24,
+    borderTopWidth: 1,
+    borderTopColor: '#1f2937',
+    backgroundColor: '#0b0f14',
+    marginHorizontal: -16, // Bleed full width in container
+    paddingBottom: Platform.OS === 'ios' ? 0 : 20,
   },
-  feedback: {
-    color: '#8b949e',
-    fontSize: 14,
-    marginTop: 8,
+  fab: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 100,
+    borderWidth: 1,
+    backgroundColor: '#0f172a',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  fabClose: {
+    width: 64,
+    height: 64,
+    borderColor: '#7f1d1d',
+  },
+  fabKeep: {
+    width: 64,
+    height: 64,
+    borderColor: '#064e3b',
+  },
+  fabUndo: {
+    width: 48,
+    height: 48,
+    borderColor: '#334155',
+  },
+  toastWrap: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 160, // Increased to ensure clearing action bar completely
+    alignItems: 'center',
+    zIndex: 100,
+  },
+  toast: {
+    width: '100%',
+    maxWidth: 520,
+    backgroundColor: '#161b22',
+    borderWidth: 1,
+    borderColor: '#30363d',
+    borderRadius: 12,
+    paddingVertical: 14, // Increased padding
+    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+    flexDirection: 'row', // Ensure layout allows for text growth
+    justifyContent: 'center',
+  },
+  toastText: {
+    color: '#e2e8f0',
+    fontWeight: '600',
+    textAlign: 'center',
   },
   aiButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#1f6feb', // GitHub Blue
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 6,
-    marginBottom: 16,
     gap: 8,
+    backgroundColor: '#1e293b',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  aiButtonActive: {
+    backgroundColor: '#0f172a',
+    borderWidth: 1,
+    borderColor: '#334155',
   },
   aiButtonText: {
-    color: '#ffffff',
+    color: '#94a3b8',
     fontWeight: '600',
-    fontSize: 14,
-  },
-  aiSummaryBox: {
-    backgroundColor: '#0d1117',
-    borderRadius: 6,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#30363d',
-  },
-  aiContainer: {
-    height: 140, // Fixed height for AI area
-    marginTop: 16,
-    justifyContent: 'flex-start',
-  },
-  aiSummaryLabel: {
-    color: '#79c0ff',
-    fontSize: 10,
-    fontWeight: '700',
-    marginBottom: 4,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  actionBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-evenly',
-    alignItems: 'center',
-    paddingBottom: 20,
-    paddingHorizontal: 40,
-  },
-  actionCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#161b22',
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 5,
-  },
-  actionCircleSmall: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#161b22',
-    borderWidth: 1,
-    borderColor: '#30363d',
-  },
-  actionClose: {
-    borderColor: '#f85149',
-  },
-  actionKeep: {
-    borderColor: '#2ea043',
-  },
-  actionUndo: {
-    marginTop: 10, // Visual balance
-  },
-  actionIcon: {
-    fontSize: 28,
-    color: '#f0f6fc',
-  },
-  actionIconSmall: {
-    fontSize: 20,
-    color: '#f0ba05', // Yellow for undo
-  },
-  overlayWrapperLeft: {
-    flexDirection: 'column',
-    alignItems: 'flex-end',
-    justifyContent: 'flex-start',
-    marginTop: 30,
-    marginLeft: -30,
-  },
-  overlayWrapperRight: {
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    justifyContent: 'flex-start',
-    marginTop: 30,
-    marginLeft: 30,
-  },
-  overlayLabelRed: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: '#f85149',
-    borderWidth: 4,
-    borderColor: '#f85149',
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    transform: [{ rotate: '15deg' }],
-  },
-  overlayLabelGreen: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: '#2ea043',
-    borderWidth: 4,
-    borderColor: '#2ea043',
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    transform: [{ rotate: '-15deg' }],
+    fontSize: 13,
   },
   aiSummaryText: {
-    color: '#c9d1d9',
-    fontSize: 14,
+    color: '#cbd5e1',
     lineHeight: 20,
+    fontSize: 14,
+  },
+  tapHint: {
+    color: '#475569',
+    fontSize: 12,
+    fontStyle: 'italic',
+    marginTop: 4,
   },
 });

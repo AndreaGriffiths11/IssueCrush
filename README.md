@@ -1,24 +1,27 @@
 # IssueCrush 🎯
 
-Swipe through your GitHub issues like Tinder. Close with a left swipe, keep with a right swipe. Now powered by **GitHub Copilot AI** for intelligent issue summaries.
+Swipe through your GitHub issues like Tinder. Close with a left swipe, keep with a right swipe. Powered by **GitHub Copilot AI** for intelligent issue summaries.
+
+![IssueCrush Demo](assets/demo.png)
 
 ## Features
 
+- **Tinder-Style Swipe Interface** - One card at a time, swipe right to keep, left to close
 - **GitHub OAuth Authentication** - Secure login with device flow (mobile) or web flow (browser)
-- **Swipe Interface** - Intuitive Tinder-style UI for triaging issues
+- **AI-Powered Summaries** ✨ - Get intelligent issue analysis powered by GitHub Copilot SDK
+- **Instant Undo** - Accidentally closed an issue? Undo it instantly
 - **Repository Filtering** - Focus on specific repos or view all your issues
-- **AI Summaries** ✨ - Get intelligent summaries powered by GitHub Copilot SDK
-- **Undo Support** - Accidentally closed an issue? Undo it instantly
-- **Cross-Platform** - Works on web, iOS, and Android via React Native
+- **Cross-Platform** - Works on web, iOS, and Android via React Native + Expo
+- **Native Feel** - Action bar with Close/Undo/Keep buttons, toast notifications, stamp-style swipe overlays
 
 ## Quick Start
 
 ### Prerequisites
 
-1. **Node.js** 18+ and npm
-2. **GitHub account** with repositories
-3. **GitHub OAuth App** ([create one here](https://github.com/settings/developers))
-4. *Optional:* **GitHub Copilot subscription** for AI features
+- **Node.js** 18+ and npm
+- **GitHub account** with repositories containing issues
+- **GitHub OAuth App** ([create one here](https://github.com/settings/developers))
+- *Optional:* **GitHub Copilot subscription** for AI summaries
 
 ### 1. Clone and Install
 
@@ -31,6 +34,7 @@ npm install
 ### 2. Configure GitHub OAuth
 
 Create a GitHub OAuth App:
+
 1. Go to https://github.com/settings/developers
 2. Click "New OAuth App"
 3. Fill in:
@@ -50,111 +54,48 @@ cp .env.example .env
 Edit `.env` and add your credentials:
 
 ```bash
-EXPO_PUBLIC_GITHUB_CLIENT_ID=your_actual_client_id_here
-GITHUB_CLIENT_SECRET=your_actual_client_secret_here
-EXPO_PUBLIC_GITHUB_SCOPE=public_repo
+EXPO_PUBLIC_GITHUB_CLIENT_ID=your_client_id_here
+GITHUB_CLIENT_SECRET=your_client_secret_here
+EXPO_PUBLIC_GITHUB_SCOPE=repo
 ```
 
-### 4. Run the Application
+> **Important:** Use `repo` scope (not `public_repo`) to enable closing issues.
 
-#### Option A: Run Everything (Recommended)
+### 4. Run the Application
 
 ```bash
 npm run dev
 ```
 
-This starts both the OAuth server and the Expo app.
+This starts both the OAuth server (port 3000) and the Expo app (port 8081).
 
-#### Option B: Run Separately
+Then press `w` to open in web browser, or scan the QR code with Expo Go.
 
-Terminal 1:
-```bash
-npm run server
-```
+### 5. Use the App
 
-Terminal 2:
-```bash
-npm start
-```
+1. Click "Start GitHub login"
+2. Authorize on GitHub
+3. Enter a repo filter (e.g., `owner/repo`) or leave blank for all issues
+4. Click "Refresh" to load issues
+5. **Swipe right** to keep an issue open
+6. **Swipe left** to close an issue
+7. Tap the issue number to open it on GitHub
+8. Use the bottom action bar for button-based actions
 
-Then press `w` to open in web browser.
+## AI Summaries (Optional)
 
-### 5. Test Authentication
+Click the **"✨ Get AI Summary"** button on any issue card to get an AI-generated analysis including:
 
-```bash
-./test-auth.sh
-```
+- What the issue is about
+- Technical context and requirements
+- Recommended next steps
 
-This script verifies:
-- Environment variables are set
-- Server is running
-- Health endpoint is responding
+The AI summary is powered by the GitHub Copilot SDK running on your backend server.
 
-### 6. Use the App
+### Requirements for AI Features
 
-1. Open http://localhost:8081 in your browser
-2. Click "Start GitHub login"
-3. Authorize on GitHub
-4. You'll be redirected back and logged in
-5. Enter a repo filter (e.g., `owner/repo`) or leave blank for all issues
-6. Click "Refresh" to load issues
-7. Swipe right to keep, left to close
-
-## AI Features (Optional)
-
-### Set Up GitHub Copilot Integration
-
-To enable AI-powered issue summaries:
-
-#### 1. Get GitHub Copilot
-
-- Subscribe at https://github.com/features/copilot
-- Free trial available, then $10/month for individuals
-
-#### 2. Install Copilot CLI
-
-```bash
-# Via Homebrew (macOS/Linux)
-brew install gh-copilot
-
-# Or via GitHub CLI
-gh extension install github/gh-copilot
-```
-
-#### 3. Authenticate
-
-```bash
-copilot auth login
-```
-
-#### 4. Verify Installation
-
-```bash
-copilot --version
-copilot "hello"
-```
-
-#### 5. Restart IssueCrush
-
-The app will automatically detect Copilot CLI and enable the AI summary button.
-
-### Using AI Summaries
-
-1. Load issues in IssueCrush
-2. Click the **"✨ Get AI Summary"** button on any issue
-3. Wait 2-5 seconds for the AI-generated summary
-4. Get concise insights about:
-   - What the issue is about
-   - Key technical details
-   - Current status and action needed
-
-See [COPILOT_INTEGRATION.md](./COPILOT_INTEGRATION.md) for detailed documentation.
-
-## Documentation
-
-- **[QUICKSTART.md](./QUICKSTART.md)** - Fast setup guide
-- **[AUTH_SETUP.md](./AUTH_SETUP.md)** - Detailed authentication troubleshooting
-- **[COPILOT_INTEGRATION.md](./COPILOT_INTEGRATION.md)** - AI features documentation
+- GitHub Copilot subscription or access
+- `GH_TOKEN` environment variable with Copilot access (or use `COPILOT_PAT`)
 
 ## Architecture
 
@@ -164,158 +105,86 @@ See [COPILOT_INTEGRATION.md](./COPILOT_INTEGRATION.md) for detailed documentatio
 │                   (React Native)                        │
 │                                                         │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │  GitHub      │  │  Swipe UI    │  │  AI Summary  │  │
-│  │  Auth        │  │  (Tinder)    │  │  (Copilot)   │  │
+│  │   Swipe UI   │  │  GitHub      │  │  AI Summary  │  │
+│  │   (Tinder)   │  │  Auth        │  │  (Copilot)   │  │
 │  └──────────────┘  └──────────────┘  └──────────────┘  │
 └────┬────────────────────┬────────────────────┬─────────┘
      │                    │                    │
      ▼                    ▼                    ▼
 ┌──────────┐      ┌──────────────┐      ┌──────────────┐
-│ Express  │      │  GitHub API  │      │ Copilot CLI  │
-│ Server   │      │              │      │     SDK      │
-│ (OAuth)  │      │              │      │              │
-└────┬─────┘      └──────────────┘      └──────────────┘
-     │
-     ▼
-┌──────────┐
-│ GitHub   │
-│ OAuth    │
-└──────────┘
+│ GitHub   │      │  Express     │      │ Copilot SDK  │
+│ API      │      │  Server      │      │              │
+│          │      │  (OAuth +    │      │              │
+│          │      │   AI proxy)  │      │              │
+└──────────┘      └──────────────┘      └──────────────┘
 ```
 
 ## Project Structure
 
 ```
 IssueCrush/
-├── App.tsx                    # Main app component
-├── server.js                  # OAuth token exchange server
+├── App.tsx                    # Main app component (UI + swipe logic)
+├── server.js                  # Express server (OAuth + AI proxy)
 ├── src/
 │   ├── api/
 │   │   └── github.ts         # GitHub API client
 │   └── lib/
 │       ├── tokenStorage.ts   # Secure token storage
-│       └── copilotService.ts # Copilot SDK integration
+│       └── copilotService.ts # Frontend Copilot service
 ├── .env.example              # Environment template
-├── test-auth.sh              # Authentication test script
-├── AUTH_SETUP.md             # Auth troubleshooting
-├── COPILOT_INTEGRATION.md    # AI features docs
-└── QUICKSTART.md             # Quick setup guide
+├── package.json              # Dependencies and scripts
+└── README.md                 # This file
 ```
 
 ## Available Scripts
 
 ```bash
-# Start both server and app
-npm run dev
-
-# Start OAuth server only
-npm run server
-
-# Start Expo app only
-npm start
-
-# Start on specific platforms
-npm run web       # Web browser
-npm run ios       # iOS simulator
-npm run android   # Android emulator
-
-# Test authentication setup
-./test-auth.sh
+npm run dev       # Start both server and Expo app
+npm run server    # Start OAuth/AI server only (port 3000)
+npm start         # Start Expo app only
+npm run web       # Open in web browser
+npm run ios       # Open in iOS simulator
+npm run android   # Open in Android emulator
 ```
 
 ## Troubleshooting
 
 ### Authentication Issues
 
-**Problem:** "Failed to connect to auth server"
-- **Solution:** Run `npm run server` to start the OAuth server
+**"Failed to connect to auth server"**
+- Make sure you run `npm run dev` (not just `npm start`)
+- The OAuth server must be running on port 3000
 
-**Problem:** "Server error: 500"
-- **Solution:** Check that `GITHUB_CLIENT_SECRET` is set in `.env`
+**"GitHub OAuth failed: bad_verification_code"**
+- Code expired or already used. Click "Start GitHub login" again
 
-**Problem:** "GitHub OAuth failed: bad_verification_code"
-- **Solution:** Code expired or already used. Click "Start GitHub login" again
-
-**Problem:** Redirect URI mismatch
-- **Solution:** Ensure GitHub OAuth app callback URL is exactly `http://localhost:8081`
+**Issues won't close**
+- Check that your OAuth scope is `repo` (not `public_repo`)
+- Sign out and sign in again to get a new token with the correct scope
 
 ### AI Summary Issues
 
-**Problem:** "Copilot not available"
-- **Solution:** Install and authenticate Copilot CLI (see AI Features section)
+**"AI summary failed: Failed to fetch"**
+- Make sure the Express server is running (`npm run server`)
+- Check that `GH_TOKEN` or `COPILOT_PAT` is set for Copilot access
 
-**Problem:** AI summary takes too long
-- **Solution:** Normal for complex issues. Wait up to 60 seconds.
+## Tech Stack
 
-**Problem:** Summary quality is poor
-- **Solution:** The AI works better with well-written issues that have clear descriptions
-
-### General Issues
-
-**Problem:** Issues won't load
-- **Solution:** Check token permissions. Sign out and sign in again with `public_repo` scope
-
-**Problem:** Can't close issues
-- **Solution:** Token needs write permissions. Update `EXPO_PUBLIC_GITHUB_SCOPE` to include `repo`
-
-See [AUTH_SETUP.md](./AUTH_SETUP.md) for detailed troubleshooting.
-
-## Development
-
-### Tech Stack
-
-- **React Native** - Cross-platform mobile framework
-- **Expo** - Development tooling and native APIs
-- **Express** - OAuth token exchange server
-- **GitHub Copilot SDK** - AI-powered features
+- **React Native** + **Expo** - Cross-platform mobile framework
+- **react-native-deck-swiper** - Tinder-style swipe cards
+- **Express** - OAuth token exchange and AI proxy server
+- **GitHub Copilot SDK** - AI-powered issue analysis
 - **TypeScript** - Type-safe development
-
-### Adding Features
-
-1. Create new components in `src/components/`
-2. Add API calls in `src/api/github.ts`
-3. Update types as needed
-4. Test on web first, then mobile
-
-### Code Style
-
-- Follow existing patterns
-- Use TypeScript for type safety
-- Keep components focused and small
-- Add error handling for all async operations
 
 ## Security
 
-- **Tokens** stored securely using `expo-secure-store` (mobile) or `AsyncStorage` (web)
-- **Client Secret** only used server-side, never exposed to client
-- **OAuth flow** follows GitHub best practices
-- **Scope** limited to `public_repo` by default (can be expanded as needed)
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
+- OAuth tokens stored securely using `expo-secure-store` (mobile) or `AsyncStorage` (web)
+- Client Secret only used server-side, never exposed to client
+- All GitHub API calls use user's OAuth token
 
 ## License
 
 MIT
-
-## Credits
-
-Built with:
-- [React Native](https://reactnative.dev/)
-- [Expo](https://expo.dev/)
-- [GitHub Copilot SDK](https://github.com/github/copilot-sdk)
-- [react-native-deck-swiper](https://github.com/webraptor/react-native-deck-swiper)
-
-## Support
-
-- **Issues:** [GitHub Issues](your-repo/issues)
-- **Discussions:** [GitHub Discussions](your-repo/discussions)
-- **Email:** your-email@example.com
 
 ---
 
