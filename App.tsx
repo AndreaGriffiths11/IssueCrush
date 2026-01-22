@@ -22,6 +22,7 @@ import { X, Check, RotateCcw, Sparkles, ExternalLink } from 'lucide-react-native
 
 import { fetchIssues, GitHubIssue, updateIssueState, extractRepoPath } from './src/api/github';
 import { deleteToken, getToken, saveToken } from './src/lib/tokenStorage';
+import { copilotService } from './src/lib/copilotService';
 
 const CLIENT_ID = process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID ?? '';
 const DEFAULT_SCOPE = process.env.EXPO_PUBLIC_GITHUB_SCOPE || 'repo';
@@ -291,12 +292,19 @@ export default function App() {
   };
 
   const handleGetAiSummary = async () => {
-    // Placeholder for AI summary logic since copilotService.ts is missing in context
+    const issue = issues[currentIndex];
+    if (!issue) return;
+
     setLoadingAiSummary(true);
-    setTimeout(() => {
-      setAiSummary("This issue requires implementing a new feature for the user profile page. Key changes involve updating the API endpoint and the frontend component. Recommended action: Assign to frontend team.");
+    try {
+      const summary = await copilotService.summarizeIssue(issue);
+      setAiSummary(summary);
+    } catch (error) {
+      setAiSummary('Failed to generate summary. Make sure the server is running.');
+      console.error('AI Summary error:', error);
+    } finally {
       setLoadingAiSummary(false);
-    }, 1500);
+    }
   };
 
   const overlayLabels = useMemo(
@@ -419,9 +427,7 @@ export default function App() {
               <Text style={styles.labelTextMuted}>No labels</Text>
             )}
           </View>
-        </View>
 
-        <View style={styles.cardBody}>
           {/* AI Summary Section */}
           <TouchableOpacity
             style={[styles.aiButton, aiSummary ? styles.aiButtonActive : null]}
@@ -429,10 +435,10 @@ export default function App() {
             disabled={loadingAiSummary || !!aiSummary}
           >
             {loadingAiSummary ? (
-              <ActivityIndicator color="#cbd5e1" size="small" />
+              <ActivityIndicator color="#ffffff" size="small" />
             ) : (
               <>
-                <Sparkles size={16} color={aiSummary ? "#e2e8f0" : "#94a3b8"} />
+                <Sparkles size={18} color="#ffffff" />
                 <Text style={styles.aiButtonText}>
                   {aiSummary ? "AI Summary" : "Get AI Summary"}
                 </Text>
@@ -445,7 +451,9 @@ export default function App() {
               {aiSummary}
             </Text>
           ) : null}
+        </View>
 
+        <View style={styles.cardBody}>
           <Text style={styles.tapHint}>Tap card for details</Text>
         </View>
       </View>
@@ -933,21 +941,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#f1f5f9',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    backgroundColor: '#0ea5e9',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 10,
     alignSelf: 'flex-start',
+    shadowColor: '#0ea5e9',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
   },
   aiButtonActive: {
-    backgroundColor: '#e2e8f0',
+    backgroundColor: '#0284c7',
     borderWidth: 1,
-    borderColor: '#cbd5e1',
+    borderColor: '#0ea5e9',
   },
   aiButtonText: {
-    color: '#0f172a',
-    fontWeight: '600',
-    fontSize: 13,
+    color: '#ffffff',
+    fontWeight: '700',
+    fontSize: 14,
   },
   aiSummaryText: {
     color: '#1f2937',
