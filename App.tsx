@@ -53,6 +53,43 @@ export default function App() {
   const swiperRef = useRef<Swiper<GitHubIssue>>(null);
   const pollTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const exchangeCodeForToken = async (code: string) => {
+    try {
+      setAuthError('');
+      const tokenResponse = await fetch('http://localhost:3000/api/github-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+      });
+
+      if (!tokenResponse.ok) {
+        const errorText = await tokenResponse.text();
+        setAuthError(`Server error: ${tokenResponse.status} - ${errorText}`);
+        return;
+      }
+
+      const data = await tokenResponse.json();
+
+      if (data.error) {
+        setAuthError(data.error_description || data.error || 'GitHub OAuth failed.');
+        return;
+      }
+
+      if (data.access_token) {
+        await saveToken(data.access_token);
+        setToken(data.access_token);
+        setFeedback('Connected to GitHub');
+        if (typeof window !== 'undefined') {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      } else {
+        setAuthError('No access token received from server');
+      }
+    } catch (error) {
+      setAuthError(`Failed to connect to auth server: ${(error as Error).message}. Make sure the server is running (npm run server).`);
+    }
+  };
+
   useEffect(() => {
     const hydrate = async () => {
       const stored = await getToken();
@@ -63,6 +100,18 @@ export default function App() {
       if (pollTimeout.current) clearTimeout(pollTimeout.current);
     };
   }, []);
+
+  // Handle OAuth callback from GitHub on web
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+
+      if (code && !token) {
+        exchangeCodeForToken(code);
+      }
+    }
+  }, [token]);
 
   useEffect(() => {
     if (!token) {
@@ -109,45 +158,10 @@ export default function App() {
     if (pollTimeout.current) clearTimeout(pollTimeout.current);
 
     if (Platform.OS === 'web') {
-      try {
-        const result = await AuthSession.startAsync({
-          authUrl: `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=${encodeURIComponent(DEFAULT_SCOPE)}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`,
-          returnUrl: REDIRECT_URI,
-        });
-
-        if (result.type !== 'success') {
-          setAuthError('GitHub login cancelled.');
-          return;
-        }
-
-        const params = new URL(result.url).searchParams;
-        const code = params.get('code');
-
-        if (!code) {
-          setAuthError('No authorization code received.');
-          return;
-        }
-
-        const tokenResponse = await fetch('http://localhost:3000/api/github-token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code }),
-        });
-
-        const data = await tokenResponse.json();
-
-        if (data.error) {
-          setAuthError(data.error_description || data.error || 'GitHub OAuth failed.');
-          return;
-        }
-
-        if (data.access_token) {
-          await saveToken(data.access_token);
-          setToken(data.access_token);
-          setFeedback('Connected to GitHub');
-        }
-      } catch (error) {
-        setAuthError((error as Error).message);
+      // Use Authorization Code Flow for web - redirect to GitHub
+      const authUrl = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=${encodeURIComponent(DEFAULT_SCOPE)}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
+      if (typeof window !== 'undefined') {
+        window.location.href = authUrl;
       }
     } else {
       const body = new URLSearchParams({
