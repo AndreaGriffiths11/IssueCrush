@@ -18,7 +18,7 @@ import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import Swiper from 'react-native-deck-swiper';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { X, Check, RotateCcw, Sparkles } from 'lucide-react-native';
+import { X, Check, RotateCcw, Sparkles, ExternalLink } from 'lucide-react-native';
 
 import { fetchIssues, GitHubIssue, updateIssueState, extractRepoPath } from './src/api/github';
 import { deleteToken, getToken, saveToken } from './src/lib/tokenStorage';
@@ -374,6 +374,7 @@ export default function App() {
         await WebBrowser.openBrowserAsync(url, {
           controlsColor: '#38bdf8',
           toolbarColor: '#0b1224',
+          presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
         });
       }
     } catch (error) {
@@ -393,11 +394,14 @@ export default function App() {
             style={styles.issueTitleButton}
             activeOpacity={0.7}
           >
-            <Text style={styles.title} numberOfLines={3}>
-              <Text style={styles.issueNumber}>#{issue.number}</Text>
-              <Text style={styles.titleSeparator}> · </Text>
-              <Text>{issue.title}</Text>
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
+              <Text style={[styles.title, { flex: 1 }]} numberOfLines={3}>
+                <Text style={styles.issueNumber}>#{issue.number}</Text>
+                <Text style={styles.titleSeparator}> · </Text>
+                <Text>{issue.title}</Text>
+              </Text>
+              <ExternalLink size={20} color="#38bdf8" style={{ marginTop: 4, opacity: 0.8 }} />
+            </View>
           </TouchableOpacity>
           <View style={styles.labels}>
             {issue.labels?.length ? (

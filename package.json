@@ -7,8 +7,8 @@
     "server": "node server.js",
     "dev": "concurrently \"npm run server\" \"npm start\"",
     "web-dev": "concurrently \"npm run server\" \"npm run web\"",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web"
   },
   "dependencies": {
@@ -23,11 +23,13 @@
     "express": "^5.2.1",
     "lucide-react-native": "^0.562.0",
     "react": "19.1.0",
+    "react-dom": "19.1.0",
     "react-native": "0.81.5",
     "react-native-deck-swiper": "^2.0.19",
     "react-native-gesture-handler": "~2.28.0",
     "react-native-reanimated": "~4.1.1",
-    "react-native-svg": "^15.15.1"
+    "react-native-svg": "^15.15.1",
+    "react-native-web": "^0.21.0"
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
