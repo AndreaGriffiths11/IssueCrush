@@ -21,7 +21,7 @@ import { fetchIssues, GitHubIssue, updateIssueState, extractRepoPath } from './s
 import { deleteToken, getToken, saveToken } from './src/lib/tokenStorage';
 
 const CLIENT_ID = process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID ?? '';
-const DEFAULT_SCOPE = process.env.EXPO_PUBLIC_GITHUB_SCOPE || 'public_repo';
+const DEFAULT_SCOPE = process.env.EXPO_PUBLIC_GITHUB_SCOPE || 'repo';
 const REDIRECT_URI = AuthSession.getRedirectUrl();
 
 type DeviceAuthState = {
@@ -265,7 +265,7 @@ export default function App() {
     () => ({
       left: {
         title: 'CLOSE',
-        style: { 
+        style: {
           label: {
             backgroundColor: 'transparent',
             borderColor: '#ef4444',
@@ -287,7 +287,7 @@ export default function App() {
       },
       right: {
         title: 'KEEP',
-        style: { 
+        style: {
           label: {
             backgroundColor: 'transparent',
             borderColor: '#10b981',
@@ -318,7 +318,7 @@ export default function App() {
         <Text style={styles.repo}>{repoLabel(issue)}</Text>
         <TouchableOpacity onPress={() => Linking.openURL(issue.html_url)}>
           <Text style={styles.title} numberOfLines={3}>
-            #{issue.number} · {issue.title}
+            <Text style={{ color: '#38bdf8' }}>#{issue.number}</Text> · {issue.title}
           </Text>
         </TouchableOpacity>
         <View style={styles.labels}>
@@ -448,7 +448,11 @@ export default function App() {
                   </Text>
                 </TouchableOpacity>
               ) : null}
-              {feedback ? <Text style={styles.feedback}>{feedback}</Text> : null}
+              {feedback ? (
+                <Text style={[styles.feedback, feedback.includes('failed') && styles.feedbackError]}>
+                  {feedback}
+                </Text>
+              ) : null}
             </View>
           </View>
         )}
@@ -661,5 +665,9 @@ const styles = StyleSheet.create({
   },
   feedback: {
     color: '#cbd5e1',
+  },
+  feedbackError: {
+    color: '#ef4444',
+    fontWeight: '700',
   },
 });
