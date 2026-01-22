@@ -1181,10 +1181,12 @@ const styles = StyleSheet.create({
   // Card Styles
   swiperWrap: {
     flex: 1,
-    marginHorizontal: -4,
+    width: '100%',
+    alignSelf: 'center',
   },
   card: {
     flex: 1,
+    width: '100%',
     backgroundColor: '#ffffff',
     borderRadius: 16,
     padding: 20,
