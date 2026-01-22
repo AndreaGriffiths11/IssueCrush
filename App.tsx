@@ -829,7 +829,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 16,
     right: 16,
-    bottom: 110, // Above action bar
+    bottom: 120, // Increased bottom spacing to clear action bar
     alignItems: 'center',
     zIndex: 100,
   },
@@ -840,13 +840,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#30363d',
     borderRadius: 12,
-    paddingVertical: 12,
+    paddingVertical: 14, // Increased padding
     paddingHorizontal: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 6,
+    flexDirection: 'row', // Ensure layout allows for text growth
+    justifyContent: 'center',
   },
   toastText: {
     color: '#e2e8f0',
