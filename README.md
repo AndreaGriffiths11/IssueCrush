@@ -177,6 +177,19 @@ npm run android   # Open in Android emulator
 - Make sure the Express server is running (`npm run server`)
 - Check that `GH_TOKEN` or `COPILOT_PAT` is set for Copilot access
 
+### Build/Bundling Issues
+
+**"Cannot find module 'babel-preset-expo'"**
+- Run `npm install` to ensure all dependencies are installed
+- If the issue persists, manually install: `npm install --save-dev babel-preset-expo`
+
+**"Cannot find module 'react-dom' or 'react-native-web'"**
+- Install web dependencies: `npx expo install react-dom react-native-web`
+
+**Blank page or JSON manifest displayed**
+- Don't navigate directly to `http://localhost:8081` - that's the Metro bundler endpoint
+- Use `npm run web-dev` instead, which opens the correct web URL automatically
+
 ## Tech Stack
 
 - **React Native** + **Expo** - Cross-platform mobile framework
