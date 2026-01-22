@@ -401,7 +401,10 @@ export default function App() {
     }
   };
 
-  const renderIssueCard = (issue: GitHubIssue | null) => {
+  const renderIssueCard = (cardIssue: GitHubIssue | null) => {
+    // Look up the freshest version of the issue from state to ensure AI summary updates appear
+    const issue = issues.find(i => i.id === cardIssue?.id) || cardIssue;
+    
     if (!issue) return <View style={[styles.card, styles.cardEmpty]} />;
     return (
       <View style={styles.card}>
@@ -577,7 +580,7 @@ export default function App() {
 
                 {/* Toast Feedback */}
                 {feedback ? (
-                  <View pointerEvents="none" style={styles.toastWrap}>
+                  <View style={[styles.toastWrap, { pointerEvents: 'none' }]}>
                     <View style={styles.toast}>
                       <Text
                         numberOfLines={1}
