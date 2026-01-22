@@ -141,6 +141,49 @@ export default function App() {
     loadIssues();
   }, [token]);
 
+  const getContrastColor = (hex: string) => {
+    // Remove # if present
+    const color = hex.replace('#', '');
+    const r = parseInt(color.substr(0, 2), 16);
+    const g = parseInt(color.substr(2, 2), 16);
+    const b = parseInt(color.substr(4, 2), 16);
+    const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+    return yiq >= 128 ? '#000000' : '#ffffff';
+  };
+
+  const renderFormattedText = (text: string) => {
+    // Simple markdown parser for AI summaries
+    const lines = text.split('\n').filter(line => line.trim());
+    
+    return lines.map((line, index) => {
+      // Remove ## headers and make them bold
+      if (line.startsWith('## ')) {
+        return (
+          <Text key={index} style={[styles.aiSummaryText, { fontWeight: '700', marginTop: index > 0 ? 12 : 0, marginBottom: 4 }]}>
+            {line.replace(/^##\s*/, '')}
+          </Text>
+        );
+      }
+      
+      // Parse **bold** text
+      const parts = line.split(/(\*\*[^*]+\*\*)/g);
+      return (
+        <Text key={index} style={[styles.aiSummaryText, { marginBottom: 6 }]}>
+          {parts.map((part, i) => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+              return (
+                <Text key={i} style={{ fontWeight: '700' }}>
+                  {part.replace(/\*\*/g, '')}
+                </Text>
+              );
+            }
+            return part;
+          })}
+        </Text>
+      );
+    });
+  };
+
   const repoLabel = (issue: GitHubIssue) =>
     issue.repository?.full_name ?? extractRepoPath(issue.repository_url);
 
@@ -257,44 +300,52 @@ export default function App() {
     if (pollTimeout.current) clearTimeout(pollTimeout.current);
   };
 
+  const handleSwiped = (cardIndex: number) => {
+    // Advance index state to match Swiper's internal state
+    setCurrentIndex(cardIndex + 1);
+  };
+
   const handleSwipeLeft = async (cardIndex: number) => {
     const issue = issues[cardIndex];
     if (!issue || !token) return;
-    // Don't remove from array, let Swiper handle it
-    setFeedback(`Closed #${issue.number} · ${repoLabel(issue)}`);
+    
+    // Optimistic UI update handled by Swiper animation
+    setFeedback(`Closed #${issue.number}`);
     setLastClosed(issue);
-    setAiSummary('');
-    setCurrentIndex((prev) => prev + 1);
-    try {
-      await updateIssueState(token, issue, 'closed');
-    } catch (error) {
-      setFeedback(`Close failed: ${(error as Error).message}`);
-      setLastClosed(null);
-      // Ideally we would swipe back here automatically if it failed, but simple alert is safer
-    }
+    setAiSummary(''); // Clear summary for next card
+    
+    // Non-blocking API call
+    // Note: We do NOT remove the issue from the 'issues' array to keep indices stable.
+    updateIssueState(token, issue, 'closed').catch((error) => {
+      setFeedback(`Close failed: ${(error as Error).message}. Tap undo to retry.`);
+    });
   };
 
   const handleSwipeRight = (cardIndex: number) => {
     const issue = issues[cardIndex];
     if (!issue) return;
-    // Don't remove from array
-    setFeedback(`Kept open · #${issue.number}`);
+    setFeedback(`Kept #${issue.number}`);
     setAiSummary('');
-    setLastClosed(null); // Clear undo history for "Keep" actions to avoid mismatch
-    setCurrentIndex((prev) => prev + 1);
+    setLastClosed(null); // Keeping breaks the undo chain for closing
   };
 
   const handleUndo = async () => {
-    if (!lastClosed || !token) return;
+    if (!lastClosed || !token || undoBusy) return;
     setUndoBusy(true);
     try {
+      // Immediate UI feedback
+      swiperRef.current?.swipeBack();
+      // We manually decrement here because onSwipedBack isn't reliably available/consistent in all versions
+      // But swipeBack() usually handles visual, we just need to ensure index syncs if we rely on it
+      setCurrentIndex((prev) => Math.max(0, prev - 1));
+      
+      setFeedback(`Reopening #${lastClosed.number}...`);
       await updateIssueState(token, lastClosed, 'open');
       setFeedback(`Reopened #${lastClosed.number}`);
       setLastClosed(null);
-      swiperRef.current?.swipeBack();
-      setCurrentIndex((prev) => Math.max(0, prev - 1));
     } catch (error) {
       setFeedback(`Undo failed: ${(error as Error).message}`);
+      // If API failed, we might be in weird state, but card is visually back
     } finally {
       setUndoBusy(false);
     }
@@ -323,16 +374,28 @@ export default function App() {
   const overlayLabels = useMemo(
     () => ({
       left: {
-        title: 'Close',
-        style: { label: styles.overlayLabel, wrapper: styles.overlayLeft },
+        title: 'CLOSE',
+        style: { 
+          label: styles.overlayLabelRed, 
+          wrapper: styles.overlayWrapperLeft 
+        },
       },
       right: {
-        title: 'Keep',
-        style: { label: styles.overlayLabel, wrapper: styles.overlayRight },
+        title: 'KEEP',
+        style: { 
+          label: styles.overlayLabelGreen, 
+          wrapper: styles.overlayWrapperRight 
+        },
       },
     }),
     []
   );
+
+  const openIssue = (issue: GitHubIssue) => {
+    if (issue.html_url) {
+      Linking.openURL(issue.html_url);
+    }
+  };
 
   const renderIssueCard = (issue: GitHubIssue | null, cardIndex?: number) => {
     if (!issue) return <View style={[styles.card, styles.cardEmpty]} />;
@@ -341,45 +404,63 @@ export default function App() {
 
     return (
       <View style={styles.card}>
-        <Text style={styles.repo}>{repoLabel(issue)}</Text>
-        <Text style={styles.title} numberOfLines={3}>
-          #{issue.number} · {issue.title}
-        </Text>
-        <View style={styles.labels}>
-          {issue.labels?.length ? (
-            issue.labels.slice(0, 6).map((label) => (
-              <View
-                key={label.id}
-                style={[styles.label, { backgroundColor: `#${label.color || '334155'}` }]}
-              >
-                <Text style={styles.labelText}>{label.name}</Text>
-              </View>
-            ))
-          ) : (
-            <Text style={styles.labelTextMuted}>No labels</Text>
-          )}
-        </View>
-
-        {copilotAvailable && isTopCard && (
-          <TouchableOpacity
-            style={styles.aiButton}
-            onPress={() => handleGetAiSummary(issue)}
-            disabled={loadingAiSummary}
-          >
-            <Text style={styles.aiButtonText}>
-              {loadingAiSummary ? 'Generating AI summary...' : '✨ Get AI Summary'}
+        <View>
+          <Text style={styles.repo} numberOfLines={1}>{repoLabel(issue)}</Text>
+          <TouchableOpacity onPress={() => openIssue(issue)}>
+            <Text style={[styles.title, styles.titleLink]} numberOfLines={3}>
+              #{issue.number} · {issue.title} ↗
             </Text>
           </TouchableOpacity>
-        )}
-
-        {aiSummary && isTopCard ? (
-          <View style={styles.aiSummaryBox}>
-            <Text style={styles.aiSummaryLabel}>AI Summary:</Text>
-            <Text style={styles.aiSummaryText}>{aiSummary}</Text>
+          <View style={styles.labels}>
+            {issue.labels?.length ? (
+              issue.labels.slice(0, 3).map((label) => ( // Limit to 3 labels
+                <View
+                  key={label.id}
+                  style={[styles.label, { backgroundColor: `#${label.color || '334155'}` }]}
+                >
+                  <Text style={[styles.labelText, { color: getContrastColor(label.color || '334155') }]}>
+                    {label.name}
+                  </Text>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.labelTextMuted}>No labels</Text>
+            )}
+            {issue.labels && issue.labels.length > 3 && (
+              <View style={[styles.label, { backgroundColor: '#30363d' }]}>
+                <Text style={[styles.labelText, { color: '#c9d1d9' }]}>+{issue.labels.length - 3}</Text>
+              </View>
+            )}
           </View>
-        ) : null}
+        </View>
 
-        <Text style={styles.meta}>Swipe right to keep · left to close</Text>
+        {/* AI Section fixed height container to prevent jumps */}
+        <View style={styles.aiContainer}>
+          {isTopCard && !aiSummary && (
+             <TouchableOpacity
+             style={styles.aiButton}
+             onPress={() => handleGetAiSummary(issue)}
+             disabled={loadingAiSummary}
+           >
+             <Text style={styles.aiButtonText}>
+               {loadingAiSummary ? 'Generating...' : '✨ Get AI Summary'}
+             </Text>
+           </TouchableOpacity>
+          )}
+
+          {aiSummary && isTopCard ? (
+            <View style={styles.aiSummaryBox}>
+              <Text style={styles.aiSummaryLabel}>AI SUMMARY</Text>
+              <View style={{ maxHeight: 120, overflow: 'hidden' }}>
+                {renderFormattedText(aiSummary)}
+              </View>
+            </View>
+          ) : null}
+        </View>
+
+        {currentIndex < 2 && (
+          <Text style={styles.meta}>Swipe right to keep · left to close</Text>
+        )}
       </View>
     );
   };
@@ -460,18 +541,24 @@ export default function App() {
                 <Swiper
                   ref={swiperRef}
                   cards={issues}
+                  cardIndex={currentIndex}
+                  onSwiped={handleSwiped}
                   renderCard={renderIssueCard}
                   onSwipedLeft={handleSwipeLeft}
                   onSwipedRight={handleSwipeRight}
                   backgroundColor="transparent"
-                  stackSize={3}
-                  stackSeparation={15}
+                  stackSize={2}
+                  stackSeparation={0}
                   stackScale={5}
+                  infinite={false}
                   animateCardOpacity
+                  animateOverlayLabelsOpacity
                   overlayLabels={overlayLabels}
                   cardVerticalMargin={40}
                   cardHorizontalMargin={20}
                   verticalSwipe={false}
+                  swipeAnimationDuration={200}
+                  horizontalThreshold={80} // Approx 25% of typical screen
                 />
               </View>
             ) : (
@@ -480,20 +567,33 @@ export default function App() {
               </View>
             )}
 
-            <View style={styles.footer}>
-              {lastClosed ? (
-                <TouchableOpacity
-                  style={[styles.secondaryButton, styles.undoButton]}
-                  onPress={handleUndo}
-                  disabled={undoBusy}
-                >
-                  <Text style={styles.secondaryButtonText}>
-                    {undoBusy ? 'Undoing…' : `Undo close #${lastClosed.number}`}
-                  </Text>
-                </TouchableOpacity>
-              ) : null}
-              {feedback ? <Text style={styles.feedback}>{feedback}</Text> : null}
+            <View style={styles.actionBar}>
+              <TouchableOpacity
+                style={[styles.actionCircle, styles.actionClose]}
+                onPress={() => swiperRef.current?.swipeLeft()}
+              >
+                <Text style={styles.actionIcon}>✕</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.actionCircleSmall, styles.actionUndo]}
+                onPress={handleUndo}
+                disabled={!lastClosed || undoBusy}
+              >
+                <Text style={styles.actionIconSmall}>↺</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.actionCircle, styles.actionKeep]}
+                onPress={() => swiperRef.current?.swipeRight()}
+              >
+                <Text style={styles.actionIcon}>♥</Text>
+              </TouchableOpacity>
             </View>
+
+            {feedback && currentIndex < 2 ? (
+              <Text style={styles.feedback}>{feedback}</Text>
+            ) : null}
           </View>
         )}
       </SafeAreaView>
@@ -692,6 +792,9 @@ const styles = StyleSheet.create({
     lineHeight: 28,
     marginBottom: 16,
   },
+  titleLink: {
+    textDecorationLine: 'underline',
+  },
   labels: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -791,12 +894,100 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#30363d',
   },
+  aiContainer: {
+    height: 140, // Fixed height for AI area
+    marginTop: 16,
+    justifyContent: 'flex-start',
+  },
   aiSummaryLabel: {
     color: '#79c0ff',
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 8,
+    fontSize: 10,
+    fontWeight: '700',
+    marginBottom: 4,
     textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  actionBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    alignItems: 'center',
+    paddingBottom: 20,
+    paddingHorizontal: 40,
+  },
+  actionCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#161b22',
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+  actionCircleSmall: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#161b22',
+    borderWidth: 1,
+    borderColor: '#30363d',
+  },
+  actionClose: {
+    borderColor: '#f85149',
+  },
+  actionKeep: {
+    borderColor: '#2ea043',
+  },
+  actionUndo: {
+    marginTop: 10, // Visual balance
+  },
+  actionIcon: {
+    fontSize: 28,
+    color: '#f0f6fc',
+  },
+  actionIconSmall: {
+    fontSize: 20,
+    color: '#f0ba05', // Yellow for undo
+  },
+  overlayWrapperLeft: {
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    justifyContent: 'flex-start',
+    marginTop: 30,
+    marginLeft: -30,
+  },
+  overlayWrapperRight: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+    marginTop: 30,
+    marginLeft: 30,
+  },
+  overlayLabelRed: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#f85149',
+    borderWidth: 4,
+    borderColor: '#f85149',
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    transform: [{ rotate: '15deg' }],
+  },
+  overlayLabelGreen: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#2ea043',
+    borderWidth: 4,
+    borderColor: '#2ea043',
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    transform: [{ rotate: '-15deg' }],
   },
   aiSummaryText: {
     color: '#c9d1d9',
