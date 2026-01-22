@@ -63,13 +63,21 @@ EXPO_PUBLIC_GITHUB_SCOPE=repo
 
 ### 4. Run the Application
 
+**For Web:**
+```bash
+npm run web-dev
+```
+
+This starts both the OAuth server (port 3000) and opens the app in your web browser.
+
+**For Mobile Development:**
 ```bash
 npm run dev
 ```
 
-This starts both the OAuth server (port 3000) and the Expo app (port 8081).
+This starts both the OAuth server (port 3000) and the Expo dev server (port 8081). Then press `w` to open in web browser, or scan the QR code with Expo Go.
 
-Then press `w` to open in web browser, or scan the QR code with Expo Go.
+> **Note:** If you navigate to `http://localhost:8081` in your browser, you'll see a JSON manifest instead of the app. This is normal - use the commands above to properly launch the web app.
 
 ### 5. Use the App
 
@@ -139,10 +147,11 @@ IssueCrush/
 ## Available Scripts
 
 ```bash
-npm run dev       # Start both server and Expo app
+npm run web-dev   # Start server + open web app (recommended for web)
+npm run dev       # Start server + Expo dev server (for mobile)
 npm run server    # Start OAuth/AI server only (port 3000)
 npm start         # Start Expo app only
-npm run web       # Open in web browser
+npm run web       # Open in web browser only
 npm run ios       # Open in iOS simulator
 npm run android   # Open in Android emulator
 ```
