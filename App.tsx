@@ -26,7 +26,10 @@ import { copilotService } from './src/lib/copilotService';
 
 const CLIENT_ID = process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID ?? '';
 const DEFAULT_SCOPE = process.env.EXPO_PUBLIC_GITHUB_SCOPE || 'repo';
-const REDIRECT_URI = AuthSession.getRedirectUrl();
+const REDIRECT_URI =
+  Platform.OS === 'web' && typeof window !== 'undefined'
+    ? window.location.origin
+    : AuthSession.makeRedirectUri({ preferLocalhost: true, useProxy: false });
 
 type DeviceAuthState = {
   device_code: string;
@@ -161,9 +164,16 @@ export default function App() {
 
     if (Platform.OS === 'web') {
       // Use Authorization Code Flow for web - redirect to GitHub
-      const authUrl = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=${encodeURIComponent(DEFAULT_SCOPE)}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
+      const authUrl = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=${encodeURIComponent(
+        DEFAULT_SCOPE
+      )}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
+      if (__DEV__) {
+        console.log('GitHub auth redirect:', { authUrl, REDIRECT_URI });
+      }
       if (typeof window !== 'undefined') {
         window.location.href = authUrl;
+      } else {
+        setAuthError('Unable to open GitHub login (window unavailable).');
       }
     } else {
       const body = new URLSearchParams({
