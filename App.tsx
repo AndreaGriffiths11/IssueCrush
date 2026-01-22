@@ -2,6 +2,7 @@ import 'react-native-gesture-handler';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  ImageBackground,
   Linking,
   Platform,
   SafeAreaView,
@@ -414,10 +415,15 @@ export default function App() {
   const renderIssueCard = (cardIssue: GitHubIssue | null) => {
     // Look up the freshest version of the issue from state to ensure AI summary updates appear
     const issue = issues.find(i => i.id === cardIssue?.id) || cardIssue;
-    
+
     if (!issue) return <View style={[styles.card, styles.cardEmpty]} />;
     return (
-      <View style={styles.card}>
+      <ImageBackground
+        source={require('./assets/notebook_paper_overlay.png')}
+        style={styles.card}
+        imageStyle={styles.cardBackgroundImage}
+        resizeMode="cover"
+      >
         <View style={styles.cardHeader}>
           <Text style={styles.repo}>{repoLabel(issue)}</Text>
           <TouchableOpacity
@@ -475,7 +481,7 @@ export default function App() {
             </Text>
           ) : null}
         </View>
-      </View>
+      </ImageBackground>
     );
   };
 
@@ -802,6 +808,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 6,
     elevation: 2,
+    overflow: 'hidden', // Ensures image respects borderRadius
+  },
+  cardBackgroundImage: {
+    borderRadius: 12,
+    opacity: 0.15, // Subtle notebook texture
   },
   cardEmpty: {
     backgroundColor: '#eef2f7',
