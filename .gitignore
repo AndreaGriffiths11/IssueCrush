@@ -30,9 +30,13 @@ yarn-error.*
 .DS_Store
 *.pem
 
+# editor
+.vscode/
+
 # local env files
+.env
 .env*.local
-.envnothing happens when i say login
+
 
 # typescript
 *.tsbuildinfo
