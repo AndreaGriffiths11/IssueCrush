@@ -323,14 +323,14 @@ export default function App() {
         title: 'CLOSE',
         style: {
           label: {
-            borderColor: '#ef4444',
-            color: '#ef4444',
-            borderWidth: 4,
-            fontSize: 24,
-            fontWeight: '800',
+            borderColor: '#d1242f', // GitHub red
+            color: '#d1242f',
+            borderWidth: 3,
+            fontSize: 22,
+            fontWeight: '700',
             textAlign: 'center',
             padding: 8,
-            borderRadius: 8,
+            borderRadius: 6,
             transform: [{ rotate: '15deg' }],
           },
           wrapper: {
@@ -346,14 +346,14 @@ export default function App() {
         title: 'KEEP',
         style: {
           label: {
-            borderColor: '#10b981',
-            color: '#10b981',
-            borderWidth: 4,
-            fontSize: 24,
-            fontWeight: '800',
+            borderColor: '#2da44e', // GitHub green
+            color: '#2da44e',
+            borderWidth: 3,
+            fontSize: 22,
+            fontWeight: '700',
             textAlign: 'center',
             padding: 8,
-            borderRadius: 8,
+            borderRadius: 6,
             transform: [{ rotate: '-15deg' }],
           },
           wrapper: {
@@ -421,7 +421,7 @@ export default function App() {
                 <Text style={styles.titleSeparator}> · </Text>
                 <Text>{issue.title}</Text>
               </Text>
-              <ExternalLink size={20} color="#38bdf8" style={{ marginTop: 4, opacity: 0.8 }} />
+              <ExternalLink size={20} color="#0969da" style={{ marginTop: 4, opacity: 0.8 }} />
             </View>
           </TouchableOpacity>
           <View style={styles.labels}>
@@ -467,7 +467,7 @@ export default function App() {
         </View>
 
         <View style={styles.cardBody}>
-          <Text style={styles.tapHint}>Tap card for details</Text>
+          {/* Removed tap hint - unnecessary and clunky */}
         </View>
       </View>
     );
@@ -544,7 +544,7 @@ export default function App() {
 
                 {loadingIssues ? (
                   <View style={styles.loader}>
-                    <ActivityIndicator color="#34d399" size="small" />
+                    <ActivityIndicator color="#0969da" size="small" />
                     <Text style={styles.copyMuted}>Fetching issues…</Text>
                   </View>
                 ) : issues.length > currentIndex ? (
@@ -601,7 +601,7 @@ export default function App() {
                     style={[styles.fab, styles.fabClose]}
                     onPress={() => swiperRef.current?.swipeLeft()}
                   >
-                    <X color="#ef4444" size={32} />
+                    <X color="#d1242f" size={32} />
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -609,14 +609,14 @@ export default function App() {
                     onPress={handleUndo}
                     disabled={!lastClosed || undoBusy}
                   >
-                    <RotateCcw color={!lastClosed ? "#334155" : "#e2e8f0"} size={24} />
+                    <RotateCcw color={!lastClosed ? "#57606a" : "#24292f"} size={24} />
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     style={[styles.fab, styles.fabKeep]}
                     onPress={() => swiperRef.current?.swipeRight()}
                   >
-                    <Check color="#10b981" size={32} />
+                    <Check color="#2da44e" size={32} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -631,7 +631,7 @@ export default function App() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f5f7fb',
+    backgroundColor: '#f6f8fa', // GitHub light theme background
   },
   container: {
     flex: 1,
@@ -655,43 +655,43 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   brand: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#0f172a',
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#24292f', // GitHub text color
   },
   hero: {
     fontSize: 20,
-    fontWeight: '700',
-    color: '#0f172a',
+    fontWeight: '600',
+    color: '#24292f',
     marginBottom: 8,
   },
   authCard: {
     backgroundColor: '#ffffff',
-    borderRadius: 18,
-    padding: 22,
+    borderRadius: 12,
+    padding: 24,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: '#d0d7de',
     marginTop: 8,
-    gap: 10,
-    shadowColor: '#0f172a',
-    shadowOpacity: 0.06,
-    shadowOffset: { width: 0, height: 10 },
-    shadowRadius: 18,
+    gap: 12,
+    shadowColor: '#000000',
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 6,
   },
   content: {
     flex: 1,
   },
   primaryButton: {
-    backgroundColor: '#10b981',
+    backgroundColor: '#2da44e', // GitHub green
     paddingVertical: 12,
-    borderRadius: 12,
+    borderRadius: 6,
     alignItems: 'center',
   },
   primaryButtonSmall: {
-    backgroundColor: '#10b981',
+    backgroundColor: '#2da44e', // GitHub green
     height: 44,
     paddingHorizontal: 14,
-    borderRadius: 12,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -700,58 +700,61 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   secondaryButton: {
-    borderColor: '#cbd5e1',
+    borderColor: '#d0d7de',
     borderWidth: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#f6f8fa',
   },
   secondaryButtonText: {
-    color: '#0f172a',
+    color: '#24292f',
     fontWeight: '600',
+    fontSize: 14,
   },
   undoButton: {
     marginBottom: 8,
   },
   copy: {
-    color: '#1f2937',
+    color: '#57606a', // GitHub gray
     lineHeight: 20,
   },
   copyMuted: {
-    color: '#6b7280',
+    color: '#57606a',
   },
   mono: {
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   error: {
-    color: '#b91c1c',
+    color: '#cf222e', // GitHub red
     marginTop: 4,
   },
   deviceBox: {
-    backgroundColor: '#f8fafc',
-    padding: 14,
-    borderRadius: 12,
+    backgroundColor: '#f6f8fa',
+    padding: 16,
+    borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    gap: 6,
+    borderColor: '#d0d7de',
+    gap: 8,
   },
   codeLabel: {
-    color: '#6b7280',
+    color: '#57606a', // GitHub gray
     fontSize: 12,
+    fontWeight: '600',
   },
   code: {
     fontSize: 24,
     letterSpacing: 2,
-    color: '#0f172a',
+    color: '#24292f',
     fontWeight: '700',
   },
   linkButton: {
     paddingVertical: 8,
   },
   linkButtonText: {
-    color: '#0ea5e9',
+    color: '#0969da', // GitHub blue
     fontWeight: '600',
   },
   controls: {
@@ -764,16 +767,16 @@ const styles = StyleSheet.create({
   inputWrap: {
     flex: 1,
     backgroundColor: '#ffffff',
-    borderRadius: 12,
+    borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    paddingHorizontal: 14,
+    borderColor: '#d0d7de',
+    paddingHorizontal: 12,
     height: 44,
     justifyContent: 'center',
   },
   input: {
     height: 44,
-    color: '#0f172a',
+    color: '#24292f',
   },
   swiperWrap: {
     flex: 1,
@@ -783,31 +786,34 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     backgroundColor: '#ffffff',
-    borderRadius: 18,
-    padding: Platform.OS === 'ios' ? 24 : 22,
+    borderRadius: 12, // More subtle, GitHub-style
+    padding: 16,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
-    justifyContent: 'space-between',
-    shadowColor: '#0f172a',
-    shadowOffset: { width: 0, height: Platform.OS === 'ios' ? 12 : 10 },
-    shadowOpacity: Platform.OS === 'ios' ? 0.14 : 0.12,
-    shadowRadius: Platform.OS === 'ios' ? 18 : 16,
-    elevation: 8,
+    borderColor: '#d0d7de', // GitHub border color
+    justifyContent: 'flex-start',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
   cardEmpty: {
     backgroundColor: '#eef2f7',
   },
   cardHeader: {
-    gap: Platform.OS === 'ios' ? 12 : 8,
+    gap: 12,
   },
   cardBody: {
-    gap: Platform.OS === 'ios' ? 16 : 12,
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#d0d7de',
   },
   repo: {
-    color: '#0ea5e9',
-    fontWeight: '700',
-    marginBottom: 4,
-    fontSize: 13,
+    color: '#0969da', // GitHub blue
+    fontWeight: '600',
+    marginBottom: 8,
+    fontSize: 14,
   },
   issueTitleButton: {
     // Ensure adequate touch target for iOS (44pt minimum)
@@ -816,37 +822,40 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   title: {
-    color: '#0f172a',
-    fontSize: 20,
-    fontWeight: '700',
-    lineHeight: Platform.OS === 'ios' ? 28 : 26,
+    color: '#24292f', // GitHub text color
+    fontSize: 18,
+    fontWeight: '600',
+    lineHeight: 26,
   },
   issueNumber: {
-    color: '#38bdf8',
-    fontWeight: '700',
+    color: '#57606a', // GitHub gray
+    fontWeight: '600',
   },
   titleSeparator: {
-    color: '#64748b',
+    color: '#57606a',
     fontWeight: '400',
   },
   labels: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Platform.OS === 'ios' ? 8 : 6,
-    marginTop: Platform.OS === 'ios' ? 12 : 8,
+    gap: 6,
+    marginTop: 12,
   },
   label: {
-    paddingVertical: Platform.OS === 'ios' ? 6 : 4,
-    paddingHorizontal: Platform.OS === 'ios' ? 10 : 8,
-    borderRadius: Platform.OS === 'ios' ? 12 : 10,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12, // GitHub pill style
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
   },
   labelText: {
-    fontWeight: '700',
-    fontSize: Platform.OS === 'ios' ? 13 : 12,
-    letterSpacing: Platform.OS === 'ios' ? 0.2 : 0,
+    fontWeight: '600',
+    fontSize: 12,
+    letterSpacing: 0,
   },
   labelTextMuted: {
-    color: '#94a3b8',
+    color: '#57606a', // GitHub gray
+    fontSize: 14,
   },
   meta: {
     color: '#6b7280',
@@ -876,49 +885,48 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   feedbackError: {
-    color: '#b91c1c',
+    color: '#cf222e', // GitHub red
     fontWeight: '700',
   },
   actionBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: Platform.OS === 'ios' ? 40 : 30,
-    paddingTop: Platform.OS === 'ios' ? 24 : 20,
+    gap: 32,
+    paddingTop: 20,
     paddingHorizontal: 24,
     borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-    backgroundColor: '#ffffff',
-    marginHorizontal: -20, // Bleed full width in container
-    // Add proper spacing for iOS devices with home indicator
-    paddingBottom: Platform.OS === 'ios' ? 20 : 20,
+    borderTopColor: '#d0d7de', // GitHub border
+    backgroundColor: '#f6f8fa', // Match background
+    marginHorizontal: -20,
+    paddingBottom: 20,
   },
   fab: {
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 100,
-    borderWidth: Platform.OS === 'ios' ? 1.5 : 1,
-    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    backgroundColor: '#ffffff',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: Platform.OS === 'ios' ? 6 : 4 },
-    shadowOpacity: Platform.OS === 'ios' ? 0.25 : 0.2,
-    shadowRadius: Platform.OS === 'ios' ? 10 : 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   fabClose: {
-    width: Platform.OS === 'ios' ? 68 : 64,
-    height: Platform.OS === 'ios' ? 68 : 64,
-    borderColor: '#f87171',
+    width: 64,
+    height: 64,
+    borderColor: '#d1242f', // GitHub red
   },
   fabKeep: {
-    width: Platform.OS === 'ios' ? 68 : 64,
-    height: Platform.OS === 'ios' ? 68 : 64,
-    borderColor: '#22c55e',
+    width: 64,
+    height: 64,
+    borderColor: '#2da44e', // GitHub green
   },
   fabUndo: {
-    width: Platform.OS === 'ios' ? 52 : 48,
-    height: Platform.OS === 'ios' ? 52 : 48,
-    borderColor: '#cbd5e1',
+    width: 48,
+    height: 48,
+    borderColor: '#d0d7de',
   },
   toastWrap: {
     position: 'absolute',
@@ -933,42 +941,43 @@ const styles = StyleSheet.create({
     maxWidth: 520,
     backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 12,
-    paddingVertical: 14, // Increased padding
+    borderColor: '#d0d7de',
+    borderRadius: 6,
+    paddingVertical: 12,
     paddingHorizontal: 16,
-    shadowColor: '#0f172a',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 6,
-    flexDirection: 'row', // Ensure layout allows for text growth
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+    flexDirection: 'row',
     justifyContent: 'center',
   },
   toastText: {
-    color: '#0f172a',
+    color: '#24292f',
     fontWeight: '600',
     textAlign: 'center',
+    fontSize: 14,
   },
   aiButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#0ea5e9',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 10,
+    backgroundColor: '#0969da', // GitHub blue
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
     alignSelf: 'flex-start',
-    shadowColor: '#0ea5e9',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
   },
   aiButtonActive: {
-    backgroundColor: '#0284c7',
+    backgroundColor: '#0550ae', // Darker GitHub blue
     borderWidth: 1,
-    borderColor: '#0ea5e9',
+    borderColor: '#0969da',
   },
   aiButtonText: {
     color: '#ffffff',
@@ -976,16 +985,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   aiSummaryText: {
-    color: '#1f2937',
-    lineHeight: Platform.OS === 'ios' ? 22 : 20,
-    fontSize: Platform.OS === 'ios' ? 15 : 14,
-    letterSpacing: Platform.OS === 'ios' ? 0.3 : 0,
-  },
-  tapHint: {
-    color: '#94a3b8',
-    fontSize: Platform.OS === 'ios' ? 13 : 12,
-    fontStyle: 'italic',
-    marginTop: Platform.OS === 'ios' ? 8 : 4,
-    letterSpacing: Platform.OS === 'ios' ? 0.2 : 0,
+    color: '#57606a', // GitHub gray
+    lineHeight: 22,
+    fontSize: 14,
+    letterSpacing: 0,
   },
 });
