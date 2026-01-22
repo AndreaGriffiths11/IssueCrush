@@ -6,6 +6,7 @@
     "start": "expo start",
     "server": "node server.js",
     "dev": "concurrently \"npm run server\" \"npm start\"",
+    "web-dev": "concurrently \"npm run server\" \"npm run web\"",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web"
