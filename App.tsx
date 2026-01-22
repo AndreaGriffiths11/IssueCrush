@@ -465,10 +465,6 @@ export default function App() {
             </Text>
           ) : null}
         </View>
-
-        <View style={styles.cardBody}>
-          {/* Removed tap hint - unnecessary and clunky */}
-        </View>
       </View>
     );
   };
@@ -803,12 +799,6 @@ const styles = StyleSheet.create({
   cardHeader: {
     gap: 12,
   },
-  cardBody: {
-    marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#d0d7de',
-  },
   repo: {
     color: '#0969da', // GitHub blue
     fontWeight: '600',
@@ -845,8 +835,6 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 8,
     borderRadius: 12, // GitHub pill style
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
   },
   labelText: {
     fontWeight: '600',
