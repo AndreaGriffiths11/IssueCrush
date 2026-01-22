@@ -4,7 +4,6 @@ import {
   ActivityIndicator,
   Linking,
   Platform,
-  SafeAreaView,
   StatusBar as RNStatusBar,
   StyleSheet,
   Text,
@@ -45,7 +44,7 @@ export default function App() {
   const [undoBusy, setUndoBusy] = useState(false);
   const [lastClosed, setLastClosed] = useState<GitHubIssue | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  
+
   // AI Summary State
   const [aiSummary, setAiSummary] = useState('');
   const [loadingAiSummary, setLoadingAiSummary] = useState(false);
@@ -234,7 +233,7 @@ export default function App() {
     // Swiper owns the index, we just handle the data logic
     const issue = issues[cardIndex];
     if (!issue || !token) return;
-    
+
     setFeedback(`Closed #${issue.number} · ${repoLabel(issue)}`);
     setLastClosed(issue);
     try {
@@ -264,7 +263,7 @@ export default function App() {
       swiperRef.current?.swipeBack();
       // Swiper's internal index decrements on swipeBack, we sync our state
       setCurrentIndex((prev) => Math.max(0, prev - 1));
-      
+
       await updateIssueState(token, lastClosed, 'open');
       setFeedback(`Reopened #${lastClosed.number}`);
       setLastClosed(null);
@@ -279,8 +278,8 @@ export default function App() {
     // Placeholder for AI summary logic since copilotService.ts is missing in context
     setLoadingAiSummary(true);
     setTimeout(() => {
-        setAiSummary("This issue requires implementing a new feature for the user profile page. Key changes involve updating the API endpoint and the frontend component. Recommended action: Assign to frontend team.");
-        setLoadingAiSummary(false);
+      setAiSummary("This issue requires implementing a new feature for the user profile page. Key changes involve updating the API endpoint and the frontend component. Recommended action: Assign to frontend team.");
+      setLoadingAiSummary(false);
     }, 1500);
   };
 
@@ -349,56 +348,56 @@ export default function App() {
     return (
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-            <Text style={styles.repo}>{repoLabel(issue)}</Text>
-            <TouchableOpacity onPress={() => Linking.openURL(issue.html_url)}>
+          <Text style={styles.repo}>{repoLabel(issue)}</Text>
+          <TouchableOpacity onPress={() => Linking.openURL(issue.html_url)}>
             <Text style={styles.title} numberOfLines={3}>
-                <Text style={{ color: '#38bdf8' }}>#{issue.number}</Text> · {issue.title}
+              <Text style={{ color: '#38bdf8' }}>#{issue.number}</Text> · {issue.title}
             </Text>
-            </TouchableOpacity>
-            <View style={styles.labels}>
+          </TouchableOpacity>
+          <View style={styles.labels}>
             {issue.labels?.length ? (
-                issue.labels.slice(0, 6).map((label) => (
+              issue.labels.slice(0, 6).map((label) => (
                 <View
-                    key={label.id}
-                    style={[styles.label, { backgroundColor: `#${label.color || '334155'}` }]}
+                  key={label.id}
+                  style={[styles.label, { backgroundColor: `#${label.color || '334155'}` }]}
                 >
-                    <Text style={[styles.labelText, { color: getLabelColor(label.color || '334155') }]}>
-                        {label.name}
-                    </Text>
+                  <Text style={[styles.labelText, { color: getLabelColor(label.color || '334155') }]}>
+                    {label.name}
+                  </Text>
                 </View>
-                ))
+              ))
             ) : (
-                <Text style={styles.labelTextMuted}>No labels</Text>
+              <Text style={styles.labelTextMuted}>No labels</Text>
             )}
-            </View>
+          </View>
         </View>
 
         <View style={styles.cardBody}>
-            {/* AI Summary Section */}
-            <TouchableOpacity 
-                style={[styles.aiButton, aiSummary ? styles.aiButtonActive : null]}
-                onPress={handleGetAiSummary}
-                disabled={loadingAiSummary || !!aiSummary}
-            >
-                {loadingAiSummary ? (
-                    <ActivityIndicator color="#cbd5e1" size="small" />
-                ) : (
-                    <>
-                        <Sparkles size={16} color={aiSummary ? "#e2e8f0" : "#94a3b8"} />
-                        <Text style={styles.aiButtonText}>
-                            {aiSummary ? "AI Summary" : "Get AI Summary"}
-                        </Text>
-                    </>
-                )}
-            </TouchableOpacity>
-            
-            {aiSummary ? (
-                <Text style={styles.aiSummaryText} numberOfLines={3} ellipsizeMode="tail">
-                    {aiSummary}
+          {/* AI Summary Section */}
+          <TouchableOpacity
+            style={[styles.aiButton, aiSummary ? styles.aiButtonActive : null]}
+            onPress={handleGetAiSummary}
+            disabled={loadingAiSummary || !!aiSummary}
+          >
+            {loadingAiSummary ? (
+              <ActivityIndicator color="#cbd5e1" size="small" />
+            ) : (
+              <>
+                <Sparkles size={16} color={aiSummary ? "#e2e8f0" : "#94a3b8"} />
+                <Text style={styles.aiButtonText}>
+                  {aiSummary ? "AI Summary" : "Get AI Summary"}
                 </Text>
-            ) : null}
-            
-            <Text style={styles.tapHint}>Tap card for details</Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          {aiSummary ? (
+            <Text style={styles.aiSummaryText} numberOfLines={3} ellipsizeMode="tail">
+              {aiSummary}
+            </Text>
+          ) : null}
+
+          <Text style={styles.tapHint}>Tap card for details</Text>
         </View>
       </View>
     );
@@ -409,143 +408,150 @@ export default function App() {
       <SafeAreaView style={styles.safeArea}>
         <StatusBar style="light" />
         <RNStatusBar barStyle="light-content" />
-        
+
         <View style={styles.container}>
-            <View style={styles.contentMax}>
-                <View style={styles.header}>
-                <Text style={styles.brand}>IssueCrush</Text>
-                {token ? (
-                    <TouchableOpacity style={styles.secondaryButton} onPress={signOut}>
-                    <Text style={styles.secondaryButtonText}>Sign out</Text>
-                    </TouchableOpacity>
-                ) : null}
-                </View>
-
-                {!token ? (
-                <View style={styles.authCard}>
-                    <Text style={styles.hero}>Swipe through your GitHub issues</Text>
-                    <Text style={styles.copy}>
-                    Login uses GitHub device flow. Approve the code to continue. Scope:{' '}
-                    <Text style={styles.mono}>{DEFAULT_SCOPE}</Text>
-                    </Text>
-                    {!CLIENT_ID ? (
-                    <Text style={styles.error}>
-                        Add EXPO_PUBLIC_GITHUB_CLIENT_ID to your env (see .env.example).
-                    </Text>
-                    ) : null}
-                    <TouchableOpacity style={styles.primaryButton} onPress={startDeviceFlow}>
-                    <Text style={styles.primaryButtonText}>Start GitHub login</Text>
-                    </TouchableOpacity>
-
-                    {deviceAuth ? (
-                    <View style={styles.deviceBox}>
-                        <Text style={styles.codeLabel}>Your code</Text>
-                        <Text style={styles.code}>{deviceAuth.user_code}</Text>
-                        <TouchableOpacity
-                        style={styles.linkButton}
-                        onPress={() => Linking.openURL(deviceAuth.verification_uri)}
-                        >
-                        <Text style={styles.linkButtonText}>Open {deviceAuth.verification_uri}</Text>
-                        </TouchableOpacity>
-                        <Text style={styles.copyMuted}>Waiting for approval...</Text>
-                    </View>
-                    ) : null}
-
-                    {authError ? <Text style={styles.error}>{authError}</Text> : null}
-                </View>
-                ) : (
-                <View style={styles.content}>
-                    <View style={styles.controls}>
-                    <View style={styles.inputWrap}>
-                        <TextInput
-                        placeholder="owner/repo (leave blank for all)"
-                        placeholderTextColor="#94a3b8"
-                        value={repoFilter}
-                        onChangeText={setRepoFilter}
-                        style={styles.input}
-                        autoCapitalize="none"
-                        />
-                    </View>
-                    <TouchableOpacity style={styles.primaryButtonSmall} onPress={loadIssues}>
-                        <Text style={styles.primaryButtonText}>Refresh</Text>
-                    </TouchableOpacity>
-                    </View>
-
-                    {authError ? <Text style={styles.error}>{authError}</Text> : null}
-
-                    {loadingIssues ? (
-                    <View style={styles.loader}>
-                        <ActivityIndicator color="#34d399" size="small" />
-                        <Text style={styles.copyMuted}>Fetching issues…</Text>
-                    </View>
-                    ) : issues.length > currentIndex ? (
-                    <View style={styles.swiperWrap}>
-                        <Swiper
-                        ref={swiperRef}
-                        cards={issues}
-                        cardIndex={currentIndex}
-                        renderCard={renderIssueCard}
-                        onSwiped={onSwiped}
-                        onSwipedLeft={handleSwipeLeft}
-                        onSwipedRight={handleSwipeRight}
-                        backgroundColor="transparent"
-                        stackSize={2}
-                        stackSeparation={12}
-                        stackScale={4}
-                        animateCardOpacity
-                        overlayLabels={overlayLabels}
-                        cardVerticalMargin={16}
-                        verticalSwipe={false}
-                        disableTopSwipe
-                        disableBottomSwipe
-                        horizontalThreshold={120}
-                        swipeAnimationDuration={180}
-                        animateOverlayLabelsOpacity
-                        />
-                    </View>
-                    ) : (
-                    <View style={styles.empty}>
-                        <Text style={styles.copy}>Nothing to triage right now.</Text>
-                    </View>
-                    )}
-
-                    {/* Toast Feedback */}
-                    {feedback ? (
-                        <View pointerEvents="none" style={styles.toastWrap}>
-                            <View style={styles.toast}>
-                                <Text numberOfLines={1} ellipsizeMode="tail" style={styles.toastText}>
-                                {feedback}
-                                </Text>
-                            </View>
-                        </View>
-                    ) : null}
-
-                    <View style={styles.actionBar}>
-                        <TouchableOpacity 
-                            style={[styles.fab, styles.fabClose]} 
-                            onPress={() => swiperRef.current?.swipeLeft()}
-                        >
-                            <X color="#ef4444" size={32} />
-                        </TouchableOpacity>
-                        
-                        <TouchableOpacity 
-                            style={[styles.fab, styles.fabUndo]} 
-                            onPress={handleUndo}
-                            disabled={!lastClosed || undoBusy}
-                        >
-                            <RotateCcw color={!lastClosed ? "#334155" : "#e2e8f0"} size={24} />
-                        </TouchableOpacity>
-                        
-                        <TouchableOpacity 
-                            style={[styles.fab, styles.fabKeep]} 
-                            onPress={() => swiperRef.current?.swipeRight()}
-                        >
-                            <Check color="#10b981" size={32} />
-                        </TouchableOpacity>
-                    </View>
-                </View>
-                )}
+          <View style={styles.contentMax}>
+            <View style={styles.header}>
+              <Text style={styles.brand}>IssueCrush</Text>
+              {token ? (
+                <TouchableOpacity style={styles.secondaryButton} onPress={signOut}>
+                  <Text style={styles.secondaryButtonText}>Sign out</Text>
+                </TouchableOpacity>
+              ) : null}
             </View>
+
+            {!token ? (
+              <View style={styles.authCard}>
+                <Text style={styles.hero}>Swipe through your GitHub issues</Text>
+                <Text style={styles.copy}>
+                  Login uses GitHub device flow. Approve the code to continue. Scope:{' '}
+                  <Text style={styles.mono}>{DEFAULT_SCOPE}</Text>
+                </Text>
+                {!CLIENT_ID ? (
+                  <Text style={styles.error}>
+                    Add EXPO_PUBLIC_GITHUB_CLIENT_ID to your env (see .env.example).
+                  </Text>
+                ) : null}
+                <TouchableOpacity style={styles.primaryButton} onPress={startDeviceFlow}>
+                  <Text style={styles.primaryButtonText}>Start GitHub login</Text>
+                </TouchableOpacity>
+
+                {deviceAuth ? (
+                  <View style={styles.deviceBox}>
+                    <Text style={styles.codeLabel}>Your code</Text>
+                    <Text style={styles.code}>{deviceAuth.user_code}</Text>
+                    <TouchableOpacity
+                      style={styles.linkButton}
+                      onPress={() => Linking.openURL(deviceAuth.verification_uri)}
+                    >
+                      <Text style={styles.linkButtonText}>Open {deviceAuth.verification_uri}</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.copyMuted}>Waiting for approval...</Text>
+                  </View>
+                ) : null}
+
+                {authError ? <Text style={styles.error}>{authError}</Text> : null}
+              </View>
+            ) : (
+              <View style={styles.content}>
+                <View style={styles.controls}>
+                  <View style={styles.inputWrap}>
+                    <TextInput
+                      placeholder="owner/repo (leave blank for all)"
+                      placeholderTextColor="#94a3b8"
+                      value={repoFilter}
+                      onChangeText={setRepoFilter}
+                      style={styles.input}
+                      autoCapitalize="none"
+                    />
+                  </View>
+                  <TouchableOpacity style={styles.primaryButtonSmall} onPress={loadIssues}>
+                    <Text style={styles.primaryButtonText}>Refresh</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {authError ? <Text style={styles.error}>{authError}</Text> : null}
+
+                {loadingIssues ? (
+                  <View style={styles.loader}>
+                    <ActivityIndicator color="#34d399" size="small" />
+                    <Text style={styles.copyMuted}>Fetching issues…</Text>
+                  </View>
+                ) : issues.length > currentIndex ? (
+                  <View style={styles.swiperWrap}>
+                    <Swiper
+                      ref={swiperRef}
+                      cards={issues}
+                      cardIndex={currentIndex}
+                      renderCard={renderIssueCard}
+                      onSwiped={onSwiped}
+                      onSwipedLeft={handleSwipeLeft}
+                      onSwipedRight={handleSwipeRight}
+                      backgroundColor="transparent"
+                      stackSize={2}
+                      stackSeparation={12}
+                      stackScale={4}
+                      animateCardOpacity
+                      overlayLabels={overlayLabels}
+                      cardVerticalMargin={16}
+                      verticalSwipe={false}
+                      disableTopSwipe
+                      disableBottomSwipe
+                      horizontalThreshold={120}
+                      swipeAnimationDuration={180}
+                      animateOverlayLabelsOpacity
+                    />
+                  </View>
+                ) : (
+                  <View style={styles.empty}>
+                    <Text style={styles.copy}>Nothing to triage right now.</Text>
+                  </View>
+                )}
+
+                {/* Toast Feedback */}
+                {feedback ? (
+                  <View pointerEvents="none" style={styles.toastWrap}>
+                    <View style={styles.toast}>
+                      <Text
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                        style={[
+                          styles.toastText,
+                          feedback.toLowerCase().includes('failed') && styles.feedbackError,
+                        ]}
+                      >
+                        {feedback}
+                      </Text>
+                    </View>
+                  </View>
+                ) : null}
+
+                <View style={styles.actionBar}>
+                  <TouchableOpacity
+                    style={[styles.fab, styles.fabClose]}
+                    onPress={() => swiperRef.current?.swipeLeft()}
+                  >
+                    <X color="#ef4444" size={32} />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.fab, styles.fabUndo]}
+                    onPress={handleUndo}
+                    disabled={!lastClosed || undoBusy}
+                  >
+                    <RotateCcw color={!lastClosed ? "#334155" : "#e2e8f0"} size={24} />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.fab, styles.fabKeep]}
+                    onPress={() => swiperRef.current?.swipeRight()}
+                  >
+                    <Check color="#10b981" size={32} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </View>
         </View>
       </SafeAreaView>
     </GestureHandlerRootView>
@@ -693,7 +699,7 @@ const styles = StyleSheet.create({
   swiperWrap: {
     flex: 1,
     // Add margins to prevent card from touching edges fully during swipe
-    marginHorizontal: -8, 
+    marginHorizontal: -8,
   },
   card: {
     flex: 1,
@@ -775,12 +781,6 @@ const styles = StyleSheet.create({
     color: '#0b1224',
     fontWeight: '700',
   },
-  footer: {
-    paddingVertical: 8,
-  },
-  feedback: {
-    color: '#cbd5e1',
-  },
   feedbackError: {
     color: '#ef4444',
     fontWeight: '700',
@@ -829,7 +829,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 16,
     right: 16,
-    bottom: 120, // Increased bottom spacing to clear action bar
+    bottom: 160, // Increased to ensure clearing action bar completely
     alignItems: 'center',
     zIndex: 100,
   },
