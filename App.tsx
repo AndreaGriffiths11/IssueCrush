@@ -567,7 +567,11 @@ export default function App() {
               <View style={styles.authContainer}>
                 <View style={styles.authHeroSection}>
                   <View style={styles.authIconContainer}>
-                    <Text style={styles.authIcon}>🗂️</Text>
+                    <Image
+                      source={require('./assets/icon.png')}
+                      style={styles.authHeroIcon}
+                      resizeMode="contain"
+                    />
                   </View>
                   <Text style={styles.hero}>Swipe through your</Text>
                   <Text style={styles.heroAccent}>GitHub issues</Text>
@@ -859,23 +863,23 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   brandIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     backgroundColor: '#ffffff',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowRadius: 6,
+    elevation: 3,
     borderWidth: 1,
-    borderColor: '#e1e4e8',
+    borderColor: '#e6e8ec',
   },
   brandIconImage: {
-    width: 30,
-    height: 30,
+    width: 38,
+    height: 38,
   },
   brand: {
     fontSize: 22,
@@ -910,9 +914,9 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   authIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 24,
+    width: 88,
+    height: 88,
+    borderRadius: 26,
     backgroundColor: '#ffffff',
     alignItems: 'center',
     justifyContent: 'center',
@@ -920,13 +924,14 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 12,
+    shadowRadius: 10,
     elevation: 4,
     borderWidth: 1,
-    borderColor: '#e1e4e8',
+    borderColor: '#e6e8ec',
   },
-  authIcon: {
-    fontSize: 40,
+  authHeroIcon: {
+    width: 72,
+    height: 72,
   },
   hero: {
     fontSize: 26,
