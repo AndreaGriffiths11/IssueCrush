@@ -547,7 +547,11 @@ export default function App() {
             <View style={styles.header}>
               <View style={styles.brandContainer}>
                 <View style={styles.brandIcon}>
-                  <Text style={styles.brandEmoji}>📋</Text>
+                  <Image
+                    source={require('./assets/icon.png')}
+                    style={styles.brandIconImage}
+                    resizeMode="contain"
+                  />
                 </View>
                 <Text style={styles.brand}>IssueCrush</Text>
               </View>
@@ -869,8 +873,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e1e4e8',
   },
-  brandEmoji: {
-    fontSize: 18,
+  brandIconImage: {
+    width: 30,
+    height: 30,
   },
   brand: {
     fontSize: 22,
