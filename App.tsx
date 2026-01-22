@@ -43,6 +43,7 @@ export default function App() {
   const [undoBusy, setUndoBusy] = useState(false);
   const [lastClosed, setLastClosed] = useState<GitHubIssue | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const swiperRef = useRef<Swiper<GitHubIssue>>(null);
 
   const pollTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -248,10 +249,9 @@ export default function App() {
     if (!lastClosed || !token) return;
     setUndoBusy(true);
     try {
+      swiperRef.current?.swipeBack();
+      setCurrentIndex((prev) => Math.max(0, prev - 1));
       await updateIssueState(token, lastClosed, 'open');
-      // To properly undo in the UI with Swiper, we'd need to decrement currentIndex
-      // and swipe back. For now, we'll just re-open in backend and give feedback.
-      // If we want to show it again, we might need to manipulate the stack or refresh.
       setFeedback(`Reopened #${lastClosed.number}`);
       setLastClosed(null);
     } catch (error) {
@@ -414,6 +414,7 @@ export default function App() {
             ) : issues.length > currentIndex ? (
               <View style={styles.swiperWrap}>
                 <Swiper
+                  ref={swiperRef}
                   cards={issues}
                   cardIndex={currentIndex}
                   renderCard={renderIssueCard}
