@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as AuthSession from 'expo-auth-session';
+import * as WebBrowser from 'expo-web-browser';
 import Swiper from 'react-native-deck-swiper';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { X, Check, RotateCcw, Sparkles } from 'lucide-react-native';
@@ -358,15 +359,44 @@ export default function App() {
     return yiq >= 128 ? '#000000' : '#ffffff';
   };
 
+  const openIssueLink = async (url: string) => {
+    try {
+      // Use WebBrowser for in-app browsing on mobile, fallback to Linking on web
+      if (Platform.OS === 'web') {
+        // On web, open in a new tab
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.click();
+      } else {
+        // On mobile (iOS/Android), use WebBrowser for in-app browsing
+        await WebBrowser.openBrowserAsync(url, {
+          controlsColor: '#38bdf8',
+          toolbarColor: '#0b1224',
+        });
+      }
+    } catch (error) {
+      // Fallback to Linking if WebBrowser fails
+      await Linking.openURL(url);
+    }
+  };
+
   const renderIssueCard = (issue: GitHubIssue | null) => {
     if (!issue) return <View style={[styles.card, styles.cardEmpty]} />;
     return (
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Text style={styles.repo}>{repoLabel(issue)}</Text>
-          <TouchableOpacity onPress={() => Linking.openURL(issue.html_url)}>
+          <TouchableOpacity
+            onPress={() => openIssueLink(issue.html_url)}
+            style={styles.issueTitleButton}
+            activeOpacity={0.7}
+          >
             <Text style={styles.title} numberOfLines={3}>
-              <Text style={{ color: '#38bdf8' }}>#{issue.number}</Text> · {issue.title}
+              <Text style={styles.issueNumber}>#{issue.number}</Text>
+              <Text style={styles.titleSeparator}> · </Text>
+              <Text>{issue.title}</Text>
             </Text>
           </TouchableOpacity>
           <View style={styles.labels}>
@@ -720,51 +750,67 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0b1224',
     borderRadius: 16,
-    padding: 20,
+    padding: Platform.OS === 'ios' ? 24 : 20,
     borderWidth: 1,
     borderColor: '#1f2937',
     justifyContent: 'space-between',
-    // Stronger shadow
+    // Stronger shadow with iOS-specific adjustments
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
+    shadowOffset: { width: 0, height: Platform.OS === 'ios' ? 12 : 10 },
+    shadowOpacity: Platform.OS === 'ios' ? 0.35 : 0.3,
+    shadowRadius: Platform.OS === 'ios' ? 24 : 20,
     elevation: 10,
   },
   cardEmpty: {
     backgroundColor: '#0f172a',
   },
   cardHeader: {
-    gap: 8,
+    gap: Platform.OS === 'ios' ? 12 : 8,
   },
   cardBody: {
-    gap: 12,
+    gap: Platform.OS === 'ios' ? 16 : 12,
   },
   repo: {
     color: '#38bdf8',
     fontWeight: '700',
     marginBottom: 4,
+    fontSize: 13,
+  },
+  issueTitleButton: {
+    // Ensure adequate touch target for iOS (44pt minimum)
+    minHeight: Platform.OS === 'ios' ? 44 : 40,
+    justifyContent: 'center',
+    marginVertical: 4,
   },
   title: {
     color: '#e2e8f0',
     fontSize: 20,
     fontWeight: '700',
-    lineHeight: 28,
+    lineHeight: Platform.OS === 'ios' ? 28 : 26,
+  },
+  issueNumber: {
+    color: '#38bdf8',
+    fontWeight: '700',
+  },
+  titleSeparator: {
+    color: '#64748b',
+    fontWeight: '400',
   },
   labels: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 8,
+    gap: Platform.OS === 'ios' ? 8 : 6,
+    marginTop: Platform.OS === 'ios' ? 12 : 8,
   },
   label: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 10,
+    paddingVertical: Platform.OS === 'ios' ? 6 : 4,
+    paddingHorizontal: Platform.OS === 'ios' ? 10 : 8,
+    borderRadius: Platform.OS === 'ios' ? 12 : 10,
   },
   labelText: {
     fontWeight: '700',
-    fontSize: 12,
+    fontSize: Platform.OS === 'ios' ? 13 : 12,
+    letterSpacing: Platform.OS === 'ios' ? 0.2 : 0,
   },
   labelTextMuted: {
     color: '#94a3b8',
@@ -804,40 +850,41 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 30,
-    paddingVertical: 20,
+    gap: Platform.OS === 'ios' ? 40 : 30,
+    paddingTop: Platform.OS === 'ios' ? 24 : 20,
     paddingHorizontal: 24,
     borderTopWidth: 1,
     borderTopColor: '#1f2937',
     backgroundColor: '#0b0f14',
     marginHorizontal: -16, // Bleed full width in container
-    paddingBottom: Platform.OS === 'ios' ? 0 : 20,
+    // Add proper spacing for iOS devices with home indicator
+    paddingBottom: Platform.OS === 'ios' ? 20 : 20,
   },
   fab: {
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 100,
-    borderWidth: 1,
+    borderWidth: Platform.OS === 'ios' ? 1.5 : 1,
     backgroundColor: '#0f172a',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: Platform.OS === 'ios' ? 6 : 4 },
+    shadowOpacity: Platform.OS === 'ios' ? 0.25 : 0.2,
+    shadowRadius: Platform.OS === 'ios' ? 10 : 8,
     elevation: 4,
   },
   fabClose: {
-    width: 64,
-    height: 64,
+    width: Platform.OS === 'ios' ? 68 : 64,
+    height: Platform.OS === 'ios' ? 68 : 64,
     borderColor: '#7f1d1d',
   },
   fabKeep: {
-    width: 64,
-    height: 64,
+    width: Platform.OS === 'ios' ? 68 : 64,
+    height: Platform.OS === 'ios' ? 68 : 64,
     borderColor: '#064e3b',
   },
   fabUndo: {
-    width: 48,
-    height: 48,
+    width: Platform.OS === 'ios' ? 52 : 48,
+    height: Platform.OS === 'ios' ? 52 : 48,
     borderColor: '#334155',
   },
   toastWrap: {
@@ -892,13 +939,15 @@ const styles = StyleSheet.create({
   },
   aiSummaryText: {
     color: '#cbd5e1',
-    lineHeight: 20,
-    fontSize: 14,
+    lineHeight: Platform.OS === 'ios' ? 22 : 20,
+    fontSize: Platform.OS === 'ios' ? 15 : 14,
+    letterSpacing: Platform.OS === 'ios' ? 0.3 : 0,
   },
   tapHint: {
     color: '#475569',
-    fontSize: 12,
+    fontSize: Platform.OS === 'ios' ? 13 : 12,
     fontStyle: 'italic',
-    marginTop: 4,
+    marginTop: Platform.OS === 'ios' ? 8 : 4,
+    letterSpacing: Platform.OS === 'ios' ? 0.2 : 0,
   },
 });
