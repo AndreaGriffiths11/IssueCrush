@@ -19,6 +19,7 @@
     "expo-auth-session": "~7.0.10",
     "expo-secure-store": "~15.0.8",
     "expo-status-bar": "~3.0.9",
+    "expo-web-browser": "^15.0.10",
     "express": "^5.2.1",
     "lucide-react-native": "^0.562.0",
     "react": "19.1.0",
