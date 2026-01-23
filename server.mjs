@@ -15,7 +15,7 @@ let copilotSession = null;
 
 async function initializeCopilot() {
   if (copilotClient && copilotSession) return true;
-  
+
   try {
     console.log('Initializing Copilot SDK...');
     copilotClient = new CopilotClient();
@@ -83,7 +83,7 @@ app.post('/api/github-token', async (req, res) => {
 });
 
 app.get('/health', (req, res) => {
-  res.json({ 
+  res.json({
     status: 'ok',
     copilotAvailable: copilotClient !== null && copilotSession !== null
   });
@@ -98,9 +98,9 @@ app.post('/api/ai-summary', async (req, res) => {
 
   // Check if Copilot is available
   const copilotReady = await initializeCopilot();
-  
+
   if (!copilotReady || !copilotSession) {
-    return res.status(503).json({ 
+    return res.status(503).json({
       error: 'Copilot not available. Install GitHub Copilot CLI first.',
       details: 'Run: npm install -g @github/copilot'
     });
@@ -108,7 +108,7 @@ app.post('/api/ai-summary', async (req, res) => {
 
   try {
     const labels = issue.labels?.map(l => l.name).join(', ') || 'none';
-    
+
     const prompt = `Analyze this GitHub issue and provide a concise 2-3 sentence summary:
 
 Repository: ${issue.repository?.full_name || 'Unknown'}
@@ -133,9 +133,9 @@ Keep it concise and developer-friendly.`;
     res.json({ summary });
   } catch (error) {
     console.error('AI summary error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to generate AI summary',
-      details: error.message 
+      details: error.message
     });
   }
 });

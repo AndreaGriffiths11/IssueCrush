@@ -15,7 +15,8 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.IssueCrush"
+      "bundleIdentifier": "com.anonymous.IssueCrush",
+      "icon": "./assets/icon.png"
     },
     "android": {
       "adaptiveIcon": {

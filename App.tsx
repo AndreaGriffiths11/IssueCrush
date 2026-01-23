@@ -32,6 +32,7 @@ import Animated, {
   Easing,
   runOnJS,
 } from 'react-native-reanimated';
+import { Agentation } from 'agentation';
 
 import { fetchIssues, GitHubIssue, updateIssueState, extractRepoPath } from './src/api/github';
 import { deleteToken, getToken, saveToken } from './src/lib/tokenStorage';
@@ -87,13 +88,13 @@ export default function App() {
     crumbleRotate.value = 0;
 
     // Animate the crumble effect
-    crumbleProgress.value = withTiming(1, { duration: 400, easing: Easing.out(Easing.cubic) });
+    crumbleProgress.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.cubic) });
     crumbleScale.value = withSequence(
-      withTiming(1.1, { duration: 100 }),
-      withTiming(0.3, { duration: 300, easing: Easing.in(Easing.cubic) })
+      withTiming(1.2, { duration: 150 }),
+      withTiming(0.2, { duration: 650, easing: Easing.in(Easing.cubic) })
     );
-    crumbleRotate.value = withTiming(15, { duration: 400, easing: Easing.out(Easing.quad) });
-    crumbleOpacity.value = withTiming(0, { duration: 400, easing: Easing.in(Easing.cubic) }, () => {
+    crumbleRotate.value = withTiming(45, { duration: 800, easing: Easing.out(Easing.quad) });
+    crumbleOpacity.value = withTiming(0, { duration: 800, easing: Easing.in(Easing.cubic) }, () => {
       runOnJS(setShowCrumble)(false);
     });
   }, []);
@@ -103,7 +104,7 @@ export default function App() {
     transform: [
       { scale: crumbleScale.value },
       { rotate: `${crumbleRotate.value}deg` },
-      { translateY: interpolate(crumbleProgress.value, [0, 1], [0, 50]) },
+      { translateY: interpolate(crumbleProgress.value, [0, 1], [0, 150]) },
     ],
   }));
 
@@ -335,9 +336,6 @@ export default function App() {
     // Swiper owns the index, we just handle the data logic
     const issue = issues[cardIndex];
     if (!issue || !token) return;
-
-    // Trigger the crumble animation
-    triggerCrumbleAnimation();
 
     setFeedback(`Closed #${issue.number} · ${repoLabel(issue)}`);
     setLastClosed(issue);
@@ -589,14 +587,6 @@ export default function App() {
           <View style={styles.contentMax}>
             <View style={styles.header}>
               <View style={styles.brandContainer}>
-                <View style={styles.brandIcon}>
-                  <Image
-                    source={require('./assets/icon.png')}
-                    style={styles.brandIconImage}
-                    resizeMode="contain"
-                    borderRadius={10}
-                  />
-                </View>
                 <Text style={styles.brand}>IssueCrush</Text>
               </View>
               {token ? (
@@ -775,17 +765,6 @@ export default function App() {
                       swipeAnimationDuration={180}
                       animateOverlayLabelsOpacity
                     />
-
-                    {/* Crumble animation overlay */}
-                    {showCrumble && (
-                      <Animated.View style={[styles.crumbleOverlay, crumbleAnimatedStyle]}>
-                        <Image
-                          source={require('./assets/crumpled_sheet.png')}
-                          style={styles.crumbleImage}
-                          resizeMode="contain"
-                        />
-                      </Animated.View>
-                    )}
                   </View>
                 ) : (
                   <View style={styles.emptyState}>
@@ -870,6 +849,7 @@ export default function App() {
             )}
           </View>
         </View>
+        {__DEV__ && Platform.OS === 'web' && <Agentation />}
       </SafeAreaView>
     </GestureHandlerRootView>
   );
@@ -893,7 +873,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 480,
     alignSelf: 'center',
-    paddingHorizontal: 1,
+    paddingHorizontal: 16,
   },
   header: {
     flexDirection: 'row',
@@ -906,6 +886,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    alignSelf: 'flex-start',
   },
   brandIcon: {
     width: 70,
@@ -1437,16 +1418,17 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    bottom: 100,
+    bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 1000,
+    zIndex: 9999,
     pointerEvents: 'none',
   },
   crumbleImage: {
-    width: 300,
-    height: 300,
-    tintColor: '#fef2f2',
+    width: 400,
+    height: 400,
+    tintColor: '#d1242f',
+    opacity: 0.9,
   },
 
   // Toast Styles

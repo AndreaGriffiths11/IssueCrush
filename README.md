@@ -196,7 +196,12 @@ npm run android   # Open in Android emulator
 - **react-native-deck-swiper** - Tinder-style swipe cards
 - **Express** - OAuth token exchange and AI proxy server
 - **GitHub Copilot SDK** - AI-powered issue analysis
+- **[Agentation](https://github.com/benjitaylor/agentation)** - Visual feedback UI component (web only) by [Benji Taylor](https://github.com/benjitaylor)
 - **TypeScript** - Type-safe development
+
+## Credits
+
+- **Agentation** visual feedback component by [Benji Taylor](https://github.com/benjitaylor) - [GitHub](https://github.com/benjitaylor/agentation)
 
 ## Security
 
