@@ -13,11 +13,12 @@ import {
   TouchableOpacity,
   View,
   Image,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
+import * as Haptics from 'expo-haptics';
 import Swiper from 'react-native-deck-swiper';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { X, Check, RotateCcw, Sparkles, ExternalLink, Github, Filter, RefreshCw, Inbox, LogOut } from 'lucide-react-native';
@@ -32,8 +33,6 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
 import { fetchIssues, GitHubIssue, updateIssueState, extractRepoPath } from './src/api/github';
 import { deleteToken, getToken, saveToken } from './src/lib/tokenStorage';
 import { copilotService } from './src/lib/copilotService';
@@ -43,7 +42,7 @@ const DEFAULT_SCOPE = process.env.EXPO_PUBLIC_GITHUB_SCOPE || 'repo';
 const REDIRECT_URI =
   Platform.OS === 'web' && typeof window !== 'undefined'
     ? window.location.origin
-    : AuthSession.makeRedirectUri({ preferLocalhost: true, useProxy: false });
+    : AuthSession.makeRedirectUri({ preferLocalhost: true });
 
 type DeviceAuthState = {
   device_code: string;
@@ -54,6 +53,7 @@ type DeviceAuthState = {
 };
 
 export default function App() {
+  const { width: SCREEN_WIDTH } = useWindowDimensions();
   const [token, setToken] = useState<string | null>(null);
   const [issues, setIssues] = useState<GitHubIssue[]>([]);
   const [loadingIssues, setLoadingIssues] = useState(false);
@@ -203,50 +203,71 @@ export default function App() {
   };
 
   const startDeviceFlow = async () => {
-    if (!CLIENT_ID) {
-      setAuthError('Missing EXPO_PUBLIC_GITHUB_CLIENT_ID env var.');
-      return;
-    }
-    setAuthError('');
-    setDeviceAuth(null);
-    if (pollTimeout.current) clearTimeout(pollTimeout.current);
+    try {
+      console.log('Starting device flow...', { CLIENT_ID: CLIENT_ID ? 'Set' : 'Missing', Platform: Platform.OS });
 
-    if (Platform.OS === 'web') {
-      // Use Authorization Code Flow for web - redirect to GitHub
-      const authUrl = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=${encodeURIComponent(
-        DEFAULT_SCOPE
-      )}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
-      if (__DEV__) {
-        console.log('GitHub auth redirect:', { authUrl, REDIRECT_URI });
-      }
-      if (typeof window !== 'undefined') {
-        window.location.href = authUrl;
-      } else {
-        setAuthError('Unable to open GitHub login (window unavailable).');
-      }
-    } else {
-      const body = new URLSearchParams({
-        client_id: CLIENT_ID,
-        scope: DEFAULT_SCOPE,
-      }).toString();
-
-      const response = await fetch('https://github.com/login/device/code', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Accept: 'application/json',
-        },
-        body,
-      });
-
-      if (!response.ok) {
-        setAuthError('Unable to start GitHub device login.');
+      if (!CLIENT_ID) {
+        setAuthError('Missing EXPO_PUBLIC_GITHUB_CLIENT_ID env var.');
         return;
       }
+      setAuthError('');
+      setDeviceAuth(null);
+      if (pollTimeout.current) clearTimeout(pollTimeout.current);
 
-      const data = (await response.json()) as DeviceAuthState;
-      setDeviceAuth(data);
-      schedulePoll(data, data.interval || 5);
+      if (Platform.OS === 'web') {
+        // Use Authorization Code Flow for web - redirect to GitHub
+        const authUrl = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=${encodeURIComponent(
+          DEFAULT_SCOPE
+        )}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
+        if (__DEV__) {
+          console.log('GitHub auth redirect:', { authUrl, REDIRECT_URI });
+        }
+        if (typeof window !== 'undefined') {
+          window.location.href = authUrl;
+        } else {
+          setAuthError('Unable to open GitHub login (window unavailable).');
+        }
+      } else {
+        // For mobile/iOS, use WebBrowser-based OAuth flow
+        console.log('Starting mobile OAuth flow with WebBrowser...');
+        const redirectUri = AuthSession.makeRedirectUri({
+          scheme: 'issuecrush',
+          preferLocalhost: false,
+        });
+
+        const authUrl = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=${encodeURIComponent(
+          DEFAULT_SCOPE
+        )}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+
+        console.log('Opening OAuth URL:', { authUrl, redirectUri });
+
+        try {
+          const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+          console.log('OAuth result:', result);
+
+          if (result.type === 'success' && result.url) {
+            const url = new URL(result.url);
+            const code = url.searchParams.get('code');
+
+            if (code) {
+              console.log('Authorization code received, exchanging for token...');
+              await exchangeCodeForToken(code);
+            } else {
+              setAuthError('No authorization code received');
+            }
+          } else if (result.type === 'cancel') {
+            console.log('User cancelled OAuth flow');
+          } else {
+            setAuthError('OAuth flow failed');
+          }
+        } catch (error) {
+          console.error('WebBrowser OAuth error:', error);
+          setAuthError(`Failed to open browser: ${(error as Error).message}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error in startDeviceFlow:', error);
+      setAuthError(`Failed to start login: ${(error as Error).message}`);
     }
   };
 
@@ -306,6 +327,11 @@ export default function App() {
   };
 
   const handleSwipeLeft = async (cardIndex: number) => {
+    // Haptic feedback
+    if (Platform.OS !== 'web') {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+
     // Swiper owns the index, we just handle the data logic
     const issue = issues[cardIndex];
     if (!issue || !token) return;
@@ -323,7 +349,12 @@ export default function App() {
     }
   };
 
-  const handleSwipeRight = (cardIndex: number) => {
+  const handleSwipeRight = async (cardIndex: number) => {
+    // Haptic feedback
+    if (Platform.OS !== 'web') {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+
     const issue = issues[cardIndex];
     if (!issue) return;
     setFeedback(`Kept open · #${issue.number}`);
@@ -364,10 +395,10 @@ export default function App() {
     try {
       // Pass the fully typed issue including optional body/etc
       const summary = await copilotService.summarizeIssue(issue);
-      
+
       // Update the issue in the list to trigger re-render
-      setIssues(prevIssues => 
-        prevIssues.map((item, index) => 
+      setIssues(prevIssues =>
+        prevIssues.map((item, index) =>
           index === issueIndex ? { ...item, aiSummary: summary } : item
         )
       );
@@ -476,7 +507,19 @@ export default function App() {
         resizeMode="cover"
       >
         <View style={styles.cardHeader}>
-          <Text style={styles.repo}>{repoLabel(issue)}</Text>
+          <View style={styles.cardTopRow}>
+            <Text style={styles.repo}>{repoLabel(issue)}</Text>
+            {issue.user && (
+              <View style={styles.userInfo}>
+                <Image
+                  source={{ uri: issue.user.avatar_url }}
+                  style={styles.avatar}
+                  resizeMode="cover"
+                />
+                <Text style={styles.username} numberOfLines={1} ellipsizeMode="tail">@{issue.user.login}</Text>
+              </View>
+            )}
+          </View>
           <TouchableOpacity
             onPress={() => openIssueLink(issue.html_url)}
             style={styles.issueTitleButton}
@@ -527,7 +570,7 @@ export default function App() {
           </TouchableOpacity>
 
           {issue.aiSummary ? (
-            <Text style={styles.aiSummaryText} numberOfLines={3} ellipsizeMode="tail">
+            <Text style={styles.aiSummaryText}>
               {issue.aiSummary}
             </Text>
           ) : null}
@@ -551,6 +594,7 @@ export default function App() {
                     source={require('./assets/icon.png')}
                     style={styles.brandIconImage}
                     resizeMode="contain"
+                    borderRadius={10}
                   />
                 </View>
                 <Text style={styles.brand}>IssueCrush</Text>
@@ -568,7 +612,7 @@ export default function App() {
                 <View style={styles.authHeroSection}>
                   <View style={styles.authIconContainer}>
                     <Image
-                      source={require('./assets/icon.png')}
+                      source={require('./assets/adaptive-icon.png')}
                       style={styles.authHeroIcon}
                       resizeMode="contain"
                     />
@@ -587,7 +631,7 @@ export default function App() {
                   </View>
 
                   <Text style={styles.copy}>
-                    We'll use {Platform.OS === 'web' ? 'OAuth' : 'device flow'} to securely connect to your GitHub account.
+                    We'll use {Platform.OS === 'web' ? 'OAuth' : 'browser-based OAuth'} to securely connect to your GitHub account.
                   </Text>
 
                   <View style={styles.scopeBadge}>
@@ -709,6 +753,7 @@ export default function App() {
                 ) : issues.length > currentIndex ? (
                   <View style={styles.swiperWrap}>
                     <Swiper
+                      key={SCREEN_WIDTH}
                       ref={swiperRef}
                       cards={issues}
                       cardIndex={currentIndex}
@@ -722,7 +767,7 @@ export default function App() {
                       stackScale={4}
                       animateCardOpacity
                       overlayLabels={overlayLabels}
-                      cardVerticalMargin={16}
+                      cardVerticalMargin={0}
                       verticalSwipe={false}
                       disableTopSwipe
                       disableBottomSwipe
@@ -815,7 +860,7 @@ export default function App() {
                     </TouchableOpacity>
                   </View>
 
-                  <View style={styles.actionBarHints}>
+                  <View style={[styles.actionBarHints, { display: 'none' }]}>
                     <Text style={[styles.actionHint, styles.actionHintClose]}>Close</Text>
                     <Text style={styles.actionHint}>Undo</Text>
                     <Text style={[styles.actionHint, styles.actionHintKeep]}>Keep</Text>
@@ -837,9 +882,8 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    paddingHorizontal: 16,
     width: '100%',
-    maxWidth: 960,
+    maxWidth: 480,
     alignSelf: 'center',
     alignItems: 'center',
     justifyContent: 'flex-start',
@@ -849,51 +893,55 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 480,
     alignSelf: 'center',
+    paddingHorizontal: 1,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 16,
-    paddingHorizontal: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 1,
   },
   brandContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 6,
   },
   brandIcon: {
-    width: 44,
-    height: 44,
+    width: 70,
+    height: 70,
     borderRadius: 12,
-    backgroundColor: '#ffffff',
+    backgroundColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0,
     shadowRadius: 6,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: '#e6e8ec',
+    elevation: 0,
+    borderWidth: 0,
+    borderColor: '#ffffff',
   },
   brandIconImage: {
     width: 38,
     height: 38,
   },
   brand: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#24292f',
-    letterSpacing: -0.5,
+    fontSize: 30,
+    fontWeight: '800',
+    color: '#0969da',
+    letterSpacing: -0.8,
+    textShadowColor: 'rgba(9, 105, 218, 0.15)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   signOutButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    gap: 2,
+    paddingVertical: 6,
+    paddingHorizontal: 20,
+    borderRadius: 10,
     backgroundColor: '#ffffff',
     borderWidth: 1,
     borderColor: '#d0d7de',
@@ -1105,19 +1153,19 @@ const styles = StyleSheet.create({
   // Main Content Styles
   content: {
     flex: 1,
+    paddingHorizontal: 0,
   },
   controlsCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
+    backgroundColor: '#f6f8fa',
+    borderRadius: 20,
     padding: 12,
-    borderWidth: 1,
-    borderColor: '#d0d7de',
     marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
+    shadowOpacity: 0.02,
     shadowRadius: 4,
-    elevation: 1,
+    elevation: 0,
+    paddingHorizontal: 14,
   },
   controlsRow: {
     flexDirection: 'row',
@@ -1129,10 +1177,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f6f8fa',
-    borderRadius: 8,
+    borderRadius: 1,
     borderWidth: 1,
     borderColor: '#d0d7de',
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     height: 44,
   },
   inputIcon: {
@@ -1159,34 +1207,48 @@ const styles = StyleSheet.create({
   },
   issueCounter: {
     marginTop: 12,
-    gap: 6,
+    gap: 8,
   },
   issueCountText: {
-    fontSize: 12,
-    color: '#57606a',
-    fontWeight: '600',
+    fontSize: 14,
+    color: '#24292f',
+    fontWeight: '700',
+    backgroundColor: '#ddf4ff',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+    overflow: 'hidden',
   },
   progressBar: {
-    height: 4,
+    height: 8,
     backgroundColor: '#e1e4e8',
-    borderRadius: 2,
+    borderRadius: 4,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
     backgroundColor: '#0969da',
-    borderRadius: 2,
+    borderRadius: 4,
   },
 
   // Card Styles
   swiperWrap: {
     flex: 1,
     width: '100%',
+    maxWidth: 480,
     alignSelf: 'center',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    zIndex: 1,
   },
   card: {
     flex: 1,
     width: '100%',
+    maxWidth: 480,
+    minHeight: 350,
+    maxHeight: 500,
+    alignSelf: 'flex-start',
     backgroundColor: '#ffffff',
     borderRadius: 16,
     padding: 20,
@@ -1197,8 +1259,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
-    elevation: 4,
+    elevation: 2,
     overflow: 'hidden',
+    zIndex: 1,
   },
   cardBackgroundImage: {
     borderRadius: 16,
@@ -1209,6 +1272,32 @@ const styles = StyleSheet.create({
   },
   cardHeader: {
     gap: 14,
+  },
+  cardTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexShrink: 1,
+    maxWidth: '50%',
+  },
+  avatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#d0d7de',
+  },
+  username: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#57606a',
+    flexShrink: 1,
   },
   repo: {
     color: '#0969da',
@@ -1355,8 +1444,8 @@ const styles = StyleSheet.create({
     pointerEvents: 'none',
   },
   crumbleImage: {
-    width: SCREEN_WIDTH * 0.8,
-    height: SCREEN_WIDTH * 0.8,
+    width: 300,
+    height: 300,
     tintColor: '#fef2f2',
   },
 
@@ -1422,17 +1511,16 @@ const styles = StyleSheet.create({
   // Action Bar Styles
   actionBar: {
     paddingTop: 16,
-    paddingBottom: 24,
-    paddingHorizontal: 16,
-    marginHorizontal: -16,
-    backgroundColor: '#ffffff',
-    borderTopWidth: 1,
-    borderTopColor: '#e1e4e8',
+    paddingBottom: 34,
+    paddingHorizontal: -16,
+    backgroundColor: 'transparent',
+    borderTopWidth: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 10,
+    zIndex: 1000,
   },
   actionBarInner: {
     flexDirection: 'row',

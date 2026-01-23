@@ -24,6 +24,7 @@ export type GitHubIssue = {
   created_at?: string;
   user?: {
     login: string;
+    avatar_url: string;
   };
 };
 

@@ -2,7 +2,7 @@ import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
-const TOKEN_KEY = 'issuecrush/github-token';
+const TOKEN_KEY = 'issuecrush-github-token';
 
 export async function saveToken(token: string) {
   if (Platform.OS === 'web') {
