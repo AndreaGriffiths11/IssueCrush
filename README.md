@@ -215,4 +215,4 @@ MIT
 
 ---
 
-Made with ❤️ for developers who want to triage issues faster
+Made with ❤️ & 🤖 for developers who want to triage issues faster
