@@ -153,7 +153,6 @@ Update README with new setup instructions
 ## Community
 
 - **Issues:** Use GitHub Issues for bugs and feature requests
-- **Discussions:** Use GitHub Discussions for questions and ideas
 
 ## Recognition
 
