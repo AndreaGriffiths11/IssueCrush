@@ -2,6 +2,9 @@
   "name": "issuecrush",
   "version": "1.0.0",
   "main": "index.ts",
+  "overrides": {
+    "node-fetch": "^2.6.7"
+  },
   "scripts": {
     "start": "expo start",
     "server": "node server.js",
