@@ -4,15 +4,14 @@ export class CopilotService {
   private backendUrl = 'http://localhost:3000';
 
   async initialize() {
-    // Check if backend has Copilot available
     try {
       const response = await fetch(`${this.backendUrl}/health`);
       const data = await response.json();
-      
+
       if (!data.copilotAvailable) {
         throw new Error('Copilot CLI not available on server. Install it first: brew install gh-copilot');
       }
-      
+
       console.log('Copilot available via backend');
     } catch (error) {
       console.error('Failed to connect to backend:', error);
@@ -48,12 +47,10 @@ export class CopilotService {
     confidence: number;
     reasoning: string;
   }> {
-    // This can be implemented later if needed
     throw new Error('Not implemented yet');
   }
 
   async cleanup() {
-    // No cleanup needed for HTTP client
   }
 }
 

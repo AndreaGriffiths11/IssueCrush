@@ -33,6 +33,7 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { Agentation } from 'agentation';
+import ConfettiCannon from 'react-native-confetti-cannon';
 
 import { fetchIssues, GitHubIssue, updateIssueState, extractRepoPath } from './src/api/github';
 import { deleteToken, getToken, saveToken } from './src/lib/tokenStorage';
@@ -66,12 +67,11 @@ export default function App() {
   const [lastClosed, setLastClosed] = useState<GitHubIssue | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // AI Summary State
-  // Stored within issues array now
   const [loadingAiSummary, setLoadingAiSummary] = useState(false);
 
   const swiperRef = useRef<Swiper<GitHubIssue>>(null);
   const pollTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const confettiRef = useRef<any>(null);
 
   // Crumble animation state
   const [showCrumble, setShowCrumble] = useState(false);
@@ -216,7 +216,6 @@ export default function App() {
       if (pollTimeout.current) clearTimeout(pollTimeout.current);
 
       if (Platform.OS === 'web') {
-        // Use Authorization Code Flow for web - redirect to GitHub
         const authUrl = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=${encodeURIComponent(
           DEFAULT_SCOPE
         )}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
@@ -229,7 +228,6 @@ export default function App() {
           setAuthError('Unable to open GitHub login (window unavailable).');
         }
       } else {
-        // For mobile/iOS, use WebBrowser-based OAuth flow
         console.log('Starting mobile OAuth flow with WebBrowser...');
         const redirectUri = AuthSession.makeRedirectUri({
           scheme: 'issuecrush',
@@ -328,12 +326,10 @@ export default function App() {
   };
 
   const handleSwipeLeft = async (cardIndex: number) => {
-    // Haptic feedback
     if (Platform.OS !== 'web') {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
 
-    // Swiper owns the index, we just handle the data logic
     const issue = issues[cardIndex];
     if (!issue || !token) return;
 
@@ -348,7 +344,6 @@ export default function App() {
   };
 
   const handleSwipeRight = async (cardIndex: number) => {
-    // Haptic feedback
     if (Platform.OS !== 'web') {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
@@ -361,6 +356,12 @@ export default function App() {
   const onSwiped = (idx: number) => {
     setCurrentIndex(idx + 1);
     setLoadingAiSummary(false);
+
+    if (idx === issues.length - 1) {
+      setTimeout(() => {
+        confettiRef.current?.start();
+      }, 300);
+    }
   };
 
   const handleUndo = async () => {
@@ -368,7 +369,6 @@ export default function App() {
     setUndoBusy(true);
     try {
       swiperRef.current?.swipeBack();
-      // Swiper's internal index decrements on swipeBack, we sync our state
       setCurrentIndex((prev) => Math.max(0, prev - 1));
 
       await updateIssueState(token, lastClosed, 'open');
@@ -386,15 +386,12 @@ export default function App() {
     const issue = issues[issueIndex];
     if (!issue) return;
 
-    // If we already have a summary, don't fetch again
     if (issue.aiSummary) return;
 
     setLoadingAiSummary(true);
     try {
-      // Pass the fully typed issue including optional body/etc
       const summary = await copilotService.summarizeIssue(issue);
 
-      // Update the issue in the list to trigger re-render
       setIssues(prevIssues =>
         prevIssues.map((item, index) =>
           index === issueIndex ? { ...item, aiSummary: summary } : item
@@ -402,7 +399,6 @@ export default function App() {
       );
     } catch (error) {
       console.error('AI Summary error:', error);
-      // Optional: show error toast here using setFeedback
     } finally {
       setLoadingAiSummary(false);
     }
@@ -470,16 +466,13 @@ export default function App() {
 
   const openIssueLink = async (url: string) => {
     try {
-      // Use WebBrowser for in-app browsing on mobile, fallback to Linking on web
       if (Platform.OS === 'web') {
-        // On web, open in a new tab
         const link = document.createElement('a');
         link.href = url;
         link.target = '_blank';
         link.rel = 'noopener noreferrer';
         link.click();
       } else {
-        // On mobile (iOS/Android), use WebBrowser for in-app browsing
         await WebBrowser.openBrowserAsync(url, {
           controlsColor: '#38bdf8',
           toolbarColor: '#0b1224',
@@ -487,13 +480,11 @@ export default function App() {
         });
       }
     } catch (error) {
-      // Fallback to Linking if WebBrowser fails
       await Linking.openURL(url);
     }
   };
 
   const renderIssueCard = (cardIssue: GitHubIssue | null) => {
-    // Look up the freshest version of the issue from state to ensure AI summary updates appear
     const issue = issues.find(i => i.id === cardIssue?.id) || cardIssue;
 
     if (!issue) return <View style={[styles.card, styles.cardEmpty]} />;
@@ -716,13 +707,13 @@ export default function App() {
                   {issues.length > 0 && (
                     <View style={styles.issueCounter}>
                       <Text style={styles.issueCountText}>
-                        {currentIndex + 1} of {issues.length} issues
+                        {Math.min(currentIndex + 1, issues.length)} of {issues.length} issues
                       </Text>
                       <View style={styles.progressBar}>
                         <View
                           style={[
                             styles.progressFill,
-                            { width: `${((currentIndex + 1) / issues.length) * 100}%` }
+                            { width: `${(Math.min(currentIndex + 1, issues.length) / issues.length) * 100}%` }
                           ]}
                         />
                       </View>
@@ -850,6 +841,14 @@ export default function App() {
           </View>
         </View>
         {__DEV__ && Platform.OS === 'web' && <Agentation />}
+
+        <ConfettiCannon
+          ref={confettiRef}
+          count={200}
+          origin={{ x: SCREEN_WIDTH / 2, y: -10 }}
+          autoStart={false}
+          fadeOut
+        />
       </SafeAreaView>
     </GestureHandlerRootView>
   );

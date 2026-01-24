@@ -19,7 +19,7 @@ export type GitHubIssue = {
     full_name: string;
   };
   pull_request?: unknown;
-  aiSummary?: string; // Client-side enhancement
+  aiSummary?: string;
   body?: string;
   created_at?: string;
   user?: {
