@@ -80,6 +80,20 @@ export default function App() {
   const crumbleRotate = useSharedValue(0);
   const crumbleOpacity = useSharedValue(0);
 
+  // Card entrance animation
+  const cardEntranceOpacity = useSharedValue(0);
+  const cardEntranceY = useSharedValue(20);
+  const cardEntranceScale = useSharedValue(0.95);
+
+  useEffect(() => {
+    // Trigger entrance animation when cards are loaded
+    if (issues.length > 0) {
+      cardEntranceOpacity.value = withSpring(1, { damping: 20, stiffness: 150 });
+      cardEntranceY.value = withSpring(0, { damping: 20, stiffness: 150 });
+      cardEntranceScale.value = withSpring(1, { damping: 20, stiffness: 150 });
+    }
+  }, [issues.length]);
+
   const triggerCrumbleAnimation = useCallback(() => {
     setShowCrumble(true);
     crumbleOpacity.value = 1;
@@ -105,6 +119,15 @@ export default function App() {
       { scale: crumbleScale.value },
       { rotate: `${crumbleRotate.value}deg` },
       { translateY: interpolate(crumbleProgress.value, [0, 1], [0, 150]) },
+    ],
+  }));
+
+  // Card entrance animation style
+  const cardEntranceStyle = useAnimatedStyle(() => ({
+    opacity: cardEntranceOpacity.value,
+    transform: [
+      { translateY: cardEntranceY.value },
+      { scale: cardEntranceScale.value },
     ],
   }));
 
@@ -489,12 +512,13 @@ export default function App() {
 
     if (!issue) return <View style={[styles.card, styles.cardEmpty]} />;
     return (
-      <ImageBackground
-        source={require('./assets/notebook_paper_overlay.png')}
-        style={styles.card}
-        imageStyle={styles.cardBackgroundImage}
-        resizeMode="cover"
-      >
+      <Animated.View style={cardEntranceStyle}>
+        <ImageBackground
+          source={require('./assets/notebook_paper_overlay.png')}
+          style={styles.card}
+          imageStyle={styles.cardBackgroundImage}
+          resizeMode="cover"
+        >
         <View style={styles.cardHeader}>
           <View style={styles.cardTopRow}>
             <Text style={styles.repo}>{repoLabel(issue)}</Text>
@@ -565,6 +589,7 @@ export default function App() {
           ) : null}
         </View>
       </ImageBackground>
+      </Animated.View>
     );
   };
 
@@ -1236,10 +1261,10 @@ const styles = StyleSheet.create({
     borderColor: '#d0d7de',
     justifyContent: 'flex-start',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 4,
     overflow: 'hidden',
     zIndex: 1,
   },
