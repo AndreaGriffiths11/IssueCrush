@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CraftCard Demo - IssueCrush</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      color: white;
+      text-align: center;
+      margin-bottom: 1rem;
+      font-size: 2.5rem;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .subtitle {
+      color: rgba(255,255,255,0.9);
+      text-align: center;
+      margin-bottom: 3rem;
+      font-size: 1.1rem;
+    }
+    
+    .demo-section {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 1rem;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+    
+    .section-title {
+      color: white;
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      font-weight: 600;
+    }
+    
+    .note {
+      background: rgba(255,255,255,0.2);
+      padding: 1rem;
+      border-radius: 0.5rem;
+      color: white;
+      margin-bottom: 2rem;
+      border-left: 4px solid rgba(255,255,255,0.5);
+    }
+    
+    .note strong {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 1.1rem;
+    }
+    
+    .code-block {
+      background: rgba(0,0,0,0.3);
+      padding: 1rem;
+      border-radius: 0.5rem;
+      color: #fff;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      overflow-x: auto;
+      margin: 1rem 0;
+    }
+    
+    .feature-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    
+    .feature-card {
+      background: rgba(255,255,255,0.95);
+      padding: 1.5rem;
+      border-radius: 0.75rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .feature-icon {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .feature-title {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: #1f2937;
+    }
+    
+    .feature-desc {
+      color: #6b7280;
+      font-size: 0.9rem;
+    }
+    
+    .instructions {
+      background: white;
+      padding: 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    
+    .step {
+      margin-bottom: 2rem;
+    }
+    
+    .step-number {
+      display: inline-block;
+      width: 2rem;
+      height: 2rem;
+      background: #667eea;
+      color: white;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 2rem;
+      font-weight: bold;
+      margin-right: 1rem;
+    }
+    
+    .step-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 0.5rem;
+    }
+    
+    .step-content {
+      margin-left: 3rem;
+      color: #6b7280;
+    }
+    
+    .cta-button {
+      display: inline-block;
+      background: #667eea;
+      color: white;
+      padding: 1rem 2rem;
+      border-radius: 0.5rem;
+      text-decoration: none;
+      font-weight: 600;
+      transition: transform 0.2s, box-shadow 0.2s;
+      margin-top: 1rem;
+    }
+    
+    .cta-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    }
+    
+    footer {
+      text-align: center;
+      color: rgba(255,255,255,0.8);
+      margin-top: 3rem;
+      padding: 2rem 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎴 CraftCard Component</h1>
+    <p class="subtitle">Drop-in 3D tilt cards with spring animations for React</p>
+    
+    <div class="note">
+      <strong>📝 Component Successfully Added!</strong>
+      The CraftCard component has been implemented with all requested features. This page provides an overview and usage instructions.
+    </div>
+    
+    <div class="demo-section">
+      <h2 class="section-title">✨ Features</h2>
+      <div class="feature-list">
+        <div class="feature-card">
+          <div class="feature-icon">🎯</div>
+          <div class="feature-title">3D Tilt Effect</div>
+          <div class="feature-desc">Cards tilt based on mouse position with smooth spring physics</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <div class="feature-title">Spring Animations</div>
+          <div class="feature-desc">Physics-based hover animations with scale and shadow effects</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🎬</div>
+          <div class="feature-title">Staggered Entrance</div>
+          <div class="feature-desc">Choreographed fade-in with configurable delay between cards</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🎨</div>
+          <div class="feature-title">Tailwind Ready</div>
+          <div class="feature-desc">Works seamlessly with Tailwind CSS or custom styles</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="instructions">
+      <h2 style="margin-bottom: 1.5rem; color: #1f2937;">📚 Usage Instructions</h2>
+      
+      <div class="step">
+        <div class="step-title">
+          <span class="step-number">1</span>
+          Installation
+        </div>
+        <div class="step-content">
+          <p>The component requires framer-motion (already installed):</p>
+          <div class="code-block">npm install framer-motion</div>
+        </div>
+      </div>
+      
+      <div class="step">
+        <div class="step-title">
+          <span class="step-number">2</span>
+          Import the Component
+        </div>
+        <div class="step-content">
+          <div class="code-block">
+import CraftCard from './src/components/CraftCard';<br>
+import './src/components/CraftCard.css';
+          </div>
+        </div>
+      </div>
+      
+      <div class="step">
+        <div class="step-title">
+          <span class="step-number">3</span>
+          Basic Usage
+        </div>
+        <div class="step-content">
+          <div class="code-block">
+&lt;CraftCard delay={0.2}&gt;<br>
+  &nbsp;&nbsp;&lt;h2&gt;My Card Title&lt;/h2&gt;<br>
+  &nbsp;&nbsp;&lt;p&gt;Card content goes here...&lt;/p&gt;<br>
+&lt;/CraftCard&gt;
+          </div>
+        </div>
+      </div>
+      
+      <div class="step">
+        <div class="step-title">
+          <span class="step-number">4</span>
+          Grid with Stagger
+        </div>
+        <div class="step-content">
+          <div class="code-block">
+import { CardGrid } from './src/components';<br>
+<br>
+&lt;CardGrid<br>
+  &nbsp;&nbsp;data={myData}<br>
+  &nbsp;&nbsp;staggerDelay={0.1}<br>
+  &nbsp;&nbsp;renderCard={(item) =&gt; (<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&lt;h3&gt;{item.title}&lt;/h3&gt;<br>
+  &nbsp;&nbsp;)}<br>
+/&gt;
+          </div>
+        </div>
+      </div>
+      
+      <div class="step">
+        <div class="step-title">
+          <span class="step-number">5</span>
+          View Examples
+        </div>
+        <div class="step-content">
+          <p>Check out the comprehensive examples in:</p>
+          <ul style="margin-top: 0.5rem; margin-left: 1.5rem;">
+            <li><code>src/components/CraftCardDemo.tsx</code> - Full demo with multiple examples</li>
+            <li><code>src/components/README.md</code> - Complete documentation</li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="step">
+        <div class="step-title">
+          <span class="step-number">6</span>
+          Run the Web App
+        </div>
+        <div class="step-content">
+          <p>To see the component in action with the IssueCrush app:</p>
+          <div class="code-block">
+npm run web-dev
+          </div>
+          <p style="margin-top: 0.5rem;">Then open your browser to test the interactive animations.</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="demo-section" style="margin-top: 2rem;">
+      <h2 class="section-title">🗂️ Files Created</h2>
+      <div style="color: white;">
+        <ul style="list-style: none; line-height: 2;">
+          <li>✅ <code>src/components/CraftCard.tsx</code> - Main component</li>
+          <li>✅ <code>src/components/CardGrid.tsx</code> - Grid layout component</li>
+          <li>✅ <code>src/components/CraftCard.css</code> - Global styles</li>
+          <li>✅ <code>src/components/CraftCardDemo.tsx</code> - Demo examples</li>
+          <li>✅ <code>src/components/README.md</code> - Documentation</li>
+          <li>✅ <code>src/components/index.ts</code> - Exports</li>
+        </ul>
+      </div>
+    </div>
+    
+    <div class="demo-section">
+      <h2 class="section-title">⚠️ Platform Notes</h2>
+      <div style="color: white;">
+        <p><strong>Web Only:</strong> The CraftCard component uses <code>framer-motion</code>, which is web-only. It works perfectly with:</p>
+        <ul style="margin-left: 2rem; margin-top: 0.5rem; line-height: 1.8;">
+          <li>Expo web builds (<code>expo start --web</code>)</li>
+          <li>React web applications</li>
+          <li>Next.js projects</li>
+        </ul>
+        <p style="margin-top: 1rem;"><strong>For React Native:</strong> Consider using <code>moti</code> or <code>react-native-reanimated</code> for similar effects on native platforms.</p>
+      </div>
+    </div>
+    
+    <footer>
+      <p>Made with ❤️ for IssueCrush</p>
+      <p style="margin-top: 0.5rem; font-size: 0.9rem;">Framer Motion + React = Beautiful Interactions</p>
+    </footer>
+  </div>
+</body>
+</html>
