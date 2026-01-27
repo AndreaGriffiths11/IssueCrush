@@ -1,9 +1,9 @@
 import React from 'react';
 import CraftCard from './CraftCard';
 
-interface CardGridProps {
-  data: any[];
-  renderCard?: (item: any, index: number) => React.ReactNode;
+interface CardGridProps<T = any> {
+  data: T[];
+  renderCard?: (item: T, index: number) => React.ReactNode;
   className?: string;
   staggerDelay?: number; // Delay between each card entrance in seconds
 }
@@ -37,12 +37,12 @@ interface CardGridProps {
  * />
  * ```
  */
-export default function CardGrid({ 
+export default function CardGrid<T = any>({ 
   data, 
   renderCard, 
   className = '',
   staggerDelay = 0.1 
-}: CardGridProps) {
+}: CardGridProps<T>) {
   return (
     <div 
       className={`grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ${className}`}
@@ -54,17 +54,17 @@ export default function CardGrid({
     >
       {data.map((item, index) => (
         <CraftCard 
-          key={item.id || index} 
+          key={(item as any).id || index} 
           delay={index * staggerDelay}
           className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-shadow"
         >
           {renderCard ? renderCard(item, index) : (
             <div>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-                {item.title || `Item ${index + 1}`}
+                {(item as any).title || `Item ${index + 1}`}
               </h3>
               <p style={{ color: '#666' }}>
-                {item.content || item.description || 'No content'}
+                {(item as any).content || (item as any).description || 'No content'}
               </p>
             </div>
           )}
