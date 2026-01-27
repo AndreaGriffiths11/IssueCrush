@@ -84,10 +84,12 @@ export default function App() {
   const cardEntranceOpacity = useSharedValue(0);
   const cardEntranceY = useSharedValue(20);
   const cardEntranceScale = useSharedValue(0.95);
+  const hasAnimated = useRef(false);
 
   useEffect(() => {
-    // Trigger entrance animation when cards are loaded
-    if (issues.length > 0) {
+    // Trigger entrance animation only on initial load
+    if (issues.length > 0 && !hasAnimated.current) {
+      hasAnimated.current = true;
       cardEntranceOpacity.value = withSpring(1, { damping: 20, stiffness: 150 });
       cardEntranceY.value = withSpring(0, { damping: 20, stiffness: 150 });
       cardEntranceScale.value = withSpring(1, { damping: 20, stiffness: 150 });
