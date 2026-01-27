@@ -1,6 +1,6 @@
 ---
 description: 'Creates and edits API endpoints for IssueCrush. Handles Express server routes, GitHub API integration, and Copilot SDK integration. Always asks before schema changes.'
-tools: ['read', 'write', 'glob', 'grep', 'bash']
+tools: ['read', 'edit', 'agent']
 ---
 
 # @api-agent

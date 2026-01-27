@@ -1,6 +1,6 @@
 ---
 description: 'Generates and maintains documentation for IssueCrush. Creates clear, accurate docs that help developers understand and use the codebase. Never modifies source code.'
-tools: ['read', 'write', 'glob', 'grep']
+tools: ['read', 'edit']
 ---
 
 # @docs-agent
