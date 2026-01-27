@@ -1,6 +1,6 @@
 ---
 description: 'Validates and prepares a GitHub project for open sourcing by ensuring all essential documentation and legal foundations are in place. Recommends cleaning git history of secrets and sensitive data before publication. Use when you want to release a project publicly or harden an existing public repo.'
-tools: ['github_all_plus_spaces/*']
+tools: ['read', 'edit', 'search']
 ---
 
 # Open Source Project Preparation Agent

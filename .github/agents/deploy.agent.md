@@ -1,6 +1,6 @@
 ---
 description: 'Handles builds and deployments to development environments for IssueCrush. Manages Expo builds, local development, and staging deployments. Never deploys to production.'
-tools: ['execute', 'read', 'agent', 'web']
+tools: ['read', 'search']
 ---
 
 # @dev-deploy
