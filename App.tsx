@@ -122,7 +122,7 @@ const ThemeContext = createContext<{
   theme: lightTheme,
   isDark: false,
   themeMode: 'system',
-  setThemeMode: () => {},
+  setThemeMode: () => { },
 });
 
 const useTheme = () => useContext(ThemeContext);
@@ -835,7 +835,7 @@ function AppContent() {
                   <Text style={styles.brandHeavy}>ISSUE</Text>
                   <Text style={styles.brandLight}>Crush</Text>
                 </View>
-                
+
                 <View style={styles.sidebarSection}>
                   <Text style={[styles.sidebarLabel, { color: theme.textMuted }]}>FILTER</Text>
                   <View style={[styles.sidebarInputWrap, { backgroundColor: theme.inputBackground, borderColor: theme.border }]}>
@@ -908,22 +908,6 @@ function AppContent() {
               </View>
 
               <View style={[styles.sidebarFooter, { borderColor: theme.border }]}>
-                <TouchableOpacity
-                  style={[styles.themeToggle, { backgroundColor: theme.backgroundTertiary, borderColor: theme.border }, webCursor('pointer')]}
-                  onPress={cycleTheme}
-                  activeOpacity={0.7}
-                >
-                  {themeMode === 'dark' ? (
-                    <Moon size={18} color={theme.primary} />
-                  ) : themeMode === 'light' ? (
-                    <Sun size={18} color={theme.primary} />
-                  ) : (
-                    <View style={{ flexDirection: 'row', gap: 2 }}>
-                      <Sun size={12} color={theme.primary} />
-                      <Moon size={12} color={theme.primary} />
-                    </View>
-                  )}
-                </TouchableOpacity>
                 <TouchableOpacity style={[styles.signOutBrutalist, webCursor('pointer')]} onPress={signOut}>
                   <LogOut size={18} color="#000000" />
                   <Text style={styles.signOutTextBrutalist}>Sign out</Text>
@@ -941,22 +925,6 @@ function AppContent() {
                   <Text style={[styles.brand, { color: theme.primary }]}>IssueCrush</Text>
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <TouchableOpacity
-                    style={[styles.themeToggle, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }, webCursor('pointer')]}
-                    onPress={cycleTheme}
-                    activeOpacity={0.7}
-                  >
-                    {themeMode === 'dark' ? (
-                      <Moon size={18} color={theme.textSecondary} />
-                    ) : themeMode === 'light' ? (
-                      <Sun size={18} color={theme.textSecondary} />
-                    ) : (
-                      <View style={{ flexDirection: 'row', gap: 2 }}>
-                        <Sun size={12} color={theme.textSecondary} />
-                        <Moon size={12} color={theme.textSecondary} />
-                      </View>
-                    )}
-                  </TouchableOpacity>
                   {token ? (
                     <TouchableOpacity style={[styles.signOutButton, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }, webCursor('pointer')]} onPress={signOut}>
                       <LogOut size={18} color={theme.textSecondary} />
@@ -1117,11 +1085,11 @@ function AppContent() {
                     </View>
                   </Animated.View>
                 ) : issues.length > currentIndex ? (
-                  <View 
+                  <View
                     style={[styles.swiperWrap, isWeb && styles.swiperWrapWeb, webCursor('grab')]}
                   >
                     {/* Card stack container for proper centering */}
-                    <View 
+                    <View
                       style={isWeb ? styles.cardStackContainer : undefined}
                       {...(isWeb ? { nativeID: 'card-stack-container' } : {})}
                     >
@@ -1132,32 +1100,32 @@ function AppContent() {
                           <View style={styles.cardLayerGreen} nativeID="card-layer-two" />
                         </>
                       )}
-                    <Swiper
-                      key={SCREEN_WIDTH}
-                      ref={swiperRef}
-                      cards={issues}
-                      cardIndex={currentIndex}
-                      renderCard={renderIssueCard}
-                      onSwiped={onSwiped}
-                      onSwipedLeft={handleSwipeLeft}
-                      onSwipedRight={handleSwipeRight}
-                      backgroundColor="transparent"
-                      stackSize={2}
-                      stackSeparation={12}
-                      stackScale={4}
-                      animateCardOpacity
-                      overlayLabels={overlayLabels}
-                      cardVerticalMargin={isWeb ? 0 : 0}
-                      marginTop={isWeb ? 0 : undefined}
-                      containerStyle={isWeb ? { position: 'absolute', left: 75, top: 25, width: 500, height: 550, zIndex: 10 } : undefined}
-                      cardStyle={isWeb ? { left: 0, top: 0 } : undefined}
-                      verticalSwipe={false}
-                      disableTopSwipe
-                      disableBottomSwipe
-                      horizontalThreshold={120}
-                      swipeAnimationDuration={180}
-                      animateOverlayLabelsOpacity
-                    />
+                      <Swiper
+                        key={SCREEN_WIDTH}
+                        ref={swiperRef}
+                        cards={issues}
+                        cardIndex={currentIndex}
+                        renderCard={renderIssueCard}
+                        onSwiped={onSwiped}
+                        onSwipedLeft={handleSwipeLeft}
+                        onSwipedRight={handleSwipeRight}
+                        backgroundColor="transparent"
+                        stackSize={2}
+                        stackSeparation={12}
+                        stackScale={4}
+                        animateCardOpacity
+                        overlayLabels={overlayLabels}
+                        cardVerticalMargin={isWeb ? 0 : 0}
+                        marginTop={isWeb ? 0 : undefined}
+                        containerStyle={isWeb ? { position: 'absolute', left: 75, top: 25, width: 500, height: 550, zIndex: 10 } : undefined}
+                        cardStyle={isWeb ? { left: 0, top: 0 } : undefined}
+                        verticalSwipe={false}
+                        disableTopSwipe
+                        disableBottomSwipe
+                        horizontalThreshold={120}
+                        swipeAnimationDuration={180}
+                        animateOverlayLabelsOpacity
+                      />
                     </View>
                   </View>
                 ) : (
@@ -1177,7 +1145,7 @@ function AppContent() {
                 )}
 
                 {/* Toast Feedback with Animations */}
-                <Animated.View style={[styles.toastWrap, { pointerEvents: 'none' }, toastAnimatedStyle]}>
+                <Animated.View style={[styles.toastWrap, isWeb && styles.toastWrapWeb, { pointerEvents: 'none' }, toastAnimatedStyle]}>
                   <View style={[
                     styles.toast,
                     feedback.toLowerCase().includes('closed') && { backgroundColor: '#FF1493', borderColor: '#FF1493' },
@@ -1603,14 +1571,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 13,
   },
-  themeToggle: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-  },
 
   // Auth Screen Styles
   authContainer: {
@@ -1919,7 +1879,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',
-    transform: [{ translateX: 80 }],
+    transform: [{ translateX: 100 }],
   },
   cardStackWrapper: {
     position: 'absolute',
@@ -2403,6 +2363,12 @@ const styles = StyleSheet.create({
     bottom: 180,
     alignItems: 'center',
     zIndex: 100,
+  },
+  toastWrapWeb: {
+    top: 24,
+    bottom: undefined,
+    left: 0,
+    right: 0,
   },
   toast: {
     flexDirection: 'row',
