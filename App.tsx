@@ -279,6 +279,51 @@ function AppContent() {
     }
   }, [feedback]);
 
+  // Inject CSS for web hover effects on card stack
+  useEffect(() => {
+    if (isWeb && typeof document !== 'undefined') {
+      const styleId = 'brutalist-card-hover-styles';
+
+      // Create and inject style tag
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = `
+        /* Base transitions for all card layers */
+        #card-layer-three,
+        #card-layer-two,
+        #card-stack-container > div > div:last-child {
+          transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+        }
+
+        /* Hover effects on the container */
+        #card-stack-container:hover #card-layer-three {
+          transform: rotate(-6deg) translateX(-20px) translateY(20px) !important;
+        }
+
+        #card-stack-container:hover #card-layer-two {
+          transform: rotate(4deg) translateX(20px) translateY(-10px) !important;
+        }
+
+        /* Top card: straighten and grow slightly
+         * Note: This selector depends on react-native-deck-swiper's internal DOM structure.
+         * If the library updates, this selector may need adjustment.
+         */
+        #card-stack-container:hover > div > div:last-child {
+          transform: scale(1.02) !important;
+        }
+      `;
+      document.head.appendChild(style);
+
+      // Cleanup on unmount
+      return () => {
+        const styleToRemove = document.getElementById(styleId);
+        if (styleToRemove) {
+          styleToRemove.remove();
+        }
+      };
+    }
+  }, [isWeb]);
+
   const exchangeCodeForToken = async (code: string) => {
     try {
       setAuthError('');
@@ -1075,12 +1120,15 @@ function AppContent() {
                     </View>
                   </Animated.View>
                 ) : issues.length > currentIndex ? (
-                  <View style={[styles.swiperWrap, isWeb && styles.swiperWrapWeb, webCursor('grab')]}>
+                  <View 
+                    style={[styles.swiperWrap, isWeb && styles.swiperWrapWeb, webCursor('grab')]}
+                    {...(isWeb ? { nativeID: 'card-stack-container' } : {})}
+                  >
                     {/* Stacked card layers for brutalist effect */}
                     {isWeb && (
                       <>
-                        <View style={styles.cardLayerThree} />
-                        <View style={styles.cardLayerTwo} />
+                        <View style={styles.cardLayerThree} nativeID="card-layer-three" />
+                        <View style={styles.cardLayerTwo} nativeID="card-layer-two" />
                       </>
                     )}
                     <Swiper
@@ -1859,12 +1907,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
+    paddingVertical: 40,
   },
   // Stacked card layers for brutalist effect
   cardLayerThree: {
     position: 'absolute',
     width: '92%',
-    height: '88%',
+    height: '90%',
     backgroundColor: '#FF1493',
     borderRadius: 24,
     transform: [{ rotate: '-4deg' }, { translateX: -10 }, { translateY: 10 }],
@@ -1873,7 +1922,7 @@ const styles = StyleSheet.create({
   cardLayerTwo: {
     position: 'absolute',
     width: '96%',
-    height: '92%',
+    height: '94%',
     backgroundColor: '#4B9F5D',
     borderRadius: 24,
     transform: [{ rotate: '2deg' }, { translateX: 10 }, { translateY: -5 }],
@@ -1900,8 +1949,8 @@ const styles = StyleSheet.create({
   },
   cardWebBrutalist: {
     maxWidth: 900,
-    minHeight: 500,
-    maxHeight: 560,
+    minHeight: 520,
+    maxHeight: 580,
   },
   cardHeaderBrutalist: {
     backgroundColor: '#ffffff',
