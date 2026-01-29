@@ -1,5 +1,5 @@
 import 'react-native-gesture-handler';
-import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback, createContext, useContext } from 'react';
 import {
   ActivityIndicator,
   ImageBackground,
@@ -14,6 +14,8 @@ import {
   View,
   Image,
   useWindowDimensions,
+  useColorScheme,
+  Appearance,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as AuthSession from 'expo-auth-session';
@@ -21,19 +23,96 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Haptics from 'expo-haptics';
 import Swiper from 'react-native-deck-swiper';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { X, Check, RotateCcw, Sparkles, ExternalLink, Github, Filter, RefreshCw, Inbox, LogOut } from 'lucide-react-native';
+import { X, Check, RotateCcw, Sparkles, ExternalLink, Github, Filter, RefreshCw, Inbox, LogOut, Moon, Sun } from 'lucide-react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
   withSequence,
   withSpring,
+  withDelay,
   interpolate,
+  interpolateColor,
   Easing,
   runOnJS,
+  FadeIn,
+  FadeOut,
+  SlideInDown,
+  SlideOutDown,
 } from 'react-native-reanimated';
 import { Agentation } from 'agentation';
 import ConfettiCannon from 'react-native-confetti-cannon';
+
+// ============================================
+// THEME SYSTEM
+// ============================================
+const lightTheme = {
+  background: '#f6f8fa',
+  backgroundSecondary: '#ffffff',
+  backgroundTertiary: '#f6f8fa',
+  text: '#24292f',
+  textSecondary: '#57606a',
+  textMuted: '#8c959f',
+  primary: '#0969da',
+  primaryLight: '#ddf4ff',
+  danger: '#d1242f',
+  dangerLight: '#ffebe9',
+  dangerBorder: '#ffcecb',
+  success: '#2da44e',
+  successLight: '#dafbe1',
+  successBorder: '#aceebb',
+  border: '#d0d7de',
+  borderLight: '#e1e4e8',
+  cardBackground: '#ffffff',
+  cardBorder: '#d0d7de',
+  inputBackground: '#f6f8fa',
+  shadow: '#000000',
+  notebookOpacity: 0.12,
+};
+
+const darkTheme = {
+  background: '#0d1117',
+  backgroundSecondary: '#161b22',
+  backgroundTertiary: '#21262d',
+  text: '#c9d1d9',
+  textSecondary: '#8b949e',
+  textMuted: '#6e7681',
+  primary: '#58a6ff',
+  primaryLight: '#1f3a5f',
+  danger: '#f85149',
+  dangerLight: '#3d1d1d',
+  dangerBorder: '#5c2d2d',
+  success: '#3fb950',
+  successLight: '#1d3d2d',
+  successBorder: '#2d5c3d',
+  border: '#30363d',
+  borderLight: '#21262d',
+  cardBackground: '#161b22',
+  cardBorder: '#30363d',
+  inputBackground: '#0d1117',
+  shadow: '#010409',
+  notebookOpacity: 0.06,
+};
+
+type Theme = typeof lightTheme;
+type ThemeMode = 'light' | 'dark' | 'system';
+
+const ThemeContext = createContext<{
+  theme: Theme;
+  isDark: boolean;
+  themeMode: ThemeMode;
+  setThemeMode: (mode: ThemeMode) => void;
+}>({
+  theme: lightTheme,
+  isDark: false,
+  themeMode: 'system',
+  setThemeMode: () => {},
+});
+
+const useTheme = () => useContext(ThemeContext);
+
+// Web cursor styles helper
+const webCursor = (cursor: string) => Platform.OS === 'web' ? { cursor } : {};
 
 import { fetchIssues, GitHubIssue, updateIssueState, extractRepoPath } from './src/api/github';
 import { deleteToken, getToken, saveToken } from './src/lib/tokenStorage';
@@ -54,7 +133,8 @@ type DeviceAuthState = {
   interval: number;
 };
 
-export default function App() {
+function AppContent() {
+  const { theme, isDark, themeMode, setThemeMode } = useTheme();
   const { width: SCREEN_WIDTH } = useWindowDimensions();
   const [token, setToken] = useState<string | null>(null);
   const [issues, setIssues] = useState<GitHubIssue[]>([]);
@@ -66,12 +146,28 @@ export default function App() {
   const [undoBusy, setUndoBusy] = useState(false);
   const [lastClosed, setLastClosed] = useState<GitHubIssue | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [inputFocused, setInputFocused] = useState(false);
 
   const [loadingAiSummary, setLoadingAiSummary] = useState(false);
 
   const swiperRef = useRef<Swiper<GitHubIssue>>(null);
   const pollTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const confettiRef = useRef<any>(null);
+
+  // Toast animation state
+  const toastTranslateY = useSharedValue(100);
+  const toastOpacity = useSharedValue(0);
+
+  // Input focus animation
+  const inputBorderColor = useSharedValue(0);
+
+  // Progress bar animation
+  const progressWidth = useSharedValue(0);
+
+  // FAB button animations
+  const undoScale = useSharedValue(1);
+  const closeScale = useSharedValue(1);
+  const keepScale = useSharedValue(1);
 
   // Crumble animation state
   const [showCrumble, setShowCrumble] = useState(false);
@@ -107,6 +203,64 @@ export default function App() {
       { translateY: interpolate(crumbleProgress.value, [0, 1], [0, 150]) },
     ],
   }));
+
+  // Toast animated styles
+  const toastAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: toastTranslateY.value }],
+    opacity: toastOpacity.value,
+  }));
+
+  // Input border animated style
+  const inputAnimatedStyle = useAnimatedStyle(() => ({
+    borderColor: interpolateColor(
+      inputBorderColor.value,
+      [0, 1],
+      [theme.border, theme.primary]
+    ),
+    borderWidth: interpolate(inputBorderColor.value, [0, 1], [1, 2]),
+  }));
+
+  // Progress bar animated style
+  const progressAnimatedStyle = useAnimatedStyle(() => ({
+    width: `${progressWidth.value}%`,
+  }));
+
+  // FAB animated styles
+  const undoAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: undoScale.value }],
+  }));
+
+  const closeAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: closeScale.value }],
+  }));
+
+  const keepAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: keepScale.value }],
+  }));
+
+  // Animate input focus
+  useEffect(() => {
+    inputBorderColor.value = withTiming(inputFocused ? 1 : 0, { duration: 200 });
+  }, [inputFocused]);
+
+  // Animate progress bar
+  useEffect(() => {
+    if (issues.length > 0) {
+      const targetWidth = (Math.min(currentIndex + 1, issues.length) / issues.length) * 100;
+      progressWidth.value = withSpring(targetWidth, { damping: 15, stiffness: 100 });
+    }
+  }, [currentIndex, issues.length]);
+
+  // Animate toast entry/exit
+  useEffect(() => {
+    if (feedback) {
+      toastTranslateY.value = withSpring(0, { damping: 15, stiffness: 150 });
+      toastOpacity.value = withTiming(1, { duration: 200 });
+    } else {
+      toastTranslateY.value = withTiming(100, { duration: 300 });
+      toastOpacity.value = withTiming(0, { duration: 200 });
+    }
+  }, [feedback]);
 
   const exchangeCodeForToken = async (code: string) => {
     try {
@@ -410,8 +564,8 @@ export default function App() {
         title: 'CLOSE',
         style: {
           label: {
-            borderColor: '#d1242f', // GitHub red
-            color: '#d1242f',
+            borderColor: theme.danger,
+            color: theme.danger,
             borderWidth: 3,
             fontSize: 22,
             fontWeight: '700',
@@ -433,8 +587,8 @@ export default function App() {
         title: 'KEEP',
         style: {
           label: {
-            borderColor: '#2da44e', // GitHub green
-            color: '#2da44e',
+            borderColor: theme.success,
+            color: theme.success,
             borderWidth: 3,
             fontSize: 22,
             fontWeight: '700',
@@ -453,7 +607,7 @@ export default function App() {
         },
       },
     }),
-    []
+    [theme]
   );
 
   const getLabelColor = (hex: string) => {
@@ -487,40 +641,40 @@ export default function App() {
   const renderIssueCard = (cardIssue: GitHubIssue | null) => {
     const issue = issues.find(i => i.id === cardIssue?.id) || cardIssue;
 
-    if (!issue) return <View style={[styles.card, styles.cardEmpty]} />;
+    if (!issue) return <View style={[styles.card, styles.cardEmpty, { backgroundColor: theme.backgroundTertiary }]} />;
     return (
       <ImageBackground
         source={require('./assets/notebook_paper_overlay.png')}
-        style={styles.card}
-        imageStyle={styles.cardBackgroundImage}
+        style={[styles.card, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}
+        imageStyle={[styles.cardBackgroundImage, { opacity: theme.notebookOpacity }]}
         resizeMode="cover"
       >
         <View style={styles.cardHeader}>
           <View style={styles.cardTopRow}>
-            <Text style={styles.repo}>{repoLabel(issue)}</Text>
+            <Text style={[styles.repo, { backgroundColor: theme.primaryLight, color: theme.primary }]}>{repoLabel(issue)}</Text>
             {issue.user && (
               <View style={styles.userInfo}>
                 <Image
                   source={{ uri: issue.user.avatar_url }}
-                  style={styles.avatar}
+                  style={[styles.avatar, { borderColor: theme.border }]}
                   resizeMode="cover"
                 />
-                <Text style={styles.username} numberOfLines={1} ellipsizeMode="tail">@{issue.user.login}</Text>
+                <Text style={[styles.username, { color: theme.textSecondary }]} numberOfLines={1} ellipsizeMode="tail">@{issue.user.login}</Text>
               </View>
             )}
           </View>
           <TouchableOpacity
             onPress={() => openIssueLink(issue.html_url)}
-            style={styles.issueTitleButton}
+            style={[styles.issueTitleButton, webCursor('pointer')]}
             activeOpacity={0.7}
           >
             <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
-              <Text style={[styles.title, { flex: 1 }]} numberOfLines={3}>
-                <Text style={styles.issueNumber}>#{issue.number}</Text>
-                <Text style={styles.titleSeparator}> · </Text>
+              <Text style={[styles.title, { flex: 1, color: theme.text }]} numberOfLines={3}>
+                <Text style={[styles.issueNumber, { color: theme.textSecondary }]}>#{issue.number}</Text>
+                <Text style={[styles.titleSeparator, { color: theme.textSecondary }]}> · </Text>
                 <Text>{issue.title}</Text>
               </Text>
-              <ExternalLink size={20} color="#0969da" style={{ marginTop: 4, opacity: 0.8 }} />
+              <ExternalLink size={20} color={theme.primary} style={{ marginTop: 4, opacity: 0.8 }} />
             </View>
           </TouchableOpacity>
           <View style={styles.labels}>
@@ -536,13 +690,18 @@ export default function App() {
                 </View>
               ))
             ) : (
-              <Text style={styles.labelTextMuted}>No labels</Text>
+              <Text style={[styles.labelTextMuted, { color: theme.textMuted }]}>No labels</Text>
             )}
           </View>
 
           {/* AI Summary Section */}
           <TouchableOpacity
-            style={[styles.aiButton, issue.aiSummary ? styles.aiButtonActive : null]}
+            style={[
+              styles.aiButton,
+              { backgroundColor: theme.primary },
+              issue.aiSummary && { backgroundColor: isDark ? '#1f4a7a' : '#0550ae' },
+              webCursor(loadingAiSummary || issue.aiSummary ? 'default' : 'pointer')
+            ]}
             onPress={loadingAiSummary ? undefined : handleGetAiSummary}
             disabled={loadingAiSummary || !!issue.aiSummary}
           >
@@ -559,7 +718,7 @@ export default function App() {
           </TouchableOpacity>
 
           {issue.aiSummary ? (
-            <Text style={styles.aiSummaryText}>
+            <Text style={[styles.aiSummaryText, { backgroundColor: theme.backgroundTertiary, borderColor: theme.borderLight, color: theme.textSecondary }]}>
               {issue.aiSummary}
             </Text>
           ) : null}
@@ -568,152 +727,201 @@ export default function App() {
     );
   };
 
+  // FAB press handlers with scale animation
+  const handleClosePressIn = () => {
+    closeScale.value = withSpring(0.9, { damping: 15 });
+  };
+  const handleClosePressOut = () => {
+    closeScale.value = withSpring(1, { damping: 15 });
+  };
+  const handleKeepPressIn = () => {
+    keepScale.value = withSpring(0.9, { damping: 15 });
+  };
+  const handleKeepPressOut = () => {
+    keepScale.value = withSpring(1, { damping: 15 });
+  };
+  const handleUndoPressIn = () => {
+    if (lastClosed) undoScale.value = withSpring(0.9, { damping: 15 });
+  };
+  const handleUndoPressOut = () => {
+    undoScale.value = withSpring(1, { damping: 15 });
+  };
+
+  // Toggle theme
+  const cycleTheme = () => {
+    const modes: ThemeMode[] = ['light', 'dark', 'system'];
+    const currentIdx = modes.indexOf(themeMode);
+    setThemeMode(modes[(currentIdx + 1) % modes.length]);
+  };
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaView style={styles.safeArea}>
-        <StatusBar style="dark" />
-        <RNStatusBar barStyle="dark-content" />
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+        <StatusBar style={isDark ? 'light' : 'dark'} />
+        <RNStatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
         <View style={styles.container}>
           <View style={styles.contentMax}>
             <View style={styles.header}>
               <View style={styles.brandContainer}>
-                <Text style={styles.brand}>IssueCrush</Text>
+                <Text style={[styles.brand, { color: theme.primary }]}>IssueCrush</Text>
               </View>
-              {token ? (
-                <TouchableOpacity style={styles.signOutButton} onPress={signOut}>
-                  <LogOut size={18} color="#57606a" />
-                  <Text style={styles.signOutText}>Sign out</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                {/* Theme Toggle Button */}
+                <TouchableOpacity
+                  style={[styles.themeToggle, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }, webCursor('pointer')]}
+                  onPress={cycleTheme}
+                  activeOpacity={0.7}
+                >
+                  {themeMode === 'dark' ? (
+                    <Moon size={18} color={theme.textSecondary} />
+                  ) : themeMode === 'light' ? (
+                    <Sun size={18} color={theme.textSecondary} />
+                  ) : (
+                    <View style={{ flexDirection: 'row', gap: 2 }}>
+                      <Sun size={12} color={theme.textSecondary} />
+                      <Moon size={12} color={theme.textSecondary} />
+                    </View>
+                  )}
                 </TouchableOpacity>
-              ) : null}
+                {token ? (
+                  <TouchableOpacity style={[styles.signOutButton, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }, webCursor('pointer')]} onPress={signOut}>
+                    <LogOut size={18} color={theme.textSecondary} />
+                    <Text style={[styles.signOutText, { color: theme.textSecondary }]}>Sign out</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
             </View>
 
             {!token ? (
               <View style={styles.authContainer}>
                 <View style={styles.authHeroSection}>
-                  <View style={styles.authIconContainer}>
+                  <View style={[styles.authIconContainer, { backgroundColor: theme.backgroundSecondary, borderColor: theme.borderLight }]}>
                     <Image
                       source={require('./assets/adaptive-icon.png')}
                       style={styles.authHeroIcon}
                       resizeMode="contain"
                     />
                   </View>
-                  <Text style={styles.hero}>Swipe through your</Text>
-                  <Text style={styles.heroAccent}>GitHub issues</Text>
-                  <Text style={styles.authSubtitle}>
+                  <Text style={[styles.hero, { color: theme.text }]}>Swipe through your</Text>
+                  <Text style={[styles.heroAccent, { color: theme.primary }]}>GitHub issues</Text>
+                  <Text style={[styles.authSubtitle, { color: theme.textSecondary }]}>
                     Triage your issues with simple swipe gestures. Swipe left to close, right to keep.
                   </Text>
                 </View>
 
-                <View style={styles.authCard}>
+                <View style={[styles.authCard, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
                   <View style={styles.authCardHeader}>
-                    <Github size={24} color="#24292f" />
-                    <Text style={styles.authCardTitle}>Connect with GitHub</Text>
+                    <Github size={24} color={theme.text} />
+                    <Text style={[styles.authCardTitle, { color: theme.text }]}>Connect with GitHub</Text>
                   </View>
 
-                  <Text style={styles.copy}>
+                  <Text style={[styles.copy, { color: theme.textSecondary }]}>
                     We'll use {Platform.OS === 'web' ? 'OAuth' : 'browser-based OAuth'} to securely connect to your GitHub account.
                   </Text>
 
-                  <View style={styles.scopeBadge}>
-                    <Text style={styles.scopeLabel}>Required scope:</Text>
-                    <Text style={styles.scopeValue}>{DEFAULT_SCOPE}</Text>
+                  <View style={[styles.scopeBadge, { backgroundColor: theme.backgroundTertiary }]}>
+                    <Text style={[styles.scopeLabel, { color: theme.textSecondary }]}>Required scope:</Text>
+                    <Text style={[styles.scopeValue, { color: theme.text }]}>{DEFAULT_SCOPE}</Text>
                   </View>
 
                   {!CLIENT_ID ? (
-                    <View style={styles.errorBox}>
-                      <Text style={styles.error}>
+                    <View style={[styles.errorBox, { backgroundColor: theme.dangerLight, borderColor: theme.dangerBorder }]}>
+                      <Text style={[styles.error, { color: theme.danger }]}>
                         Add EXPO_PUBLIC_GITHUB_CLIENT_ID to your env (see .env.example).
                       </Text>
                     </View>
                   ) : null}
 
-                  <TouchableOpacity style={styles.githubButton} onPress={startDeviceFlow}>
+                  <TouchableOpacity style={[styles.githubButton, webCursor('pointer')]} onPress={startDeviceFlow}>
                     <Github size={20} color="#ffffff" />
                     <Text style={styles.githubButtonText}>Continue with GitHub</Text>
                   </TouchableOpacity>
 
                   {deviceAuth ? (
-                    <View style={styles.deviceBox}>
-                      <Text style={styles.codeLabel}>Enter this code on GitHub</Text>
-                      <View style={styles.codeContainer}>
-                        <Text style={styles.code}>{deviceAuth.user_code}</Text>
+                    <View style={[styles.deviceBox, { backgroundColor: theme.backgroundTertiary, borderColor: theme.border }]}>
+                      <Text style={[styles.codeLabel, { color: theme.textSecondary }]}>Enter this code on GitHub</Text>
+                      <View style={[styles.codeContainer, { backgroundColor: theme.backgroundSecondary, borderColor: theme.primary }]}>
+                        <Text style={[styles.code, { color: theme.text }]}>{deviceAuth.user_code}</Text>
                       </View>
                       <TouchableOpacity
-                        style={styles.openGithubButton}
+                        style={[styles.openGithubButton, webCursor('pointer')]}
                         onPress={() => Linking.openURL(deviceAuth.verification_uri)}
                       >
-                        <ExternalLink size={16} color="#0969da" />
-                        <Text style={styles.linkButtonText}>Open GitHub to enter code</Text>
+                        <ExternalLink size={16} color={theme.primary} />
+                        <Text style={[styles.linkButtonText, { color: theme.primary }]}>Open GitHub to enter code</Text>
                       </TouchableOpacity>
                       <View style={styles.waitingIndicator}>
-                        <ActivityIndicator size="small" color="#0969da" />
-                        <Text style={styles.waitingText}>Waiting for authorization...</Text>
+                        <ActivityIndicator size="small" color={theme.primary} />
+                        <Text style={[styles.waitingText, { color: theme.textSecondary }]}>Waiting for authorization...</Text>
                       </View>
                     </View>
                   ) : null}
 
                   {authError ? (
-                    <View style={styles.errorBox}>
-                      <Text style={styles.error}>{authError}</Text>
+                    <View style={[styles.errorBox, { backgroundColor: theme.dangerLight, borderColor: theme.dangerBorder }]}>
+                      <Text style={[styles.error, { color: theme.danger }]}>{authError}</Text>
                     </View>
                   ) : null}
                 </View>
 
                 <View style={styles.authFeatures}>
                   <View style={styles.featureItem}>
-                    <View style={styles.featureIcon}>
-                      <X size={16} color="#d1242f" />
+                    <View style={[styles.featureIcon, { backgroundColor: theme.backgroundSecondary, borderColor: theme.borderLight }]}>
+                      <X size={16} color={theme.danger} />
                     </View>
-                    <Text style={styles.featureText}>Swipe left to close issues</Text>
+                    <Text style={[styles.featureText, { color: theme.textSecondary }]}>Swipe left to close issues</Text>
                   </View>
                   <View style={styles.featureItem}>
-                    <View style={styles.featureIcon}>
-                      <Check size={16} color="#2da44e" />
+                    <View style={[styles.featureIcon, { backgroundColor: theme.backgroundSecondary, borderColor: theme.borderLight }]}>
+                      <Check size={16} color={theme.success} />
                     </View>
-                    <Text style={styles.featureText}>Swipe right to keep open</Text>
+                    <Text style={[styles.featureText, { color: theme.textSecondary }]}>Swipe right to keep open</Text>
                   </View>
                   <View style={styles.featureItem}>
-                    <View style={styles.featureIcon}>
-                      <Sparkles size={16} color="#0969da" />
+                    <View style={[styles.featureIcon, { backgroundColor: theme.backgroundSecondary, borderColor: theme.borderLight }]}>
+                      <Sparkles size={16} color={theme.primary} />
                     </View>
-                    <Text style={styles.featureText}>AI-powered summaries</Text>
+                    <Text style={[styles.featureText, { color: theme.textSecondary }]}>AI-powered summaries</Text>
                   </View>
                 </View>
               </View>
             ) : (
               <View style={styles.content}>
-                <View style={styles.controlsCard}>
+                <View style={[styles.controlsCard, { backgroundColor: theme.backgroundTertiary }]}>
                   <View style={styles.controlsRow}>
-                    <View style={styles.inputWrap}>
-                      <Filter size={16} color="#57606a" style={styles.inputIcon} />
+                    <Animated.View style={[styles.inputWrap, { backgroundColor: theme.inputBackground }, inputAnimatedStyle]}>
+                      <Filter size={16} color={theme.textSecondary} style={styles.inputIcon} />
                       <TextInput
                         placeholder="Filter by repo (owner/repo)"
-                        placeholderTextColor="#8c959f"
+                        placeholderTextColor={theme.textMuted}
                         value={repoFilter}
                         onChangeText={setRepoFilter}
-                        style={styles.input}
+                        onFocus={() => setInputFocused(true)}
+                        onBlur={() => setInputFocused(false)}
+                        style={[styles.input, { color: theme.text }, webCursor('text')]}
                         autoCapitalize="none"
                       />
-                    </View>
+                    </Animated.View>
                     <TouchableOpacity
-                      style={[styles.refreshButton, loadingIssues && styles.refreshButtonDisabled]}
+                      style={[styles.refreshButton, { backgroundColor: theme.backgroundTertiary, borderColor: theme.border }, loadingIssues && styles.refreshButtonDisabled, webCursor('pointer')]}
                       onPress={loadIssues}
                       disabled={loadingIssues}
                     >
-                      <RefreshCw size={18} color={loadingIssues ? "#8c959f" : "#24292f"} />
+                      <RefreshCw size={18} color={loadingIssues ? theme.textMuted : theme.text} />
                     </TouchableOpacity>
                   </View>
                   {issues.length > 0 && (
                     <View style={styles.issueCounter}>
-                      <Text style={styles.issueCountText}>
+                      <Animated.Text style={[styles.issueCountText, { backgroundColor: theme.primaryLight, color: theme.text }]}>
                         {Math.min(currentIndex + 1, issues.length)} of {issues.length} issues
-                      </Text>
-                      <View style={styles.progressBar}>
-                        <View
+                      </Animated.Text>
+                      <View style={[styles.progressBar, { backgroundColor: theme.borderLight }]}>
+                        <Animated.View
                           style={[
                             styles.progressFill,
-                            { width: `${(Math.min(currentIndex + 1, issues.length) / issues.length) * 100}%` }
+                            { backgroundColor: theme.primary },
+                            progressAnimatedStyle
                           ]}
                         />
                       </View>
@@ -721,18 +929,18 @@ export default function App() {
                   )}
                 </View>
 
-                {authError ? <Text style={styles.error}>{authError}</Text> : null}
+                {authError ? <Text style={[styles.error, { color: theme.danger }]}>{authError}</Text> : null}
 
                 {loadingIssues ? (
-                  <View style={styles.loader}>
-                    <View style={styles.loaderCard}>
-                      <ActivityIndicator color="#0969da" size="large" />
-                      <Text style={styles.loaderText}>Fetching issues…</Text>
-                      <Text style={styles.loaderSubtext}>This may take a moment</Text>
+                  <Animated.View entering={FadeIn.duration(300)} style={styles.loader}>
+                    <View style={[styles.loaderCard, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
+                      <ActivityIndicator color={theme.primary} size="large" />
+                      <Text style={[styles.loaderText, { color: theme.text }]}>Fetching issues…</Text>
+                      <Text style={[styles.loaderSubtext, { color: theme.textMuted }]}>This may take a moment</Text>
                     </View>
-                  </View>
+                  </Animated.View>
                 ) : issues.length > currentIndex ? (
-                  <View style={styles.swiperWrap}>
+                  <View style={[styles.swiperWrap, webCursor('grab')]}>
                     <Swiper
                       key={SCREEN_WIDTH}
                       ref={swiperRef}
@@ -758,82 +966,100 @@ export default function App() {
                     />
                   </View>
                 ) : (
-                  <View style={styles.emptyState}>
-                    <View style={styles.emptyIconContainer}>
-                      <Inbox size={48} color="#8c959f" />
+                  <Animated.View entering={FadeIn.duration(400)} style={styles.emptyState}>
+                    <View style={[styles.emptyIconContainer, { backgroundColor: theme.backgroundTertiary, borderColor: theme.borderLight }]}>
+                      <Inbox size={48} color={theme.textMuted} />
                     </View>
-                    <Text style={styles.emptyTitle}>All caught up!</Text>
-                    <Text style={styles.emptySubtitle}>
+                    <Text style={[styles.emptyTitle, { color: theme.text }]}>All caught up!</Text>
+                    <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
                       No issues to triage right now. Try changing your filter or check back later.
                     </Text>
-                    <TouchableOpacity style={styles.emptyRefreshButton} onPress={loadIssues}>
-                      <RefreshCw size={16} color="#0969da" />
-                      <Text style={styles.emptyRefreshText}>Refresh issues</Text>
+                    <TouchableOpacity style={[styles.emptyRefreshButton, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }, webCursor('pointer')]} onPress={loadIssues}>
+                      <RefreshCw size={16} color={theme.primary} />
+                      <Text style={[styles.emptyRefreshText, { color: theme.primary }]}>Refresh issues</Text>
                     </TouchableOpacity>
-                  </View>
+                  </Animated.View>
                 )}
 
-                {/* Toast Feedback */}
-                {feedback ? (
-                  <View style={[styles.toastWrap, { pointerEvents: 'none' }]}>
-                    <View style={[
-                      styles.toast,
-                      feedback.toLowerCase().includes('closed') && styles.toastClose,
-                      feedback.toLowerCase().includes('kept') && styles.toastKeep,
-                      feedback.toLowerCase().includes('reopened') && styles.toastReopen,
-                      feedback.toLowerCase().includes('failed') && styles.toastError,
-                      feedback.toLowerCase().includes('loaded') && styles.toastSuccess,
-                    ]}>
-                      {feedback.toLowerCase().includes('closed') && <X size={16} color="#d1242f" />}
-                      {feedback.toLowerCase().includes('kept') && <Check size={16} color="#2da44e" />}
-                      {feedback.toLowerCase().includes('reopened') && <RotateCcw size={16} color="#0969da" />}
-                      {feedback.toLowerCase().includes('loaded') && <Check size={16} color="#2da44e" />}
-                      <Text
-                        numberOfLines={1}
-                        ellipsizeMode="tail"
-                        style={[
-                          styles.toastText,
-                          feedback.toLowerCase().includes('failed') && styles.feedbackError,
-                        ]}
-                      >
-                        {feedback}
-                      </Text>
-                    </View>
+                {/* Toast Feedback with Animations */}
+                <Animated.View style={[styles.toastWrap, { pointerEvents: 'none' }, toastAnimatedStyle]}>
+                  <View style={[
+                    styles.toast,
+                    { backgroundColor: theme.cardBackground, borderColor: theme.border },
+                    feedback.toLowerCase().includes('closed') && { backgroundColor: theme.dangerLight, borderColor: theme.dangerBorder },
+                    feedback.toLowerCase().includes('kept') && { backgroundColor: theme.successLight, borderColor: theme.successBorder },
+                    feedback.toLowerCase().includes('reopened') && { backgroundColor: theme.primaryLight, borderColor: theme.primary },
+                    feedback.toLowerCase().includes('failed') && { backgroundColor: theme.dangerLight, borderColor: theme.dangerBorder },
+                    feedback.toLowerCase().includes('loaded') && { backgroundColor: theme.successLight, borderColor: theme.successBorder },
+                  ]}>
+                    {feedback.toLowerCase().includes('closed') && <X size={16} color={theme.danger} />}
+                    {feedback.toLowerCase().includes('kept') && <Check size={16} color={theme.success} />}
+                    {feedback.toLowerCase().includes('reopened') && <RotateCcw size={16} color={theme.primary} />}
+                    {feedback.toLowerCase().includes('loaded') && <Check size={16} color={theme.success} />}
+                    <Text
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                      style={[
+                        styles.toastText,
+                        { color: theme.text },
+                        feedback.toLowerCase().includes('failed') && { color: theme.danger },
+                      ]}
+                    >
+                      {feedback}
+                    </Text>
                   </View>
-                ) : null}
+                </Animated.View>
 
                 <View style={styles.actionBar}>
                   <View style={styles.actionBarInner}>
-                    <TouchableOpacity
-                      style={[styles.fab, styles.fabClose]}
-                      onPress={() => swiperRef.current?.swipeLeft()}
-                      activeOpacity={0.7}
-                    >
-                      <X color="#ffffff" size={28} strokeWidth={2.5} />
-                    </TouchableOpacity>
+                    <Animated.View style={closeAnimatedStyle}>
+                      <TouchableOpacity
+                        style={[styles.fab, styles.fabClose, { backgroundColor: theme.danger }, webCursor('pointer')]}
+                        onPress={() => swiperRef.current?.swipeLeft()}
+                        onPressIn={handleClosePressIn}
+                        onPressOut={handleClosePressOut}
+                        activeOpacity={1}
+                      >
+                        <X color="#ffffff" size={28} strokeWidth={2.5} />
+                      </TouchableOpacity>
+                    </Animated.View>
 
-                    <TouchableOpacity
-                      style={[styles.fab, styles.fabUndo, !lastClosed && styles.fabUndoDisabled]}
-                      onPress={handleUndo}
-                      disabled={!lastClosed || undoBusy}
-                      activeOpacity={0.7}
-                    >
-                      <RotateCcw color={!lastClosed ? "#c9d1d9" : "#57606a"} size={22} />
-                    </TouchableOpacity>
+                    <Animated.View style={undoAnimatedStyle}>
+                      <TouchableOpacity
+                        style={[
+                          styles.fab,
+                          styles.fabUndo,
+                          { backgroundColor: theme.backgroundSecondary, borderColor: theme.border },
+                          !lastClosed && { backgroundColor: theme.backgroundTertiary, borderColor: theme.borderLight },
+                          webCursor(lastClosed ? 'pointer' : 'not-allowed')
+                        ]}
+                        onPress={handleUndo}
+                        onPressIn={handleUndoPressIn}
+                        onPressOut={handleUndoPressOut}
+                        disabled={!lastClosed || undoBusy}
+                        activeOpacity={1}
+                      >
+                        <RotateCcw color={!lastClosed ? theme.borderLight : theme.textSecondary} size={22} />
+                      </TouchableOpacity>
+                    </Animated.View>
 
-                    <TouchableOpacity
-                      style={[styles.fab, styles.fabKeep]}
-                      onPress={() => swiperRef.current?.swipeRight()}
-                      activeOpacity={0.7}
-                    >
-                      <Check color="#ffffff" size={28} strokeWidth={2.5} />
-                    </TouchableOpacity>
+                    <Animated.View style={keepAnimatedStyle}>
+                      <TouchableOpacity
+                        style={[styles.fab, styles.fabKeep, { backgroundColor: theme.success }, webCursor('pointer')]}
+                        onPress={() => swiperRef.current?.swipeRight()}
+                        onPressIn={handleKeepPressIn}
+                        onPressOut={handleKeepPressOut}
+                        activeOpacity={1}
+                      >
+                        <Check color="#ffffff" size={28} strokeWidth={2.5} />
+                      </TouchableOpacity>
+                    </Animated.View>
                   </View>
 
                   <View style={[styles.actionBarHints, { display: 'none' }]}>
-                    <Text style={[styles.actionHint, styles.actionHintClose]}>Close</Text>
-                    <Text style={styles.actionHint}>Undo</Text>
-                    <Text style={[styles.actionHint, styles.actionHintKeep]}>Keep</Text>
+                    <Text style={[styles.actionHint, { color: theme.danger }]}>Close</Text>
+                    <Text style={[styles.actionHint, { color: theme.textMuted }]}>Undo</Text>
+                    <Text style={[styles.actionHint, { color: theme.success }]}>Keep</Text>
                   </View>
                 </View>
               </View>
@@ -851,6 +1077,24 @@ export default function App() {
         />
       </SafeAreaView>
     </GestureHandlerRootView>
+  );
+}
+
+// Theme Provider Wrapper
+export default function App() {
+  const systemColorScheme = useColorScheme();
+  const [themeMode, setThemeMode] = useState<ThemeMode>('system');
+
+  const isDark = themeMode === 'system'
+    ? systemColorScheme === 'dark'
+    : themeMode === 'dark';
+
+  const theme = isDark ? darkTheme : lightTheme;
+
+  return (
+    <ThemeContext.Provider value={{ theme, isDark, themeMode, setThemeMode }}>
+      <AppContent />
+    </ThemeContext.Provider>
   );
 }
 
@@ -930,6 +1174,14 @@ const styles = StyleSheet.create({
     color: '#57606a',
     fontWeight: '600',
     fontSize: 13,
+  },
+  themeToggle: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
   },
 
   // Auth Screen Styles
