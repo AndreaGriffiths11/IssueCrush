@@ -297,17 +297,14 @@ function AppContent() {
 
         /* Hover effects on the container */
         #card-stack-container:hover #card-layer-three {
-          transform: rotate(-6deg) translateX(-20px) translateY(20px) !important;
+          transform: rotate(-8deg) translateX(-15px) translateY(15px) !important;
         }
 
         #card-stack-container:hover #card-layer-two {
-          transform: rotate(4deg) translateX(20px) translateY(-10px) !important;
+          transform: rotate(6deg) translateX(15px) translateY(-10px) !important;
         }
 
-        /* Top card: straighten and grow slightly
-         * Note: This selector depends on react-native-deck-swiper's internal DOM structure.
-         * If the library updates, this selector may need adjustment.
-         */
+        /* Top card: straighten and grow slightly */
         #card-stack-container:hover > div > div:last-child {
           transform: scale(1.02) !important;
         }
@@ -1122,15 +1119,19 @@ function AppContent() {
                 ) : issues.length > currentIndex ? (
                   <View 
                     style={[styles.swiperWrap, isWeb && styles.swiperWrapWeb, webCursor('grab')]}
-                    {...(isWeb ? { nativeID: 'card-stack-container' } : {})}
                   >
-                    {/* Stacked card layers for brutalist effect */}
-                    {isWeb && (
-                      <>
-                        <View style={styles.cardLayerThree} nativeID="card-layer-three" />
-                        <View style={styles.cardLayerTwo} nativeID="card-layer-two" />
-                      </>
-                    )}
+                    {/* Card stack container for proper centering */}
+                    <View 
+                      style={isWeb ? styles.cardStackContainer : undefined}
+                      {...(isWeb ? { nativeID: 'card-stack-container' } : {})}
+                    >
+                      {/* Stacked card layers for brutalist effect */}
+                      {isWeb && (
+                        <>
+                          <View style={styles.cardLayerPink} nativeID="card-layer-three" />
+                          <View style={styles.cardLayerGreen} nativeID="card-layer-two" />
+                        </>
+                      )}
                     <Swiper
                       key={SCREEN_WIDTH}
                       ref={swiperRef}
@@ -1148,7 +1149,8 @@ function AppContent() {
                       overlayLabels={overlayLabels}
                       cardVerticalMargin={isWeb ? 0 : 0}
                       marginTop={isWeb ? 0 : undefined}
-                      containerStyle={isWeb ? { height: '100%', zIndex: 10 } : undefined}
+                      containerStyle={isWeb ? { position: 'absolute', left: 75, top: 25, width: 500, height: 550, zIndex: 10 } : undefined}
+                      cardStyle={isWeb ? { left: 0, top: 0 } : undefined}
                       verticalSwipe={false}
                       disableTopSwipe
                       disableBottomSwipe
@@ -1156,6 +1158,7 @@ function AppContent() {
                       swipeAnimationDuration={180}
                       animateOverlayLabelsOpacity
                     />
+                    </View>
                   </View>
                 ) : (
                   <Animated.View entering={FadeIn.duration(400)} style={styles.emptyState}>
@@ -1524,7 +1527,7 @@ const styles = StyleSheet.create({
   contentMaxWeb: {
     flex: 1,
     paddingHorizontal: 60,
-    paddingVertical: 60,
+    paddingVertical: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1534,7 +1537,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
   },
   contentMax: {
     flex: 1,
@@ -1907,36 +1910,56 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
-    paddingVertical: 40,
   },
   // Stacked card layers for brutalist effect
-  cardLayerThree: {
+  cardStackContainer: {
+    position: 'relative',
+    width: 650,
+    height: 630,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    transform: [{ translateX: 80 }],
+  },
+  cardStackWrapper: {
     position: 'absolute',
-    width: '92%',
-    height: '90%',
+    width: 500,
+    height: 550,
+    zIndex: 0,
+  },
+  cardLayerPink: {
+    position: 'absolute',
+    width: 500,
+    height: 550,
+    left: 75,
+    top: 25,
     backgroundColor: '#FF1493',
     borderRadius: 24,
-    transform: [{ rotate: '-4deg' }, { translateX: -10 }, { translateY: 10 }],
+    borderWidth: 3,
+    borderColor: '#000000',
+    transform: [{ rotate: '-5deg' }],
     zIndex: 1,
   },
-  cardLayerTwo: {
+  cardLayerGreen: {
     position: 'absolute',
-    width: '96%',
-    height: '94%',
+    width: 500,
+    height: 550,
+    left: 75,
+    top: 25,
     backgroundColor: '#4B9F5D',
     borderRadius: 24,
-    transform: [{ rotate: '2deg' }, { translateX: 10 }, { translateY: -5 }],
+    borderWidth: 3,
+    borderColor: '#000000',
+    transform: [{ rotate: '3deg' }],
     zIndex: 2,
   },
   cardBrutalist: {
     flex: 0,
-    width: '100%',
-    maxWidth: 480,
-    minHeight: 400,
-    maxHeight: 560,
+    width: 500,
+    height: 550,
     backgroundColor: '#ffffff',
     borderRadius: 24,
-    borderWidth: 2,
+    borderWidth: 3,
     borderColor: '#000000',
     justifyContent: 'flex-start',
     shadowColor: '#000000',
@@ -1948,9 +1971,10 @@ const styles = StyleSheet.create({
     zIndex: 3,
   },
   cardWebBrutalist: {
-    maxWidth: 900,
-    minHeight: 520,
-    maxHeight: 580,
+    width: 500,
+    height: 550,
+    minHeight: 550,
+    maxHeight: 550,
   },
   cardHeaderBrutalist: {
     backgroundColor: '#ffffff',
