@@ -283,14 +283,8 @@ function AppContent() {
   useEffect(() => {
     if (isWeb && typeof document !== 'undefined') {
       const styleId = 'brutalist-card-hover-styles';
-      
-      // Remove existing style tag if present
-      const existingStyle = document.getElementById(styleId);
-      if (existingStyle) {
-        existingStyle.remove();
-      }
 
-      // Create and inject new style tag
+      // Create and inject style tag
       const style = document.createElement('style');
       style.id = styleId;
       style.textContent = `
@@ -310,7 +304,10 @@ function AppContent() {
           transform: rotate(4deg) translateX(20px) translateY(-10px) !important;
         }
 
-        /* Top card: straighten and grow slightly */
+        /* Top card: straighten and grow slightly
+         * Note: This selector depends on react-native-deck-swiper's internal DOM structure.
+         * If the library updates, this selector may need adjustment.
+         */
         #card-stack-container:hover > div > div:last-child {
           transform: scale(1.02) !important;
         }
@@ -325,7 +322,7 @@ function AppContent() {
         }
       };
     }
-  }, []);
+  }, [isWeb]);
 
   const exchangeCodeForToken = async (code: string) => {
     try {
