@@ -1497,7 +1497,7 @@ const styles = StyleSheet.create({
   },
   cardBackgroundImage: {
     borderRadius: 16,
-    opacity: 0.12,
+    opacity: 0.35,
   },
   cardEmpty: {
     backgroundColor: '#f6f8fa',
