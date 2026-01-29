@@ -68,6 +68,7 @@ const lightTheme = {
   inputBackground: '#f6f8fa',
   shadow: '#000000',
   notebookOpacity: 0.12,
+  notebookTint: undefined,
 };
 
 const darkTheme = {
@@ -91,7 +92,8 @@ const darkTheme = {
   cardBorder: '#30363d',
   inputBackground: '#0d1117',
   shadow: '#010409',
-  notebookOpacity: 0.06,
+  notebookOpacity: 0.08,
+  notebookTint: "#8b949e",
 };
 
 type Theme = typeof lightTheme;
@@ -646,7 +648,7 @@ function AppContent() {
       <ImageBackground
         source={require('./assets/notebook_paper_overlay.png')}
         style={[styles.card, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}
-        imageStyle={[styles.cardBackgroundImage, { opacity: theme.notebookOpacity }]}
+        imageStyle={[styles.cardBackgroundImage, { opacity: theme.notebookOpacity, tintColor: theme.notebookTint }]}
         resizeMode="cover"
       >
         <View style={styles.cardHeader}>
@@ -1039,7 +1041,7 @@ function AppContent() {
                         disabled={!lastClosed || undoBusy}
                         activeOpacity={1}
                       >
-                        <RotateCcw color={!lastClosed ? theme.borderLight : theme.textSecondary} size={22} />
+                        <RotateCcw color={!lastClosed ? theme.textMuted : theme.textSecondary} size={22} />
                       </TouchableOpacity>
                     </Animated.View>
 
