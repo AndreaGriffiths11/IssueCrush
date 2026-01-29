@@ -44,56 +44,70 @@ import { Agentation } from 'agentation';
 import ConfettiCannon from 'react-native-confetti-cannon';
 
 // ============================================
-// THEME SYSTEM
+// THEME SYSTEM - BRUTALIST DESIGN
 // ============================================
 const lightTheme = {
-  background: '#f6f8fa',
-  backgroundSecondary: '#ffffff',
-  backgroundTertiary: '#f6f8fa',
-  text: '#24292f',
-  textSecondary: '#57606a',
-  textMuted: '#8c959f',
-  primary: '#0969da',
-  primaryLight: '#ddf4ff',
-  danger: '#d1242f',
-  dangerLight: '#ffebe9',
-  dangerBorder: '#ffcecb',
-  success: '#2da44e',
-  successLight: '#dafbe1',
-  successBorder: '#aceebb',
-  border: '#d0d7de',
-  borderLight: '#e1e4e8',
+  background: '#050505',
+  backgroundSecondary: '#0a0a0a',
+  backgroundTertiary: '#222222',
+  text: '#ffffff',
+  textSecondary: '#888888',
+  textMuted: '#666666',
+  primary: '#DFFF00', // Acid green
+  primaryLight: '#1a1a00',
+  danger: '#FF1493', // Pink
+  dangerLight: '#2a0a1a',
+  dangerBorder: '#FF1493',
+  success: '#4B9F5D', // Forest green
+  successLight: '#0a1a0d',
+  successBorder: '#4B9F5D',
+  border: '#333333',
+  borderLight: '#222222',
   cardBackground: '#ffffff',
-  cardBorder: '#d0d7de',
-  inputBackground: '#f6f8fa',
+  cardBorder: '#000000',
+  inputBackground: '#111111',
   shadow: '#000000',
-  notebookOpacity: 0.12,
+  notebookOpacity: 0,
   notebookTint: undefined,
+  // Brutalist extras
+  acid: '#DFFF00',
+  pink: '#FF1493',
+  forest: '#4B9F5D',
+  void: '#050505',
+  canvas: '#ffffff',
+  ink: '#000000',
 };
 
 const darkTheme = {
-  background: '#0d1117',
-  backgroundSecondary: '#161b22',
-  backgroundTertiary: '#21262d',
-  text: '#c9d1d9',
-  textSecondary: '#8b949e',
-  textMuted: '#6e7681',
-  primary: '#58a6ff',
-  primaryLight: '#1f3a5f',
-  danger: '#f85149',
-  dangerLight: '#3d1d1d',
-  dangerBorder: '#5c2d2d',
-  success: '#3fb950',
-  successLight: '#1d3d2d',
-  successBorder: '#2d5c3d',
-  border: '#30363d',
-  borderLight: '#21262d',
-  cardBackground: '#161b22',
-  cardBorder: '#30363d',
-  inputBackground: '#0d1117',
-  shadow: '#010409',
-  notebookOpacity: 0.08,
-  notebookTint: "#8b949e",
+  background: '#050505',
+  backgroundSecondary: '#0a0a0a',
+  backgroundTertiary: '#222222',
+  text: '#ffffff',
+  textSecondary: '#888888',
+  textMuted: '#666666',
+  primary: '#DFFF00', // Acid green
+  primaryLight: '#1a1a00',
+  danger: '#FF1493', // Pink
+  dangerLight: '#2a0a1a',
+  dangerBorder: '#FF1493',
+  success: '#4B9F5D', // Forest green
+  successLight: '#0a1a0d',
+  successBorder: '#4B9F5D',
+  border: '#333333',
+  borderLight: '#222222',
+  cardBackground: '#ffffff',
+  cardBorder: '#000000',
+  inputBackground: '#111111',
+  shadow: '#000000',
+  notebookOpacity: 0,
+  notebookTint: undefined,
+  // Brutalist extras
+  acid: '#DFFF00',
+  pink: '#FF1493',
+  forest: '#4B9F5D',
+  void: '#050505',
+  canvas: '#ffffff',
+  ink: '#000000',
 };
 
 type Theme = typeof lightTheme;
@@ -114,7 +128,8 @@ const ThemeContext = createContext<{
 const useTheme = () => useContext(ThemeContext);
 
 // Web cursor styles helper
-const webCursor = (cursor: string) => Platform.OS === 'web' ? { cursor } : {};
+const webCursor = (cursor: string): any => Platform.OS === 'web' ? { cursor } : {};
+const isWeb = Platform.OS === 'web';
 
 import { fetchIssues, GitHubIssue, updateIssueState, extractRepoPath } from './src/api/github';
 import { deleteToken, getToken, saveToken } from './src/lib/tokenStorage';
@@ -566,21 +581,23 @@ function AppContent() {
         title: 'CLOSE',
         style: {
           label: {
-            borderColor: theme.danger,
-            color: theme.danger,
-            borderWidth: 3,
-            fontSize: 22,
-            fontWeight: '700',
+            backgroundColor: '#FF1493',
+            color: '#ffffff',
+            borderWidth: 0,
+            fontSize: 24,
+            fontWeight: '900',
             textAlign: 'center',
-            padding: 8,
-            borderRadius: 6,
+            padding: 12,
+            paddingHorizontal: 24,
+            borderRadius: 50,
             transform: [{ rotate: '15deg' }],
+            textTransform: 'uppercase',
           },
           wrapper: {
             flexDirection: 'column',
             alignItems: 'flex-end',
             justifyContent: 'flex-start',
-            marginTop: 30,
+            marginTop: 40,
             marginLeft: -30,
           }
         },
@@ -589,21 +606,23 @@ function AppContent() {
         title: 'KEEP',
         style: {
           label: {
-            borderColor: theme.success,
-            color: theme.success,
-            borderWidth: 3,
-            fontSize: 22,
-            fontWeight: '700',
+            backgroundColor: '#4B9F5D',
+            color: '#ffffff',
+            borderWidth: 0,
+            fontSize: 24,
+            fontWeight: '900',
             textAlign: 'center',
-            padding: 8,
-            borderRadius: 6,
+            padding: 12,
+            paddingHorizontal: 24,
+            borderRadius: 50,
             transform: [{ rotate: '-15deg' }],
+            textTransform: 'uppercase',
           },
           wrapper: {
             flexDirection: 'column',
             alignItems: 'flex-start',
             justifyContent: 'flex-start',
-            marginTop: 30,
+            marginTop: 40,
             marginLeft: 30,
           }
         },
@@ -643,89 +662,92 @@ function AppContent() {
   const renderIssueCard = (cardIssue: GitHubIssue | null) => {
     const issue = issues.find(i => i.id === cardIssue?.id) || cardIssue;
 
-    if (!issue) return <View style={[styles.card, styles.cardEmpty, { backgroundColor: theme.backgroundTertiary }]} />;
+    if (!issue) return <View style={[styles.card, styles.cardEmpty, isWeb && styles.cardWeb, { backgroundColor: '#222' }]} />;
     return (
-      <ImageBackground
-        source={require('./assets/notebook_paper_overlay.png')}
-        style={[styles.card, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}
-        imageStyle={[styles.cardBackgroundImage, { opacity: theme.notebookOpacity, tintColor: theme.notebookTint }]}
-        resizeMode="cover"
-      >
-        <View style={styles.cardHeader}>
-          <View style={styles.cardTopRow}>
-            <Text style={[styles.repo, { backgroundColor: theme.primaryLight, color: theme.primary }]}>{repoLabel(issue)}</Text>
-            {issue.user && (
-              <View style={styles.userInfo}>
-                <Image
-                  source={{ uri: issue.user.avatar_url }}
-                  style={[styles.avatar, { borderColor: theme.border }]}
-                  resizeMode="cover"
-                />
-                <Text style={[styles.username, { color: theme.textSecondary }]} numberOfLines={1} ellipsizeMode="tail">@{issue.user.login}</Text>
-              </View>
-            )}
+      <View style={[styles.cardBrutalist, isWeb && styles.cardWebBrutalist]}>
+        {/* Card Header - White with black text */}
+        <View style={styles.cardHeaderBrutalist}>
+          <View style={styles.issueIdBadge}>
+            <Text style={styles.issueIdText}>#{issue.number}</Text>
           </View>
           <TouchableOpacity
             onPress={() => openIssueLink(issue.html_url)}
-            style={[styles.issueTitleButton, webCursor('pointer')]}
+            style={[styles.headlineWrap, webCursor('pointer')]}
             activeOpacity={0.7}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
-              <Text style={[styles.title, { flex: 1, color: theme.text }]} numberOfLines={3}>
-                <Text style={[styles.issueNumber, { color: theme.textSecondary }]}>#{issue.number}</Text>
-                <Text style={[styles.titleSeparator, { color: theme.textSecondary }]}> · </Text>
-                <Text>{issue.title}</Text>
-              </Text>
-              <ExternalLink size={20} color={theme.primary} style={{ marginTop: 4, opacity: 0.8 }} />
-            </View>
+            <Text style={styles.headlineBrutalist} numberOfLines={2}>
+              {issue.title.split(' ').map((word, i) => (
+                <Text key={i} style={i % 3 === 0 ? styles.headlineHeavy : styles.headlineLight}>
+                  {word}{' '}
+                </Text>
+              ))}
+            </Text>
+            <ExternalLink size={20} color="#000000" style={{ marginTop: 4, opacity: 0.6 }} />
           </TouchableOpacity>
-          <View style={styles.labels}>
+        </View>
+
+        {/* Card Body - White with black text */}
+        <View style={styles.cardBodyBrutalist}>
+          {/* User row */}
+          {issue.user && (
+            <View style={styles.userRowBrutalist}>
+              <Image
+                source={{ uri: issue.user.avatar_url }}
+                style={styles.avatarBrutalist}
+                resizeMode="cover"
+              />
+              <View style={styles.userMetaBrutalist}>
+                <Text style={styles.userNameBrutalist}>{issue.user.login.toUpperCase()}</Text>
+                <Text style={styles.repoNameBrutalist}>{repoLabel(issue)}</Text>
+              </View>
+            </View>
+          )}
+
+          {/* Labels */}
+          <View style={styles.labelsBrutalist}>
             {issue.labels?.length ? (
-              issue.labels.slice(0, 6).map((label) => (
+              issue.labels.slice(0, 4).map((label) => (
                 <View
                   key={label.id}
-                  style={[styles.label, { backgroundColor: `#${label.color || '334155'}` }]}
+                  style={[styles.labelBrutalist, { backgroundColor: `#${label.color || '000000'}` }]}
                 >
-                  <Text style={[styles.labelText, { color: getLabelColor(label.color || '334155') }]}>
-                    {label.name}
+                  <Text style={[styles.labelTextBrutalist, { color: getLabelColor(label.color || '000000') }]}>
+                    {label.name.toUpperCase()}
                   </Text>
                 </View>
               ))
-            ) : (
-              <Text style={[styles.labelTextMuted, { color: theme.textMuted }]}>No labels</Text>
-            )}
+            ) : null}
           </View>
 
-          {/* AI Summary Section */}
-          <TouchableOpacity
-            style={[
-              styles.aiButton,
-              { backgroundColor: theme.primary },
-              issue.aiSummary && { backgroundColor: isDark ? '#1f4a7a' : '#0550ae' },
-              webCursor(loadingAiSummary || issue.aiSummary ? 'default' : 'pointer')
-            ]}
-            onPress={loadingAiSummary ? undefined : handleGetAiSummary}
-            disabled={loadingAiSummary || !!issue.aiSummary}
-          >
-            {loadingAiSummary && currentIndex === issues.indexOf(issue) ? (
-              <ActivityIndicator color="#ffffff" size="small" />
+          {/* AI Block */}
+          <View style={styles.aiBlockBrutalist}>
+            <View style={styles.aiStickerBadge}>
+              <Text style={styles.aiStickerText}>AI INSIGHT</Text>
+            </View>
+            {issue.aiSummary ? (
+              <Text style={styles.aiTextBrutalist}>
+                <Text style={styles.aiTextHighlight}>// SUMMARY{'\n'}</Text>
+                {issue.aiSummary}
+              </Text>
             ) : (
-              <>
-                <Sparkles size={18} color="#ffffff" />
-                <Text style={styles.aiButtonText}>
-                  {issue.aiSummary ? "AI Summary" : "Get AI Summary"}
-                </Text>
-              </>
+              <TouchableOpacity
+                style={[styles.aiButtonBrutalist, webCursor(loadingAiSummary ? 'default' : 'pointer')]}
+                onPress={loadingAiSummary ? undefined : handleGetAiSummary}
+                disabled={loadingAiSummary}
+              >
+                {loadingAiSummary && currentIndex === issues.indexOf(issue) ? (
+                  <ActivityIndicator color="#DFFF00" size="small" />
+                ) : (
+                  <>
+                    <Sparkles size={18} color="#DFFF00" />
+                    <Text style={styles.aiButtonTextBrutalist}>GET AI SUMMARY</Text>
+                  </>
+                )}
+              </TouchableOpacity>
             )}
-          </TouchableOpacity>
-
-          {issue.aiSummary ? (
-            <Text style={[styles.aiSummaryText, { backgroundColor: theme.backgroundTertiary, borderColor: theme.borderLight, color: theme.textSecondary }]}>
-              {issue.aiSummary}
-            </Text>
-          ) : null}
+          </View>
         </View>
-      </ImageBackground>
+      </View>
     );
   };
 
@@ -762,38 +784,146 @@ function AppContent() {
         <StatusBar style={isDark ? 'light' : 'dark'} />
         <RNStatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
-        <View style={styles.container}>
-          <View style={styles.contentMax}>
-            <View style={styles.header}>
-              <View style={styles.brandContainer}>
-                <Text style={[styles.brand, { color: theme.primary }]}>IssueCrush</Text>
+        <View style={[styles.container, isWeb && styles.containerWeb]}>
+          {/* Web Sidebar - Brutalist Design */}
+          {isWeb && token && (
+            <View style={[styles.webSidebar, { backgroundColor: theme.background, borderColor: theme.border }]}>
+              <View style={styles.sidebarContent}>
+                <View style={styles.sidebarBrand}>
+                  <Text style={styles.brandHeavy}>ISSUE</Text>
+                  <Text style={styles.brandLight}>Crush</Text>
+                </View>
+                
+                <View style={styles.sidebarSection}>
+                  <Text style={[styles.sidebarLabel, { color: theme.textMuted }]}>FILTER</Text>
+                  <View style={[styles.sidebarInputWrap, { backgroundColor: theme.inputBackground, borderColor: theme.border }]}>
+                    <Filter size={16} color={theme.textSecondary} style={styles.inputIcon} />
+                    <TextInput
+                      placeholder="owner/repo"
+                      placeholderTextColor={theme.textMuted}
+                      value={repoFilter}
+                      onChangeText={setRepoFilter}
+                      style={[styles.sidebarInput, { color: theme.text }, webCursor('text')]}
+                      autoCapitalize="none"
+                    />
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.sidebarButtonBrutalist, loadingIssues && styles.refreshButtonDisabled, webCursor('pointer')]}
+                    onPress={loadIssues}
+                    disabled={loadingIssues}
+                  >
+                    <RefreshCw size={16} color="#000000" />
+                    <Text style={styles.sidebarButtonTextBrutalist}>REFRESH</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {issues.length > 0 && (
+                  <View style={styles.sidebarSection}>
+                    <View style={styles.progressLabelRow}>
+                      <Text style={styles.progressLabelLight}>Triaged</Text>
+                      <Text style={styles.progressLabelHeavy}>{Math.round((Math.min(currentIndex + 1, issues.length) / issues.length) * 100)}%</Text>
+                    </View>
+                    <View style={styles.progressBarBrutalist}>
+                      <Animated.View
+                        style={[
+                          styles.progressFillBrutalist,
+                          progressAnimatedStyle
+                        ]}
+                      />
+                    </View>
+                  </View>
+                )}
+
+                <View style={styles.sidebarSection}>
+                  <Text style={[styles.sidebarLabel, { color: theme.textMuted }]}>ACTIONS</Text>
+                  <View style={styles.sidebarActions}>
+                    <TouchableOpacity
+                      style={[styles.actionBtnBrutalist, styles.actionBtnClose, webCursor('pointer')]}
+                      onPress={() => swiperRef.current?.swipeLeft()}
+                    >
+                      <X size={18} color="#ffffff" />
+                      <Text style={styles.actionBtnText}>CLOSE</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.actionBtnBrutalist, styles.actionBtnKeep, webCursor('pointer')]}
+                      onPress={() => swiperRef.current?.swipeRight()}
+                    >
+                      <Check size={18} color="#ffffff" />
+                      <Text style={styles.actionBtnText}>KEEP</Text>
+                    </TouchableOpacity>
+                  </View>
+                  {lastClosed && (
+                    <TouchableOpacity
+                      style={[styles.undoBtnBrutalist, webCursor('pointer')]}
+                      onPress={handleUndo}
+                      disabled={undoBusy}
+                    >
+                      <RotateCcw size={16} color={theme.primary} />
+                      <Text style={[styles.undoBtnText, { color: theme.primary }]}>UNDO</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                {/* Theme Toggle Button */}
+
+              <View style={[styles.sidebarFooter, { borderColor: theme.border }]}>
                 <TouchableOpacity
-                  style={[styles.themeToggle, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }, webCursor('pointer')]}
+                  style={[styles.themeToggle, { backgroundColor: theme.backgroundTertiary, borderColor: theme.border }, webCursor('pointer')]}
                   onPress={cycleTheme}
                   activeOpacity={0.7}
                 >
                   {themeMode === 'dark' ? (
-                    <Moon size={18} color={theme.textSecondary} />
+                    <Moon size={18} color={theme.primary} />
                   ) : themeMode === 'light' ? (
-                    <Sun size={18} color={theme.textSecondary} />
+                    <Sun size={18} color={theme.primary} />
                   ) : (
                     <View style={{ flexDirection: 'row', gap: 2 }}>
-                      <Sun size={12} color={theme.textSecondary} />
-                      <Moon size={12} color={theme.textSecondary} />
+                      <Sun size={12} color={theme.primary} />
+                      <Moon size={12} color={theme.primary} />
                     </View>
                   )}
                 </TouchableOpacity>
-                {token ? (
-                  <TouchableOpacity style={[styles.signOutButton, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }, webCursor('pointer')]} onPress={signOut}>
-                    <LogOut size={18} color={theme.textSecondary} />
-                    <Text style={[styles.signOutText, { color: theme.textSecondary }]}>Sign out</Text>
-                  </TouchableOpacity>
-                ) : null}
+                <TouchableOpacity style={[styles.signOutBrutalist, webCursor('pointer')]} onPress={signOut}>
+                  <LogOut size={18} color="#000000" />
+                  <Text style={styles.signOutTextBrutalist}>Sign out</Text>
+                </TouchableOpacity>
               </View>
             </View>
+          )}
+
+          {/* Main Content Area */}
+          <View style={[styles.contentMax, isWeb && token && styles.contentMaxWeb]}>
+            {/* Mobile Header (hidden on web when authenticated) */}
+            {(!isWeb || !token) && (
+              <View style={styles.header}>
+                <View style={styles.brandContainer}>
+                  <Text style={[styles.brand, { color: theme.primary }]}>IssueCrush</Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <TouchableOpacity
+                    style={[styles.themeToggle, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }, webCursor('pointer')]}
+                    onPress={cycleTheme}
+                    activeOpacity={0.7}
+                  >
+                    {themeMode === 'dark' ? (
+                      <Moon size={18} color={theme.textSecondary} />
+                    ) : themeMode === 'light' ? (
+                      <Sun size={18} color={theme.textSecondary} />
+                    ) : (
+                      <View style={{ flexDirection: 'row', gap: 2 }}>
+                        <Sun size={12} color={theme.textSecondary} />
+                        <Moon size={12} color={theme.textSecondary} />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                  {token ? (
+                    <TouchableOpacity style={[styles.signOutButton, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }, webCursor('pointer')]} onPress={signOut}>
+                      <LogOut size={18} color={theme.textSecondary} />
+                      <Text style={[styles.signOutText, { color: theme.textSecondary }]}>Sign out</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+              </View>
+            )}
 
             {!token ? (
               <View style={styles.authContainer}>
@@ -889,60 +1019,70 @@ function AppContent() {
                 </View>
               </View>
             ) : (
-              <View style={styles.content}>
-                <View style={[styles.controlsCard, { backgroundColor: theme.backgroundTertiary }]}>
-                  <View style={styles.controlsRow}>
-                    <Animated.View style={[styles.inputWrap, { backgroundColor: theme.inputBackground }, inputAnimatedStyle]}>
-                      <Filter size={16} color={theme.textSecondary} style={styles.inputIcon} />
-                      <TextInput
-                        placeholder="Filter by repo (owner/repo)"
-                        placeholderTextColor={theme.textMuted}
-                        value={repoFilter}
-                        onChangeText={setRepoFilter}
-                        onFocus={() => setInputFocused(true)}
-                        onBlur={() => setInputFocused(false)}
-                        style={[styles.input, { color: theme.text }, webCursor('text')]}
-                        autoCapitalize="none"
-                      />
-                    </Animated.View>
-                    <TouchableOpacity
-                      style={[styles.refreshButton, { backgroundColor: theme.backgroundTertiary, borderColor: theme.border }, loadingIssues && styles.refreshButtonDisabled, webCursor('pointer')]}
-                      onPress={loadIssues}
-                      disabled={loadingIssues}
-                    >
-                      <RefreshCw size={18} color={loadingIssues ? theme.textMuted : theme.text} />
-                    </TouchableOpacity>
-                  </View>
-                  {issues.length > 0 && (
-                    <View style={styles.issueCounter}>
-                      <Animated.Text style={[styles.issueCountText, { backgroundColor: theme.primaryLight, color: theme.text }]}>
-                        {Math.min(currentIndex + 1, issues.length)} of {issues.length} issues
-                      </Animated.Text>
-                      <View style={[styles.progressBar, { backgroundColor: theme.borderLight }]}>
-                        <Animated.View
-                          style={[
-                            styles.progressFill,
-                            { backgroundColor: theme.primary },
-                            progressAnimatedStyle
-                          ]}
+              <View style={[styles.content, isWeb && styles.contentWeb]}>
+                {/* Mobile Controls - Hidden on Web */}
+                {!isWeb && (
+                  <View style={[styles.controlsCard, { backgroundColor: theme.backgroundTertiary }]}>
+                    <View style={styles.controlsRow}>
+                      <Animated.View style={[styles.inputWrap, { backgroundColor: theme.inputBackground }, inputAnimatedStyle]}>
+                        <Filter size={16} color={theme.textSecondary} style={styles.inputIcon} />
+                        <TextInput
+                          placeholder="Filter by repo (owner/repo)"
+                          placeholderTextColor={theme.textMuted}
+                          value={repoFilter}
+                          onChangeText={setRepoFilter}
+                          onFocus={() => setInputFocused(true)}
+                          onBlur={() => setInputFocused(false)}
+                          style={[styles.input, { color: theme.text }, webCursor('text')]}
+                          autoCapitalize="none"
                         />
-                      </View>
+                      </Animated.View>
+                      <TouchableOpacity
+                        style={[styles.refreshButton, { backgroundColor: theme.backgroundTertiary, borderColor: theme.border }, loadingIssues && styles.refreshButtonDisabled, webCursor('pointer')]}
+                        onPress={loadIssues}
+                        disabled={loadingIssues}
+                      >
+                        <RefreshCw size={18} color={loadingIssues ? theme.textMuted : theme.text} />
+                      </TouchableOpacity>
                     </View>
-                  )}
-                </View>
+                    {issues.length > 0 && (
+                      <View style={styles.issueCounter}>
+                        <Animated.Text style={[styles.issueCountText, { backgroundColor: theme.primaryLight, color: theme.text }]}>
+                          {Math.min(currentIndex + 1, issues.length)} of {issues.length} issues
+                        </Animated.Text>
+                        <View style={[styles.progressBar, { backgroundColor: theme.borderLight }]}>
+                          <Animated.View
+                            style={[
+                              styles.progressFill,
+                              { backgroundColor: theme.primary },
+                              progressAnimatedStyle
+                            ]}
+                          />
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                )}
 
                 {authError ? <Text style={[styles.error, { color: theme.danger }]}>{authError}</Text> : null}
 
                 {loadingIssues ? (
                   <Animated.View entering={FadeIn.duration(300)} style={styles.loader}>
-                    <View style={[styles.loaderCard, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
-                      <ActivityIndicator color={theme.primary} size="large" />
-                      <Text style={[styles.loaderText, { color: theme.text }]}>Fetching issues…</Text>
-                      <Text style={[styles.loaderSubtext, { color: theme.textMuted }]}>This may take a moment</Text>
+                    <View style={styles.loaderCardBrutalist}>
+                      <ActivityIndicator color="#DFFF00" size="large" />
+                      <Text style={styles.loaderTextBrutalist}>FETCHING ISSUES</Text>
+                      <Text style={styles.loaderSubtextBrutalist}>Please wait...</Text>
                     </View>
                   </Animated.View>
                 ) : issues.length > currentIndex ? (
-                  <View style={[styles.swiperWrap, webCursor('grab')]}>
+                  <View style={[styles.swiperWrap, isWeb && styles.swiperWrapWeb, webCursor('grab')]}>
+                    {/* Stacked card layers for brutalist effect */}
+                    {isWeb && (
+                      <>
+                        <View style={styles.cardLayerThree} />
+                        <View style={styles.cardLayerTwo} />
+                      </>
+                    )}
                     <Swiper
                       key={SCREEN_WIDTH}
                       ref={swiperRef}
@@ -958,7 +1098,9 @@ function AppContent() {
                       stackScale={4}
                       animateCardOpacity
                       overlayLabels={overlayLabels}
-                      cardVerticalMargin={0}
+                      cardVerticalMargin={isWeb ? 0 : 0}
+                      marginTop={isWeb ? 0 : undefined}
+                      containerStyle={isWeb ? { height: '100%', zIndex: 10 } : undefined}
                       verticalSwipe={false}
                       disableTopSwipe
                       disableBottomSwipe
@@ -969,16 +1111,16 @@ function AppContent() {
                   </View>
                 ) : (
                   <Animated.View entering={FadeIn.duration(400)} style={styles.emptyState}>
-                    <View style={[styles.emptyIconContainer, { backgroundColor: theme.backgroundTertiary, borderColor: theme.borderLight }]}>
-                      <Inbox size={48} color={theme.textMuted} />
+                    <View style={styles.emptyIconContainerBrutalist}>
+                      <Inbox size={48} color="#DFFF00" />
                     </View>
-                    <Text style={[styles.emptyTitle, { color: theme.text }]}>All caught up!</Text>
-                    <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
-                      No issues to triage right now. Try changing your filter or check back later.
+                    <Text style={styles.emptyTitleBrutalist}>ALL CAUGHT UP</Text>
+                    <Text style={styles.emptySubtitleBrutalist}>
+                      No issues to triage. Try changing your filter.
                     </Text>
-                    <TouchableOpacity style={[styles.emptyRefreshButton, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }, webCursor('pointer')]} onPress={loadIssues}>
-                      <RefreshCw size={16} color={theme.primary} />
-                      <Text style={[styles.emptyRefreshText, { color: theme.primary }]}>Refresh issues</Text>
+                    <TouchableOpacity style={[styles.emptyRefreshButtonBrutalist, webCursor('pointer')]} onPress={loadIssues}>
+                      <RefreshCw size={16} color="#000000" />
+                      <Text style={styles.emptyRefreshTextBrutalist}>REFRESH</Text>
                     </TouchableOpacity>
                   </Animated.View>
                 )}
@@ -987,24 +1129,22 @@ function AppContent() {
                 <Animated.View style={[styles.toastWrap, { pointerEvents: 'none' }, toastAnimatedStyle]}>
                   <View style={[
                     styles.toast,
-                    { backgroundColor: theme.cardBackground, borderColor: theme.border },
-                    feedback.toLowerCase().includes('closed') && { backgroundColor: theme.dangerLight, borderColor: theme.dangerBorder },
-                    feedback.toLowerCase().includes('kept') && { backgroundColor: theme.successLight, borderColor: theme.successBorder },
-                    feedback.toLowerCase().includes('reopened') && { backgroundColor: theme.primaryLight, borderColor: theme.primary },
-                    feedback.toLowerCase().includes('failed') && { backgroundColor: theme.dangerLight, borderColor: theme.dangerBorder },
-                    feedback.toLowerCase().includes('loaded') && { backgroundColor: theme.successLight, borderColor: theme.successBorder },
+                    feedback.toLowerCase().includes('closed') && { backgroundColor: '#FF1493', borderColor: '#FF1493' },
+                    feedback.toLowerCase().includes('kept') && { backgroundColor: '#4B9F5D', borderColor: '#4B9F5D' },
+                    feedback.toLowerCase().includes('reopened') && { backgroundColor: '#DFFF00', borderColor: '#DFFF00' },
+                    feedback.toLowerCase().includes('failed') && { backgroundColor: '#FF1493', borderColor: '#FF1493' },
+                    feedback.toLowerCase().includes('loaded') && { backgroundColor: '#4B9F5D', borderColor: '#4B9F5D' },
                   ]}>
-                    {feedback.toLowerCase().includes('closed') && <X size={16} color={theme.danger} />}
-                    {feedback.toLowerCase().includes('kept') && <Check size={16} color={theme.success} />}
-                    {feedback.toLowerCase().includes('reopened') && <RotateCcw size={16} color={theme.primary} />}
-                    {feedback.toLowerCase().includes('loaded') && <Check size={16} color={theme.success} />}
+                    {feedback.toLowerCase().includes('closed') && <X size={16} color="#ffffff" />}
+                    {feedback.toLowerCase().includes('kept') && <Check size={16} color="#ffffff" />}
+                    {feedback.toLowerCase().includes('reopened') && <RotateCcw size={16} color="#000000" />}
+                    {feedback.toLowerCase().includes('loaded') && <Check size={16} color="#ffffff" />}
                     <Text
                       numberOfLines={1}
                       ellipsizeMode="tail"
                       style={[
                         styles.toastText,
-                        { color: theme.text },
-                        feedback.toLowerCase().includes('failed') && { color: theme.danger },
+                        feedback.toLowerCase().includes('reopened') && { color: '#000000' },
                       ]}
                     >
                       {feedback}
@@ -1012,58 +1152,60 @@ function AppContent() {
                   </View>
                 </Animated.View>
 
-                <View style={styles.actionBar}>
-                  <View style={styles.actionBarInner}>
-                    <Animated.View style={closeAnimatedStyle}>
-                      <TouchableOpacity
-                        style={[styles.fab, styles.fabClose, { backgroundColor: theme.danger }, webCursor('pointer')]}
-                        onPress={() => swiperRef.current?.swipeLeft()}
-                        onPressIn={handleClosePressIn}
-                        onPressOut={handleClosePressOut}
-                        activeOpacity={1}
-                      >
-                        <X color="#ffffff" size={28} strokeWidth={2.5} />
-                      </TouchableOpacity>
-                    </Animated.View>
+                {/* Mobile Action Bar - Hidden on Web */}
+                {!isWeb && (
+                  <View style={styles.actionBar}>
+                    <View style={styles.actionBarInner}>
+                      <Animated.View style={closeAnimatedStyle}>
+                        <TouchableOpacity
+                          style={[styles.fab, styles.fabClose, webCursor('pointer')]}
+                          onPress={() => swiperRef.current?.swipeLeft()}
+                          onPressIn={handleClosePressIn}
+                          onPressOut={handleClosePressOut}
+                          activeOpacity={1}
+                        >
+                          <X color="#ffffff" size={28} strokeWidth={2.5} />
+                        </TouchableOpacity>
+                      </Animated.View>
 
-                    <Animated.View style={undoAnimatedStyle}>
-                      <TouchableOpacity
-                        style={[
-                          styles.fab,
-                          styles.fabUndo,
-                          { backgroundColor: theme.backgroundSecondary, borderColor: theme.border },
-                          !lastClosed && { backgroundColor: theme.backgroundTertiary, borderColor: theme.borderLight },
-                          webCursor(lastClosed ? 'pointer' : 'not-allowed')
-                        ]}
-                        onPress={handleUndo}
-                        onPressIn={handleUndoPressIn}
-                        onPressOut={handleUndoPressOut}
-                        disabled={!lastClosed || undoBusy}
-                        activeOpacity={1}
-                      >
-                        <RotateCcw color={!lastClosed ? theme.textMuted : theme.textSecondary} size={22} />
-                      </TouchableOpacity>
-                    </Animated.View>
+                      <Animated.View style={undoAnimatedStyle}>
+                        <TouchableOpacity
+                          style={[
+                            styles.fab,
+                            styles.fabUndo,
+                            !lastClosed && styles.fabUndoDisabled,
+                            webCursor(lastClosed ? 'pointer' : 'not-allowed')
+                          ]}
+                          onPress={handleUndo}
+                          onPressIn={handleUndoPressIn}
+                          onPressOut={handleUndoPressOut}
+                          disabled={!lastClosed || undoBusy}
+                          activeOpacity={1}
+                        >
+                          <RotateCcw color={!lastClosed ? '#333333' : '#DFFF00'} size={22} />
+                        </TouchableOpacity>
+                      </Animated.View>
 
-                    <Animated.View style={keepAnimatedStyle}>
-                      <TouchableOpacity
-                        style={[styles.fab, styles.fabKeep, { backgroundColor: theme.success }, webCursor('pointer')]}
-                        onPress={() => swiperRef.current?.swipeRight()}
-                        onPressIn={handleKeepPressIn}
-                        onPressOut={handleKeepPressOut}
-                        activeOpacity={1}
-                      >
-                        <Check color="#ffffff" size={28} strokeWidth={2.5} />
-                      </TouchableOpacity>
-                    </Animated.View>
+                      <Animated.View style={keepAnimatedStyle}>
+                        <TouchableOpacity
+                          style={[styles.fab, styles.fabKeep, webCursor('pointer')]}
+                          onPress={() => swiperRef.current?.swipeRight()}
+                          onPressIn={handleKeepPressIn}
+                          onPressOut={handleKeepPressOut}
+                          activeOpacity={1}
+                        >
+                          <Check color="#ffffff" size={28} strokeWidth={2.5} />
+                        </TouchableOpacity>
+                      </Animated.View>
+                    </View>
+
+                    <View style={[styles.actionBarHints, { display: 'none' }]}>
+                      <Text style={[styles.actionHint, { color: '#FF1493' }]}>Close</Text>
+                      <Text style={[styles.actionHint, { color: '#666666' }]}>Undo</Text>
+                      <Text style={[styles.actionHint, { color: '#4B9F5D' }]}>Keep</Text>
+                    </View>
                   </View>
-
-                  <View style={[styles.actionBarHints, { display: 'none' }]}>
-                    <Text style={[styles.actionHint, { color: theme.danger }]}>Close</Text>
-                    <Text style={[styles.actionHint, { color: theme.textMuted }]}>Undo</Text>
-                    <Text style={[styles.actionHint, { color: theme.success }]}>Keep</Text>
-                  </View>
-                </View>
+                )}
               </View>
             )}
           </View>
@@ -1103,7 +1245,7 @@ export default function App() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f6f8fa',
+    backgroundColor: '#050505',
   },
   container: {
     flex: 1,
@@ -1112,6 +1254,239 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     alignItems: 'center',
     justifyContent: 'flex-start',
+  },
+  containerWeb: {
+    flexDirection: 'row',
+    maxWidth: 1400,
+    alignItems: 'stretch',
+  },
+  webSidebar: {
+    width: 320,
+    borderRightWidth: 1,
+    paddingTop: 40,
+    paddingBottom: 24,
+    paddingHorizontal: 40,
+    justifyContent: 'space-between',
+  },
+  sidebarContent: {
+    flex: 1,
+    gap: 40,
+  },
+  sidebarBrand: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: 20,
+  },
+  brandHeavy: {
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#DFFF00',
+    textTransform: 'uppercase',
+    letterSpacing: -1,
+  },
+  brandLight: {
+    fontSize: 28,
+    fontWeight: '300',
+    color: '#DFFF00',
+    letterSpacing: 0,
+  },
+  sidebarSection: {
+    gap: 16,
+  },
+  sidebarLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+  },
+  sidebarInputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    height: 44,
+  },
+  sidebarInput: {
+    flex: 1,
+    height: 44,
+    fontSize: 14,
+  },
+  sidebarButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    height: 40,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  sidebarButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  sidebarButtonBrutalist: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    height: 48,
+    borderRadius: 50,
+    backgroundColor: '#ffffff',
+  },
+  sidebarButtonTextBrutalist: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#000000',
+    textTransform: 'uppercase',
+  },
+  progressLabelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    marginBottom: 8,
+  },
+  progressLabelLight: {
+    fontSize: 14,
+    fontWeight: '300',
+    color: '#888888',
+  },
+  progressLabelHeavy: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#ffffff',
+    textTransform: 'uppercase',
+  },
+  progressBarBrutalist: {
+    width: '100%',
+    height: 24,
+    backgroundColor: '#222222',
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#333333',
+  },
+  progressFillBrutalist: {
+    height: '100%',
+    backgroundColor: '#FF1493',
+    borderRadius: 12,
+  },
+  actionBtnBrutalist: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 50,
+  },
+  actionBtnClose: {
+    backgroundColor: '#FF1493',
+  },
+  actionBtnKeep: {
+    backgroundColor: '#4B9F5D',
+  },
+  actionBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#ffffff',
+    textTransform: 'uppercase',
+  },
+  undoBtnBrutalist: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 50,
+    borderWidth: 1,
+    borderColor: '#DFFF00',
+    marginTop: 12,
+  },
+  undoBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  signOutBrutalist: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 50,
+    backgroundColor: '#ffffff',
+  },
+  signOutTextBrutalist: {
+    color: '#000000',
+    fontWeight: '700',
+    fontSize: 13,
+    textTransform: 'uppercase',
+  },
+  sidebarProgressText: {
+    fontSize: 24,
+    fontWeight: '700',
+  },
+  sidebarProgressBar: {
+    height: 6,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  sidebarActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  sidebarActionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  sidebarActionText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  sidebarUndoBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 8,
+  },
+  sidebarUndoText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  sidebarFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingTop: 20,
+    borderTopWidth: 1,
+  },
+  contentMaxWeb: {
+    flex: 1,
+    paddingHorizontal: 60,
+    paddingVertical: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  contentWeb: {
+    flex: 1,
+    maxWidth: 900,
+    width: '100%',
+    alignSelf: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   contentMax: {
     flex: 1,
@@ -1476,13 +1851,224 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     zIndex: 1,
   },
-  card: {
+  swiperWrapWeb: {
     flex: 1,
+    maxWidth: 900,
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  // Stacked card layers for brutalist effect
+  cardLayerThree: {
+    position: 'absolute',
+    width: '92%',
+    height: '88%',
+    backgroundColor: '#FF1493',
+    borderRadius: 24,
+    transform: [{ rotate: '-4deg' }, { translateX: -10 }, { translateY: 10 }],
+    zIndex: 1,
+  },
+  cardLayerTwo: {
+    position: 'absolute',
+    width: '96%',
+    height: '92%',
+    backgroundColor: '#4B9F5D',
+    borderRadius: 24,
+    transform: [{ rotate: '2deg' }, { translateX: 10 }, { translateY: -5 }],
+    zIndex: 2,
+  },
+  cardBrutalist: {
+    flex: 0,
+    width: '100%',
+    maxWidth: 480,
+    minHeight: 400,
+    maxHeight: 560,
+    backgroundColor: '#ffffff',
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: '#000000',
+    justifyContent: 'flex-start',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.5,
+    shadowRadius: 40,
+    elevation: 10,
+    overflow: 'hidden',
+    zIndex: 3,
+  },
+  cardWebBrutalist: {
+    maxWidth: 900,
+    minHeight: 500,
+    maxHeight: 560,
+  },
+  cardHeaderBrutalist: {
+    backgroundColor: '#ffffff',
+    padding: 32,
+    borderBottomWidth: 2,
+    borderBottomColor: '#000000',
+    position: 'relative',
+  },
+  issueIdBadge: {
+    position: 'absolute',
+    top: 24,
+    right: 24,
+    borderWidth: 1,
+    borderColor: '#000000',
+    borderRadius: 50,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+  },
+  issueIdText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#000000',
+    textTransform: 'uppercase',
+  },
+  headlineWrap: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginTop: 16,
+    paddingRight: 80,
+  },
+  headlineBrutalist: {
+    fontSize: 28,
+    lineHeight: 32,
+    flex: 1,
+  },
+  headlineHeavy: {
+    fontWeight: '900',
+    color: '#000000',
+    textTransform: 'uppercase',
+  },
+  headlineLight: {
+    fontWeight: '300',
+    color: '#000000',
+  },
+  cardBodyBrutalist: {
+    backgroundColor: '#ffffff',
+    flex: 1,
+    padding: 32,
+    gap: 24,
+  },
+  userRowBrutalist: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  avatarBrutalist: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#000000',
+  },
+  userMetaBrutalist: {
+    flexDirection: 'column',
+  },
+  userNameBrutalist: {
+    fontWeight: '900',
+    fontSize: 16,
+    color: '#000000',
+    textTransform: 'uppercase',
+  },
+  repoNameBrutalist: {
+    fontWeight: '300',
+    fontSize: 13,
+    color: '#555555',
+  },
+  labelsBrutalist: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  labelBrutalist: {
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 50,
+  },
+  labelTextBrutalist: {
+    fontWeight: '700',
+    fontSize: 11,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  aiBlockBrutalist: {
+    backgroundColor: '#050505',
+    padding: 24,
+    borderRadius: 16,
+    position: 'relative',
+    marginTop: 'auto',
+  },
+  aiStickerBadge: {
+    position: 'absolute',
+    top: -12,
+    right: 20,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#000000',
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    borderRadius: 50,
+    shadowColor: '#000000',
+    shadowOffset: { width: 2, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 0,
+  },
+  aiStickerText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#000000',
+    textTransform: 'uppercase',
+  },
+  aiTextBrutalist: {
+    fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
+    lineHeight: 22,
+    fontSize: 14,
+    color: '#ffffff',
+  },
+  aiTextHighlight: {
+    color: '#DFFF00',
+    fontWeight: '700',
+  },
+  aiButtonBrutalist: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  aiButtonTextBrutalist: {
+    color: '#DFFF00',
+    fontWeight: '700',
+    fontSize: 14,
+    textTransform: 'uppercase',
+  },
+  loaderCardBrutalist: {
+    backgroundColor: '#111111',
+    borderRadius: 24,
+    padding: 40,
+    alignItems: 'center',
+    gap: 16,
+    borderWidth: 1,
+    borderColor: '#333333',
+  },
+  loaderTextBrutalist: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#ffffff',
+    textTransform: 'uppercase',
+  },
+  loaderSubtextBrutalist: {
+    fontSize: 13,
+    color: '#666666',
+    fontWeight: '300',
+  },
+  card: {
+    flex: 0,
     width: '100%',
     maxWidth: 480,
     minHeight: 350,
     maxHeight: 500,
-    alignSelf: 'flex-start',
     backgroundColor: '#ffffff',
     borderRadius: 16,
     padding: 20,
@@ -1496,6 +2082,12 @@ const styles = StyleSheet.create({
     elevation: 2,
     overflow: 'hidden',
     zIndex: 1,
+  },
+  cardWeb: {
+    maxWidth: 600,
+    minHeight: 400,
+    maxHeight: 600,
+    padding: 28,
   },
   cardBackgroundImage: {
     borderRadius: 16,
@@ -1635,11 +2227,30 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e1e4e8',
   },
+  emptyIconContainerBrutalist: {
+    width: 96,
+    height: 96,
+    borderRadius: 50,
+    backgroundColor: '#111111',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#333333',
+  },
   emptyTitle: {
     fontSize: 20,
     fontWeight: '700',
     color: '#24292f',
     marginBottom: 8,
+  },
+  emptyTitleBrutalist: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: '#ffffff',
+    marginBottom: 12,
+    textTransform: 'uppercase',
+    letterSpacing: -1,
   },
   emptySubtitle: {
     fontSize: 14,
@@ -1647,6 +2258,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 20,
+  },
+  emptySubtitleBrutalist: {
+    fontSize: 14,
+    color: '#666666',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+    fontWeight: '300',
   },
   emptyRefreshButton: {
     flexDirection: 'row',
@@ -1659,10 +2278,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#d0d7de',
   },
+  emptyRefreshButtonBrutalist: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    backgroundColor: '#ffffff',
+    borderRadius: 50,
+  },
   emptyRefreshText: {
     color: '#0969da',
     fontWeight: '600',
     fontSize: 14,
+  },
+  emptyRefreshTextBrutalist: {
+    color: '#000000',
+    fontWeight: '700',
+    fontSize: 14,
+    textTransform: 'uppercase',
   },
 
   // Crumble Animation Styles
@@ -1701,46 +2335,47 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 10,
     width: '100%',
     maxWidth: 400,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#111111',
     borderWidth: 1,
-    borderColor: '#d0d7de',
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    borderColor: '#333333',
+    borderRadius: 50,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
   },
   toastClose: {
-    backgroundColor: '#ffebe9',
-    borderColor: '#ffcecb',
+    backgroundColor: '#FF1493',
+    borderColor: '#FF1493',
   },
   toastKeep: {
-    backgroundColor: '#dafbe1',
-    borderColor: '#aceebb',
+    backgroundColor: '#4B9F5D',
+    borderColor: '#4B9F5D',
   },
   toastReopen: {
-    backgroundColor: '#ddf4ff',
-    borderColor: '#b6e3ff',
+    backgroundColor: '#DFFF00',
+    borderColor: '#DFFF00',
   },
   toastError: {
-    backgroundColor: '#ffebe9',
-    borderColor: '#ffcecb',
+    backgroundColor: '#FF1493',
+    borderColor: '#FF1493',
   },
   toastSuccess: {
-    backgroundColor: '#dafbe1',
-    borderColor: '#aceebb',
+    backgroundColor: '#4B9F5D',
+    borderColor: '#4B9F5D',
   },
   toastText: {
-    color: '#24292f',
-    fontWeight: '600',
+    color: '#ffffff',
+    fontWeight: '700',
     textAlign: 'center',
     fontSize: 14,
+    textTransform: 'uppercase',
   },
 
   // Action Bar Styles
@@ -1768,32 +2403,32 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 100,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 8,
   },
   fabClose: {
-    width: 64,
-    height: 64,
-    backgroundColor: '#d1242f',
+    width: 68,
+    height: 68,
+    backgroundColor: '#FF1493',
   },
   fabKeep: {
-    width: 64,
-    height: 64,
-    backgroundColor: '#2da44e',
+    width: 68,
+    height: 68,
+    backgroundColor: '#4B9F5D',
   },
   fabUndo: {
-    width: 52,
-    height: 52,
-    backgroundColor: '#ffffff',
+    width: 56,
+    height: 56,
+    backgroundColor: '#111111',
     borderWidth: 2,
-    borderColor: '#d0d7de',
+    borderColor: '#DFFF00',
   },
   fabUndoDisabled: {
-    backgroundColor: '#f6f8fa',
-    borderColor: '#e1e4e8',
-    shadowOpacity: 0.05,
+    backgroundColor: '#111111',
+    borderColor: '#333333',
+    shadowOpacity: 0.1,
   },
   actionBarHints: {
     flexDirection: 'row',
