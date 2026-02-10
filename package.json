@@ -1,0 +1,49 @@
+{
+  "name": "issuecrush",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "overrides": {
+    "node-fetch": "^2.6.7"
+  },
+  "scripts": {
+    "start": "expo start",
+    "server": "node server.js",
+    "dev": "concurrently \"npm run server\" \"npm start\"",
+    "web-dev": "concurrently \"npm run server\" \"npm run web\"",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "@azure/cosmos": "^4.9.1",
+    "@github/copilot-sdk": "^0.1.14",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "agentation": "^1.3.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "expo": "~54.0.32",
+    "expo-auth-session": "~7.0.10",
+    "expo-haptics": "~15.0.8",
+    "expo-secure-store": "~15.0.8",
+    "expo-status-bar": "~3.0.9",
+    "expo-web-browser": "^15.0.10",
+    "express": "^5.2.1",
+    "lucide-react-native": "^0.562.0",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-native": "0.81.5",
+    "react-native-confetti-cannon": "^1.5.2",
+    "react-native-deck-swiper": "^2.0.19",
+    "react-native-gesture-handler": "~2.28.0",
+    "react-native-reanimated": "~4.1.1",
+    "react-native-svg": "15.12.1",
+    "react-native-web": "^0.21.0"
+  },
+  "devDependencies": {
+    "@types/react": "~19.1.0",
+    "babel-preset-expo": "^54.0.10",
+    "concurrently": "^9.2.1",
+    "typescript": "~5.9.2"
+  },
+  "private": true
+}

@@ -1,0 +1,14 @@
+{
+  "name": "issuecrush-api",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/app.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@azure/cosmos": "^4.3.1",
+    "@azure/functions": "^4.7.0",
+    "@github/copilot-sdk": "^0.1.14"
+  }
+}

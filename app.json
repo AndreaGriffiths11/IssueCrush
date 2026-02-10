@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "IssueCrush",
+    "slug": "IssueCrush",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "issuecrush",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#050505"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.issuecrush.app",
+      "icon": "./assets/icon.png",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#050505"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "package": "com.issuecrush.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "name": "IssueCrush",
+      "shortName": "IssueCrush",
+      "description": "Tinder-style GitHub issue triage. Swipe left to close, right to keep.",
+      "display": "standalone",
+      "orientation": "portrait",
+      "startUrl": "/",
+      "backgroundColor": "#050505",
+      "themeColor": "#050505",
+      "lang": "en",
+      "categories": ["developer-tools", "productivity"]
+    },
+    "plugins": [
+      "expo-secure-store"
+    ]
+  }
+}

@@ -1,0 +1,1 @@
+export { getLabelColor } from './colors';
