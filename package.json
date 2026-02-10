@@ -7,12 +7,14 @@
   },
   "scripts": {
     "start": "expo start",
+    "build": "npx expo export --platform web",
     "server": "node server.js",
     "dev": "concurrently \"npm run server\" \"npm start\"",
     "web-dev": "concurrently \"npm run server\" \"npm run web\"",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "test": "jest"
   },
   "dependencies": {
     "@azure/cosmos": "^4.9.1",
