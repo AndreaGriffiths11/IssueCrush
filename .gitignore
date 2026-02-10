@@ -48,3 +48,6 @@ build.log
 /ios
 /android
 IssueCrush/
+
+# agent context
+.agents.local.md

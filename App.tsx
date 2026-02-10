@@ -460,7 +460,7 @@ function AppContent() {
       fetch(`${apiUrl}/api/logout`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${sessionId}` },
-      }).catch(() => {});
+      }).catch(() => { });
     }
   };
 

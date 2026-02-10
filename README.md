@@ -135,6 +135,8 @@ IssueCrush/
 ├── App.tsx                    # Main app component (UI + swipe logic)
 ├── server.js                  # Express server (OAuth + AI proxy)
 ├── sessionStore.js            # Cosmos DB / in-memory session storage
+├── AGENTS.md                  # AI agent context (project knowledge)
+├── .agents/                   # Installed agent skills (see below)
 ├── src/
 │   ├── api/
 │   │   └── github.ts         # GitHub API client
@@ -145,6 +147,16 @@ IssueCrush/
 ├── package.json              # Dependencies and scripts
 └── README.md                 # This file
 ```
+
+### Agent Context System
+
+The `.agents/` directory contains the [Agent Context System](https://github.com/AndreaGriffiths11/agent-context-system) — a persistent memory layer for AI coding agents. It helps agents like GitHub Copilot, Claude, and Cursor retain project knowledge across sessions.
+
+- **`AGENTS.md`** — Committed project knowledge that all AI agents read automatically
+- **`.agents/skills/`** — Installed agent skills (not part of the app's runtime code)
+- **`.agents.local.md`** — Personal scratchpad (gitignored, created locally via the skill's init script)
+
+These files do not affect the app. You can safely ignore them if you're not using AI coding agents.
 
 ## Available Scripts
 
