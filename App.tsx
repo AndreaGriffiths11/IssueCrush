@@ -466,7 +466,7 @@ function AppContent() {
       const apiUrl = process.env.EXPO_PUBLIC_API_URL || '';
       fetch(`${apiUrl}/api/logout`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${sessionId}` },
+        headers: { 'X-Session-Token': sessionId },
       }).catch(() => { });
     }
   };
