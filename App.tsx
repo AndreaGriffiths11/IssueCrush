@@ -119,6 +119,7 @@ function AppContent() {
   const [authError, setAuthError] = useState('');
   const [undoBusy, setUndoBusy] = useState(false);
   const [lastClosed, setLastClosed] = useState<GitHubIssue | null>(null);
+  const [lastClosedIndex, setLastClosedIndex] = useState<number | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [inputFocused, setInputFocused] = useState(false);
 
@@ -353,8 +354,12 @@ function AppContent() {
     if (!token) {
       setIssues([]);
       setCurrentIndex(0);
+      setLastClosed(null);
+      setLastClosedIndex(null);
       return;
     }
+    setLastClosed(null);
+    setLastClosedIndex(null);
     loadIssues();
   }, [token]);
 
@@ -370,6 +375,8 @@ function AppContent() {
 
   const loadIssues = async () => {
     if (!token) return;
+    setLastClosed(null);
+    setLastClosedIndex(null);
     setLoadingIssues(true);
     setAuthError('');
     try {
@@ -474,11 +481,13 @@ function AppContent() {
 
     setFeedback(`Closed #${issue.number} · ${repoLabel(issue)}`);
     setLastClosed(issue);
+    setLastClosedIndex(cardIndex);
     try {
       await updateIssueState(token, issue, 'closed');
     } catch (error) {
       setFeedback(`Close failed: ${(error as Error).message}`);
       setLastClosed(null);
+      setLastClosedIndex(null);
     }
   };
 
@@ -490,6 +499,8 @@ function AppContent() {
     const issue = issues[cardIndex];
     if (!issue) return;
     setFeedback(`Kept open · #${issue.number}`);
+    setLastClosed(null);
+    setLastClosedIndex(null);
   };
 
   const onSwiped = (idx: number) => {
@@ -508,11 +519,12 @@ function AppContent() {
     setUndoBusy(true);
     try {
       swiperRef.current?.swipeBack();
-      setCurrentIndex((prev) => Math.max(0, prev - 1));
+      setCurrentIndex((prev) => Math.max(0, lastClosedIndex ?? prev - 1));
 
       await updateIssueState(token, lastClosed, 'open');
       setFeedback(`Reopened #${lastClosed.number}`);
       setLastClosed(null);
+      setLastClosedIndex(null);
     } catch (error) {
       setFeedback(`Undo failed: ${(error as Error).message}`);
     } finally {
@@ -1032,7 +1044,10 @@ function AppContent() {
                 )}
 
                 {/* Toast Feedback */}
-                <Animated.View style={[styles.toastWrap, isDesktop && styles.toastWrapDesktop, { pointerEvents: 'none' }, toastAnimatedStyle]}>
+                <Animated.View
+                  pointerEvents="box-none"
+                  style={[styles.toastWrap, isDesktop && styles.toastWrapDesktop, toastAnimatedStyle]}
+                >
                   <View style={[
                     styles.toast,
                     feedback.toLowerCase().includes('closed') && { backgroundColor: theme.danger, borderColor: theme.danger },
@@ -1055,6 +1070,23 @@ function AppContent() {
                     >
                       {feedback}
                     </Text>
+                    {lastClosed && (
+                      <TouchableOpacity
+                        style={[
+                          styles.toastUndoButton,
+                          { backgroundColor: theme.background, borderColor: theme.text },
+                          undoBusy && { opacity: 0.6 },
+                          webCursor('pointer'),
+                        ]}
+                        onPress={handleUndo}
+                        disabled={undoBusy}
+                      >
+                        <RotateCcw size={14} color={theme.text} />
+                        <Text style={[styles.toastUndoText, { color: theme.text }]}>
+                          {undoBusy ? 'UNDOING' : 'UNDO'}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </Animated.View>
 
@@ -2555,6 +2587,20 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
     fontSize: 14,
+    textTransform: 'uppercase',
+  },
+  toastUndoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  toastUndoText: {
+    fontSize: 12,
+    fontWeight: '800',
     textTransform: 'uppercase',
   },
 
