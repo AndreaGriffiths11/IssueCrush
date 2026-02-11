@@ -1,5 +1,5 @@
 import { app } from '@azure/functions';
-import { createSession, destroySession, resolveSession } from './sessionStore.js';
+import { createSession, destroySession, resolveSession, getSessionToken } from './sessionStore.js';
 
 const GITHUB_API = 'https://api.github.com';
 
@@ -31,19 +31,44 @@ app.http('debug', {
   handler: async () => {
     const cosmosConfigured = !!(process.env.COSMOS_ENDPOINT && process.env.COSMOS_KEY);
     let cosmosTest = null;
+    let sessionRoundTrip = null;
+
     if (cosmosConfigured) {
       try {
         const { CosmosClient } = await import('@azure/cosmos');
         const client = new CosmosClient({
           endpoint: process.env.COSMOS_ENDPOINT,
           key: process.env.COSMOS_KEY,
+          consistencyLevel: 'Strong',
         });
-        const { resource } = await client.database(process.env.COSMOS_DATABASE || 'issuecrush').read();
+        const db = client.database(process.env.COSMOS_DATABASE || 'issuecrush');
+        const { resource } = await db.read();
         cosmosTest = { connected: true, database: resource.id };
+
+        // Test full session round-trip
+        const testId = `debug-test-${Date.now()}`;
+        const container = db.container(process.env.COSMOS_CONTAINER || 'sessions');
+        await container.items.create({ id: testId, githubToken: 'test', expiresAt: Date.now() + 60000, ttl: 60 });
+        const { resource: readBack } = await container.item(testId, testId).read();
+        await container.item(testId, testId).delete();
+        sessionRoundTrip = { success: !!readBack, id: readBack?.id };
       } catch (error) {
-        cosmosTest = { connected: false, error: error.message };
+        cosmosTest = cosmosTest || { connected: false, error: error.message };
+        sessionRoundTrip = { success: false, error: error.message };
       }
     }
+
+    // Also test via the app's own session store
+    let storeTest = null;
+    try {
+      const testSessionId = await createSession('debug-test-token');
+      const resolved = await getSessionToken(testSessionId);
+      await destroySession(testSessionId);
+      storeTest = { success: resolved === 'debug-test-token', sessionId: testSessionId?.substring(0, 8) + '...' };
+    } catch (error) {
+      storeTest = { success: false, error: error.message };
+    }
+
     return {
       jsonBody: {
         cosmosConfigured,
@@ -52,6 +77,8 @@ app.http('debug', {
         cosmosDatabase: process.env.COSMOS_DATABASE || '(default: issuecrush)',
         cosmosContainer: process.env.COSMOS_CONTAINER || '(default: sessions)',
         cosmosTest,
+        sessionRoundTrip,
+        storeTest,
       },
     };
   },
