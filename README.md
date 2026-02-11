@@ -2,7 +2,7 @@
 
 Swipe through your GitHub issues like Tinder. Close with a left swipe, keep with a right swipe. Powered by **GitHub Copilot AI** for intelligent issue summaries.
 
-**[Try it live →](https://issuecrush-acolombiadev.zocomputer.io)**
+**[Try it live →](https://gray-water-08b04e810.6.azurestaticapps.net/)**
 
 ![IssueCrush Demo](assets/demo.gif)
 
@@ -214,30 +214,6 @@ npm run android   # Open in Android emulator
 - **[Agentation](https://github.com/benjitaylor/agentation)** - Visual feedback UI component (web only) by [Benji Taylor](https://github.com/benjitaylor)
 - **TypeScript** - Type-safe development
 
-## Deployment
-
-### Zo Deployment
-
-IssueCrush is deployed on [Zo](https://zo.computer) with two services:
-
-| Service | URL | Purpose |
-|---------|-----|---------|
-| Frontend | `https://issuecrush-acolombiadev.zocomputer.io` | Static web app |
-| API | `https://issuecrush-api-acolombiadev.zocomputer.io` | Express server |
-
-**API Service Configuration:**
-```
-entrypoint: node server.js
-workdir: /home/workspace/Projects/IssueCrush
-env_vars:
-  EXPO_PUBLIC_GITHUB_CLIENT_ID: <your_client_id>
-  GITHUB_CLIENT_SECRET: <your_secret>
-  COSMOS_ENDPOINT: <your_cosmos_endpoint>
-  COSMOS_KEY: <your_cosmos_key>
-  COSMOS_DATABASE: issuecrush
-  COSMOS_CONTAINER: sessions
-```
-
 ### Other Platforms
 
 For Azure Static Web Apps, Vercel, or similar platforms, set the environment variables in their configuration panel.
@@ -253,7 +229,6 @@ We welcome contributions! Check out the [Contributing Guide](CONTRIBUTING.md) to
 ## Credits
 
 - Created by [Andrea Griffiths](https://github.com/AndreaGriffiths11)
-- Deployment by [Zo](https://zo.computer?referrer=acolombiadev)
 - **Agentation** visual feedback component by [Benji Taylor](https://github.com/benjitaylor) - [GitHub](https://github.com/benjitaylor/agentation)
 
 ## Security
