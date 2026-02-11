@@ -23,6 +23,34 @@ app.http('health', {
   }),
 });
 
+// ─── Debug: Session test ─────────────────────────────────────
+app.http('debugSession', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'debug-session',
+  handler: async (request, context) => {
+    const cosmosConfigured = !!(process.env.COSMOS_ENDPOINT && process.env.COSMOS_KEY);
+    const testSessionId = await createSession('test-token-12345');
+    const retrieved = await resolveSession({
+      headers: { get: (h) => h === 'authorization' ? `Bearer ${testSessionId}` : null }
+    });
+    await destroySession(testSessionId);
+
+    return {
+      jsonBody: {
+        cosmosConfigured,
+        cosmosEndpoint: process.env.COSMOS_ENDPOINT ? 'SET' : 'NOT SET',
+        cosmosKey: process.env.COSMOS_KEY ? 'SET' : 'NOT SET',
+        cosmosDatabase: process.env.COSMOS_DATABASE || 'default: issuecrush',
+        cosmosContainer: process.env.COSMOS_CONTAINER || 'default: sessions',
+        testSessionCreated: !!testSessionId,
+        testSessionRetrieved: !!retrieved,
+        sessionRoundTripPassed: retrieved?.githubToken === 'test-token-12345',
+      },
+    };
+  },
+});
+
 // ─── OAuth token exchange → session ──────────────────────────
 app.http('githubToken', {
   methods: ['POST'],
