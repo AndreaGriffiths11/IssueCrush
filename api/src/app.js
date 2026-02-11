@@ -28,43 +28,49 @@ app.http('debug', {
   methods: ['GET'],
   authLevel: 'anonymous',
   route: 'debug',
-  handler: async () => {
+  handler: async (request) => {
     const cosmosConfigured = !!(process.env.COSMOS_ENDPOINT && process.env.COSMOS_KEY);
-    let cosmosTest = null;
-    let sessionRoundTrip = null;
 
+    // If a session_id query param is provided, test resolving it (cross-request test)
+    const testSessionId = request.query.get('session_id');
+    if (testSessionId) {
+      const token = await getSessionToken(testSessionId);
+      return {
+        jsonBody: {
+          crossRequestTest: true,
+          sessionFound: !!token,
+          tokenPrefix: token ? token.substring(0, 8) + '...' : null,
+        },
+      };
+    }
+
+    // Otherwise, run full diagnostics
+    let cosmosTest = null;
     if (cosmosConfigured) {
       try {
         const { CosmosClient } = await import('@azure/cosmos');
         const client = new CosmosClient({
           endpoint: process.env.COSMOS_ENDPOINT,
           key: process.env.COSMOS_KEY,
-          consistencyLevel: 'Strong',
         });
         const db = client.database(process.env.COSMOS_DATABASE || 'issuecrush');
         const { resource } = await db.read();
         cosmosTest = { connected: true, database: resource.id };
-
-        // Test full session round-trip
-        const testId = `debug-test-${Date.now()}`;
-        const container = db.container(process.env.COSMOS_CONTAINER || 'sessions');
-        await container.items.create({ id: testId, githubToken: 'test', expiresAt: Date.now() + 60000, ttl: 60 });
-        const { resource: readBack } = await container.item(testId, testId).read();
-        await container.item(testId, testId).delete();
-        sessionRoundTrip = { success: !!readBack, id: readBack?.id };
       } catch (error) {
-        cosmosTest = cosmosTest || { connected: false, error: error.message };
-        sessionRoundTrip = { success: false, error: error.message };
+        cosmosTest = { connected: false, error: error.message };
       }
     }
 
-    // Also test via the app's own session store
+    // Test session store create → read → delete within one invocation
     let storeTest = null;
     try {
       const testSessionId = await createSession('debug-test-token');
       const resolved = await getSessionToken(testSessionId);
-      await destroySession(testSessionId);
-      storeTest = { success: resolved === 'debug-test-token', sessionId: testSessionId?.substring(0, 8) + '...' };
+      storeTest = {
+        success: resolved === 'debug-test-token',
+        sessionId: testSessionId,
+        note: 'Use ?session_id=<id> to test cross-request read (do NOT delete first)',
+      };
     } catch (error) {
       storeTest = { success: false, error: error.message };
     }
@@ -72,12 +78,7 @@ app.http('debug', {
     return {
       jsonBody: {
         cosmosConfigured,
-        cosmosEndpoint: process.env.COSMOS_ENDPOINT ? '...configured' : 'MISSING',
-        cosmosKey: process.env.COSMOS_KEY ? '...configured' : 'MISSING',
-        cosmosDatabase: process.env.COSMOS_DATABASE || '(default: issuecrush)',
-        cosmosContainer: process.env.COSMOS_CONTAINER || '(default: sessions)',
         cosmosTest,
-        sessionRoundTrip,
         storeTest,
       },
     };
