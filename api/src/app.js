@@ -1,5 +1,5 @@
 import { app } from '@azure/functions';
-import { createSession, destroySession, resolveSession, getSessionToken } from './sessionStore.js';
+import { createSession, destroySession, resolveSession } from './sessionStore.js';
 
 const GITHUB_API = 'https://api.github.com';
 
@@ -21,68 +21,6 @@ app.http('health', {
       message: 'AI summaries powered by GitHub Copilot',
     },
   }),
-});
-
-// ─── Diagnostics (TEMPORARY — remove after debugging) ───────
-app.http('debug', {
-  methods: ['GET'],
-  authLevel: 'anonymous',
-  route: 'debug',
-  handler: async (request) => {
-    const cosmosConfigured = !!(process.env.COSMOS_ENDPOINT && process.env.COSMOS_KEY);
-
-    // If a session_id query param is provided, test resolving it (cross-request test)
-    const testSessionId = request.query.get('session_id');
-    if (testSessionId) {
-      const token = await getSessionToken(testSessionId);
-      return {
-        jsonBody: {
-          crossRequestTest: true,
-          sessionFound: !!token,
-          tokenPrefix: token ? token.substring(0, 8) + '...' : null,
-        },
-      };
-    }
-
-    // Otherwise, run full diagnostics
-    let cosmosTest = null;
-    if (cosmosConfigured) {
-      try {
-        const { CosmosClient } = await import('@azure/cosmos');
-        const client = new CosmosClient({
-          endpoint: process.env.COSMOS_ENDPOINT,
-          key: process.env.COSMOS_KEY,
-        });
-        const db = client.database(process.env.COSMOS_DATABASE || 'issuecrush');
-        const { resource } = await db.read();
-        cosmosTest = { connected: true, database: resource.id };
-      } catch (error) {
-        cosmosTest = { connected: false, error: error.message };
-      }
-    }
-
-    // Test session store create → read → delete within one invocation
-    let storeTest = null;
-    try {
-      const testSessionId = await createSession('debug-test-token');
-      const resolved = await getSessionToken(testSessionId);
-      storeTest = {
-        success: resolved === 'debug-test-token',
-        sessionId: testSessionId,
-        note: 'Use ?session_id=<id> to test cross-request read (do NOT delete first)',
-      };
-    } catch (error) {
-      storeTest = { success: false, error: error.message };
-    }
-
-    return {
-      jsonBody: {
-        cosmosConfigured,
-        cosmosTest,
-        storeTest,
-      },
-    };
-  },
 });
 
 // ─── OAuth token exchange → session ──────────────────────────
