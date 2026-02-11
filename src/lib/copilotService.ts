@@ -35,7 +35,7 @@ export class CopilotService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${sessionId}`,
+          'X-Session-Token': sessionId,
         },
         body: JSON.stringify({ issue }),
       });

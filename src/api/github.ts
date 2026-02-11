@@ -32,7 +32,7 @@ export type GitHubIssue = {
 };
 
 const authHeaders = (sessionId: string) => ({
-  Authorization: `Bearer ${sessionId}`,
+  'X-Session-Token': sessionId,
   'Content-Type': 'application/json',
 });
 

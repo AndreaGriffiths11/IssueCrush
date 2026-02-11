@@ -150,12 +150,22 @@ export async function destroySession(sessionId) {
 }
 
 /**
- * Extract session ID from request Authorization header, return the GitHub token.
+ * Extract session ID from request header, return the GitHub token.
+ * Uses X-Session-Token header to avoid Azure SWA overwriting the Authorization header.
  */
 export async function resolveSession(request) {
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
-  const sessionId = authHeader.slice(7);
+  // Try custom header first (preferred), then fall back to Authorization for backwards compatibility
+  let sessionId = request.headers.get('x-session-token');
+
+  if (!sessionId) {
+    const authHeader = request.headers.get('authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      sessionId = authHeader.slice(7);
+    }
+  }
+
+  if (!sessionId) return null;
+
   const token = await getSessionToken(sessionId);
   return token ? { sessionId, githubToken: token } : null;
 }
