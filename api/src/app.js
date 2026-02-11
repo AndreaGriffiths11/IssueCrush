@@ -51,6 +51,20 @@ app.http('debugSession', {
   },
 });
 
+// ─── Debug: Echo headers ─────────────────────────────────────
+app.http('debugHeaders', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'debug-headers',
+  handler: async (request) => {
+    const headers = {};
+    request.headers.forEach((value, key) => {
+      headers[key] = key.toLowerCase() === 'authorization' ? value.slice(0, 20) + '...' : value;
+    });
+    return { jsonBody: { headers } };
+  },
+});
+
 // ─── Debug: Check specific session ───────────────────────────
 app.http('debugCheckSession', {
   methods: ['GET'],
@@ -149,7 +163,12 @@ app.http('issues', {
   authLevel: 'anonymous',
   route: 'issues',
   handler: async (request, context) => {
+    const authHeader = request.headers.get('authorization');
+    context.log(`[ISSUES] Auth header: ${authHeader ? authHeader.slice(0, 20) + '...' : 'MISSING'}`);
+
     const session = await resolveSession(request);
+    context.log(`[ISSUES] Session resolved: ${!!session}`);
+
     if (!session) {
       return { status: 401, jsonBody: { error: 'Session expired or invalid. Please sign in again.' } };
     }
