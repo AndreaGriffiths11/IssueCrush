@@ -23,6 +23,40 @@ app.http('health', {
   }),
 });
 
+// ─── Diagnostics (TEMPORARY — remove after debugging) ───────
+app.http('debug', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'debug',
+  handler: async () => {
+    const cosmosConfigured = !!(process.env.COSMOS_ENDPOINT && process.env.COSMOS_KEY);
+    let cosmosTest = null;
+    if (cosmosConfigured) {
+      try {
+        const { CosmosClient } = await import('@azure/cosmos');
+        const client = new CosmosClient({
+          endpoint: process.env.COSMOS_ENDPOINT,
+          key: process.env.COSMOS_KEY,
+        });
+        const { resource } = await client.database(process.env.COSMOS_DATABASE || 'issuecrush').read();
+        cosmosTest = { connected: true, database: resource.id };
+      } catch (error) {
+        cosmosTest = { connected: false, error: error.message };
+      }
+    }
+    return {
+      jsonBody: {
+        cosmosConfigured,
+        cosmosEndpoint: process.env.COSMOS_ENDPOINT ? '...configured' : 'MISSING',
+        cosmosKey: process.env.COSMOS_KEY ? '...configured' : 'MISSING',
+        cosmosDatabase: process.env.COSMOS_DATABASE || '(default: issuecrush)',
+        cosmosContainer: process.env.COSMOS_CONTAINER || '(default: sessions)',
+        cosmosTest,
+      },
+    };
+  },
+});
+
 // ─── OAuth token exchange → session ──────────────────────────
 app.http('githubToken', {
   methods: ['POST'],
