@@ -65,20 +65,26 @@ export async function createSession(githubToken) {
     ttl: Math.floor(SESSION_TTL_MS / 1000),
   };
 
+  console.log(`[SESSION] Creating session ${sessionId.slice(0, 8)}... cosmosContainer=${!!cosmosContainer}`);
+
   if (cosmosContainer) {
     try {
       await cosmosContainer.items.create(session);
+      console.log(`[SESSION] Session ${sessionId.slice(0, 8)}... stored in Cosmos DB`);
     } catch (error) {
+      console.error(`[SESSION] Cosmos create error: ${error.message}, code=${error.code}`);
       if (error.code === 429) {
         const retryAfterMs = error.retryAfterInMs || 1000;
         await new Promise((r) => setTimeout(r, retryAfterMs));
         await cosmosContainer.items.create(session);
+        console.log(`[SESSION] Session ${sessionId.slice(0, 8)}... stored after retry`);
       } else {
         throw error;
       }
     }
   } else {
     memoryStore.set(sessionId, session);
+    console.log(`[SESSION] Session ${sessionId.slice(0, 8)}... stored in memory (Cosmos not available)`);
   }
 
   return sessionId;
@@ -88,28 +94,43 @@ export async function getSessionToken(sessionId) {
   if (!sessionId) return null;
   await initCosmos();
 
+  console.log(`[SESSION] Looking up session ${sessionId.slice(0, 8)}... cosmosContainer=${!!cosmosContainer}`);
+
   if (cosmosContainer) {
     try {
       const { resource } = await cosmosContainer.item(sessionId, sessionId).read();
-      if (!resource) return null;
+      if (!resource) {
+        console.log(`[SESSION] Session ${sessionId.slice(0, 8)}... not found in Cosmos`);
+        return null;
+      }
       if (resource.expiresAt < Date.now()) {
+        console.log(`[SESSION] Session ${sessionId.slice(0, 8)}... expired`);
         await destroySession(sessionId);
         return null;
       }
+      console.log(`[SESSION] Session ${sessionId.slice(0, 8)}... found and valid`);
       return resource.githubToken;
     } catch (error) {
-      if (error.code === 404) return null;
+      if (error.code === 404) {
+        console.log(`[SESSION] Session ${sessionId.slice(0, 8)}... 404 not found`);
+        return null;
+      }
       console.error('Cosmos DB read error:', error.message);
       return null;
     }
   }
 
   const session = memoryStore.get(sessionId);
-  if (!session) return null;
+  if (!session) {
+    console.log(`[SESSION] Session ${sessionId.slice(0, 8)}... not in memory store`);
+    return null;
+  }
   if (session.expiresAt < Date.now()) {
+    console.log(`[SESSION] Session ${sessionId.slice(0, 8)}... expired in memory`);
     memoryStore.delete(sessionId);
     return null;
   }
+  console.log(`[SESSION] Session ${sessionId.slice(0, 8)}... found in memory`);
   return session.githubToken;
 }
 
