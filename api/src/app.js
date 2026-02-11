@@ -51,23 +51,53 @@ app.http('debugSession', {
   },
 });
 
+// ─── Debug: Check specific session ───────────────────────────
+app.http('debugCheckSession', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'debug-check-session',
+  handler: async (request, context) => {
+    const sessionId = request.query.get('id');
+    if (!sessionId) {
+      return { status: 400, jsonBody: { error: 'Provide ?id=sessionId' } };
+    }
+
+    const session = await resolveSession({
+      headers: { get: (h) => h === 'authorization' ? `Bearer ${sessionId}` : null }
+    });
+
+    return {
+      jsonBody: {
+        sessionId: sessionId.slice(0, 8) + '...',
+        found: !!session,
+        hasToken: !!session?.githubToken,
+      },
+    };
+  },
+});
+
 // ─── OAuth token exchange → session ──────────────────────────
 app.http('githubToken', {
   methods: ['POST'],
   authLevel: 'anonymous',
   route: 'github-token',
   handler: async (request, context) => {
+    context.log('[OAUTH] github-token endpoint called');
     const body = await request.json();
     const { code } = body;
 
     if (!code) {
+      context.log('[OAUTH] No code provided');
       return { status: 400, jsonBody: { error: 'No authorization code provided' } };
     }
+
+    context.log(`[OAUTH] Exchanging code: ${code.slice(0, 8)}...`);
 
     const clientId = process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID;
     const clientSecret = process.env.GITHUB_CLIENT_SECRET;
 
     if (!clientId || !clientSecret) {
+      context.log('[OAUTH] Missing credentials');
       return { status: 500, jsonBody: { error: 'Missing GitHub credentials' } };
     }
 
@@ -79,16 +109,20 @@ app.http('githubToken', {
       });
 
       const data = await response.json();
+      context.log(`[OAUTH] GitHub response: error=${data.error || 'none'}, has_token=${!!data.access_token}`);
 
       if (data.error) {
         return { status: 400, jsonBody: { error: data.error, error_description: data.error_description } };
       }
 
       if (data.access_token) {
+        context.log('[OAUTH] Creating session...');
         const sessionId = await createSession(data.access_token);
+        context.log(`[OAUTH] Session created: ${sessionId.slice(0, 8)}...`);
         return { jsonBody: { session_id: sessionId } };
       }
 
+      context.log('[OAUTH] No access token in response');
       return { status: 400, jsonBody: { error: 'No access token received' } };
     } catch (error) {
       context.error('OAuth exchange error:', error);
