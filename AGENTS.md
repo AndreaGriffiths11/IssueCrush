@@ -79,3 +79,10 @@ api/src/sessionStore.js (Cosmos DB session storage)
 Read `.agents.local.md` at session start for accumulated learnings.
 At session end, append a Session Log entry: what changed, what worked, what didn't, decisions made, patterns learned.
 Subagents: explicitly read `.agents.local.md` — you don't inherit main conversation history.
+
+### Promotion Workflow
+- During compression (300+ lines), flag patterns that recurred 3+ sessions in `.agents.local.md` → "Ready to Promote"
+- Use pipe-delimited format: `pattern | context` → target section (Patterns, Gotchas, or Boundaries)
+- Human decides when to move flagged items into this file
+- After promoting: remove the item from Ready to Promote in `.agents.local.md`
+- If an item is already captured in AGENTS.md, clear it from Ready to Promote — don't duplicate
