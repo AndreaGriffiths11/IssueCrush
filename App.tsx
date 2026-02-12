@@ -235,7 +235,9 @@ export default function App() {
   }, [themeMode, systemColorScheme]);
 
   React.useEffect(() => {
-    const subscription = Appearance.addChangeListener(() => {});
+    const subscription = Appearance.addChangeListener(() => {
+      // Theme will re-evaluate through systemColorScheme dependency in useMemo
+    });
     return () => subscription.remove();
   }, []);
 
