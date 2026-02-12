@@ -46,6 +46,12 @@ export function IssueCard({
 }: IssueCardProps) {
   const openIssueLink = async (url: string) => {
     try {
+      // Validate URL is a GitHub URL to prevent XSS attacks
+      if (!url.startsWith('https://github.com/') && !url.startsWith('https://api.github.com/')) {
+        console.warn('Blocked non-GitHub URL:', url);
+        return;
+      }
+
       if (isWeb && typeof document !== 'undefined') {
         const link = document.createElement('a');
         link.href = url;

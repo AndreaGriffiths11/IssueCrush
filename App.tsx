@@ -88,7 +88,7 @@ function AppContent() {
     progressAnimatedStyle, undoAnimatedStyle, closeAnimatedStyle, keepAnimatedStyle,
     handleClosePressIn, handleClosePressOut, handleKeepPressIn, handleKeepPressOut,
     handleUndoPressIn, handleUndoPressOut,
-  } = useAnimations(theme, feedback, currentIndex, issues.length, false); // inputFocused=false (not used in mobile)
+  } = useAnimations(theme, feedback, currentIndex, issues.length, false); // Last param: inputFocused - not used here
 
   React.useEffect(() => {
     if (isWeb && typeof document !== 'undefined') {
@@ -327,13 +327,6 @@ export default function App() {
     }
     return { theme: effectiveTheme, isDark: effectiveIsDark };
   }, [themeMode, systemColorScheme]);
-
-  React.useEffect(() => {
-    const subscription = Appearance.addChangeListener(() => {
-      // Theme will re-evaluate through systemColorScheme dependency in useMemo
-    });
-    return () => subscription.remove();
-  }, []);
 
   return (
     <ErrorBoundary>
