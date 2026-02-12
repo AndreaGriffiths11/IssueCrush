@@ -122,7 +122,7 @@ function AppContent() {
   }, [isWeb]);
 
   const cycleTheme = () => {
-    const modes: ThemeMode[] = ['system', 'light', 'dark'];
+    const modes: ThemeMode[] = ['light', 'dark', 'system'];
     const currentIdx = modes.indexOf(themeMode);
     setThemeMode(modes[(currentIdx + 1) % modes.length]);
   };
