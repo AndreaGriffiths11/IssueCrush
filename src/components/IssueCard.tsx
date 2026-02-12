@@ -15,8 +15,8 @@ import { ExternalLink, Sparkles } from 'lucide-react-native';
 import { GitHubIssue } from '../api/github';
 import { Theme } from '../theme';
 import { getLabelColor } from '../utils/colors';
+import { webCursor } from '../utils/webCursor';
 
-const webCursor = (cursor: string): any => Platform.OS === 'web' ? { cursor, touchAction: 'pan-y' } : {};
 const isWeb = Platform.OS === 'web';
 
 interface IssueCardProps {

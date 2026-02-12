@@ -51,9 +51,8 @@ import { useAnimations } from './src/hooks/useAnimations';
 import { AuthScreen } from './src/components/AuthScreen';
 import { Sidebar } from './src/components/Sidebar';
 import { SwipeContainer } from './src/components/SwipeContainer';
+import { webCursor } from './src/utils/webCursor';
 
-const webCursor = (cursor: string): any => 
-  Platform.OS === 'web' ? { cursor, touchAction: 'pan-y' } : {};
 const isWeb = Platform.OS === 'web';
 
 const ThemeContext = React.createContext<{
@@ -89,7 +88,7 @@ function AppContent() {
     progressAnimatedStyle, undoAnimatedStyle, closeAnimatedStyle, keepAnimatedStyle,
     handleClosePressIn, handleClosePressOut, handleKeepPressIn, handleKeepPressOut,
     handleUndoPressIn, handleUndoPressOut,
-  } = useAnimations(theme, feedback, currentIndex, issues.length, false);
+  } = useAnimations(theme, feedback, currentIndex, issues.length, false); // inputFocused=false (not used in mobile)
 
   React.useEffect(() => {
     if (isWeb && typeof document !== 'undefined') {
@@ -128,7 +127,14 @@ function AppContent() {
   };
 
   if (!token) {
-    return <AuthScreen isDesktop={isDesktop} clientId={process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID || null} authError={authError} onLogin={startLogin} />;
+    return (
+      <AuthScreen
+        isDesktop={isDesktop}
+        clientId={process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID || null}
+        authError={authError}
+        onLogin={startLogin}
+      />
+    );
   }
 
   if (loadingIssues && issues.length === 0) {
@@ -144,7 +150,27 @@ function AppContent() {
     return (
       <SafeAreaView style={[appStyles.safeArea, { backgroundColor: theme.background }]}>
         <StatusBar style={isDark ? 'light' : 'dark'} />
-        {isDesktop && <Sidebar theme={theme} themeMode={themeMode} repoFilter={repoFilter} labelFilter={labelFilter} loadingIssues={loadingIssues} issues={issues} currentIndex={currentIndex} lastClosed={lastClosed} undoBusy={undoBusy} swiperRef={swiperRef} progressAnimatedStyle={progressAnimatedStyle} onRepoFilterChange={setRepoFilter} onLabelFilterChange={setLabelFilter} onRefresh={loadIssues} onUndo={handleUndo} onCycleTheme={cycleTheme} onSignOut={signOut} />}
+        {isDesktop && (
+          <Sidebar
+            theme={theme}
+            themeMode={themeMode}
+            repoFilter={repoFilter}
+            labelFilter={labelFilter}
+            loadingIssues={loadingIssues}
+            issues={issues}
+            currentIndex={currentIndex}
+            lastClosed={lastClosed}
+            undoBusy={undoBusy}
+            swiperRef={swiperRef}
+            progressAnimatedStyle={progressAnimatedStyle}
+            onRepoFilterChange={setRepoFilter}
+            onLabelFilterChange={setLabelFilter}
+            onRefresh={loadIssues}
+            onUndo={handleUndo}
+            onCycleTheme={cycleTheme}
+            onSignOut={signOut}
+          />
+        )}
         <View style={appStyles.emptyContainer}>
           <Inbox size={64} color={theme.textMuted} strokeWidth={1.5} />
           <Text style={[appStyles.emptyTitle, { color: theme.text }]}>All caught up!</Text>
@@ -162,7 +188,25 @@ function AppContent() {
       <StatusBar style={isDark ? 'light' : 'dark'} />
       {isDesktop ? (
         <View style={appStyles.desktopLayout}>
-          <Sidebar theme={theme} themeMode={themeMode} repoFilter={repoFilter} labelFilter={labelFilter} loadingIssues={loadingIssues} issues={issues} currentIndex={currentIndex} lastClosed={lastClosed} undoBusy={undoBusy} swiperRef={swiperRef} progressAnimatedStyle={progressAnimatedStyle} onRepoFilterChange={setRepoFilter} onLabelFilterChange={setLabelFilter} onRefresh={loadIssues} onUndo={handleUndo} onCycleTheme={cycleTheme} onSignOut={signOut} />
+          <Sidebar
+            theme={theme}
+            themeMode={themeMode}
+            repoFilter={repoFilter}
+            labelFilter={labelFilter}
+            loadingIssues={loadingIssues}
+            issues={issues}
+            currentIndex={currentIndex}
+            lastClosed={lastClosed}
+            undoBusy={undoBusy}
+            swiperRef={swiperRef}
+            progressAnimatedStyle={progressAnimatedStyle}
+            onRepoFilterChange={setRepoFilter}
+            onLabelFilterChange={setLabelFilter}
+            onRefresh={loadIssues}
+            onUndo={handleUndo}
+            onCycleTheme={cycleTheme}
+            onSignOut={signOut}
+          />
           <View style={appStyles.desktopCardArea}>
             {allSwiped ? (
               <View style={appStyles.completedScreen}>
@@ -172,7 +216,21 @@ function AppContent() {
                 <Text style={[appStyles.completedSubtitle, { color: theme.textSecondary }]}>You've triaged all issues. Great work!</Text>
               </View>
             ) : (
-              <SwipeContainer issues={issues} currentIndex={currentIndex} isDesktop={isDesktop} theme={theme} isDark={isDark} loadingAiSummary={loadingAiSummary} copilotAvailable={copilotAvailable} swiperRef={swiperRef} repoLabel={repoLabel} onSwiped={onSwiped} onSwipedLeft={handleSwipeLeft} onSwipedRight={handleSwipeRight} onGetAiSummary={handleGetAiSummary} />
+              <SwipeContainer
+                issues={issues}
+                currentIndex={currentIndex}
+                isDesktop={isDesktop}
+                theme={theme}
+                isDark={isDark}
+                loadingAiSummary={loadingAiSummary}
+                copilotAvailable={copilotAvailable}
+                swiperRef={swiperRef}
+                repoLabel={repoLabel}
+                onSwiped={onSwiped}
+                onSwipedLeft={handleSwipeLeft}
+                onSwipedRight={handleSwipeRight}
+                onGetAiSummary={handleGetAiSummary}
+              />
             )}
           </View>
         </View>
@@ -187,16 +245,52 @@ function AppContent() {
             </View>
           ) : (
             <>
-              <SwipeContainer issues={issues} currentIndex={currentIndex} isDesktop={isDesktop} theme={theme} isDark={isDark} loadingAiSummary={loadingAiSummary} copilotAvailable={copilotAvailable} swiperRef={swiperRef} repoLabel={repoLabel} onSwiped={onSwiped} onSwipedLeft={handleSwipeLeft} onSwipedRight={handleSwipeRight} onGetAiSummary={handleGetAiSummary} />
+              <SwipeContainer
+                issues={issues}
+                currentIndex={currentIndex}
+                isDesktop={isDesktop}
+                theme={theme}
+                isDark={isDark}
+                loadingAiSummary={loadingAiSummary}
+                copilotAvailable={copilotAvailable}
+                swiperRef={swiperRef}
+                repoLabel={repoLabel}
+                onSwiped={onSwiped}
+                onSwipedLeft={handleSwipeLeft}
+                onSwipedRight={handleSwipeRight}
+                onGetAiSummary={handleGetAiSummary}
+              />
               <View style={[appStyles.mobileControls, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]}>
                 <Animated.View style={[undoAnimatedStyle]}>
-                  <TouchableOpacity style={[appStyles.mobileUndoBtn, { backgroundColor: theme.backgroundTertiary, borderColor: theme.border }, webCursor('pointer')]} onPress={handleUndo} onPressIn={handleUndoPressIn} onPressOut={handleUndoPressOut} disabled={!lastClosed || undoBusy}><RotateCcw size={20} color={lastClosed ? theme.primary : theme.textMuted} /></TouchableOpacity>
+                  <TouchableOpacity
+                    style={[appStyles.mobileUndoBtn, { backgroundColor: theme.backgroundTertiary, borderColor: theme.border }, webCursor('pointer')]}
+                    onPress={handleUndo}
+                    onPressIn={handleUndoPressIn}
+                    onPressOut={handleUndoPressOut}
+                    disabled={!lastClosed || undoBusy}
+                  >
+                    <RotateCcw size={20} color={lastClosed ? theme.primary : theme.textMuted} />
+                  </TouchableOpacity>
                 </Animated.View>
                 <Animated.View style={[closeAnimatedStyle]}>
-                  <TouchableOpacity style={[appStyles.mobileFabClose, { backgroundColor: theme.danger }, webCursor('pointer')]} onPress={() => swiperRef.current?.swipeLeft()} onPressIn={handleClosePressIn} onPressOut={handleClosePressOut}><X size={32} color="#ffffff" strokeWidth={3} /></TouchableOpacity>
+                  <TouchableOpacity
+                    style={[appStyles.mobileFabClose, { backgroundColor: theme.danger }, webCursor('pointer')]}
+                    onPress={() => swiperRef.current?.swipeLeft()}
+                    onPressIn={handleClosePressIn}
+                    onPressOut={handleClosePressOut}
+                  >
+                    <X size={32} color="#ffffff" strokeWidth={3} />
+                  </TouchableOpacity>
                 </Animated.View>
                 <Animated.View style={[keepAnimatedStyle]}>
-                  <TouchableOpacity style={[appStyles.mobileFabKeep, { backgroundColor: theme.success }, webCursor('pointer')]} onPress={() => swiperRef.current?.swipeRight()} onPressIn={handleKeepPressIn} onPressOut={handleKeepPressOut}><Check size={32} color="#ffffff" strokeWidth={3} /></TouchableOpacity>
+                  <TouchableOpacity
+                    style={[appStyles.mobileFabKeep, { backgroundColor: theme.success }, webCursor('pointer')]}
+                    onPress={() => swiperRef.current?.swipeRight()}
+                    onPressIn={handleKeepPressIn}
+                    onPressOut={handleKeepPressOut}
+                  >
+                    <Check size={32} color="#ffffff" strokeWidth={3} />
+                  </TouchableOpacity>
                 </Animated.View>
               </View>
             </>

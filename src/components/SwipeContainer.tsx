@@ -4,8 +4,7 @@ import Swiper from 'react-native-deck-swiper';
 import { GitHubIssue } from '../api/github';
 import { Theme } from '../theme';
 import { IssueCard } from './IssueCard';
-
-const webCursor = (cursor: string): any => Platform.OS === 'web' ? { cursor, touchAction: 'pan-y' } : {};
+import { webCursor } from '../utils/webCursor';
 
 interface SwipeContainerProps {
   issues: GitHubIssue[];

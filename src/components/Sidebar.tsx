@@ -12,8 +12,7 @@ import Swiper from 'react-native-deck-swiper';
 import { Check, Filter, LogOut, Moon, RotateCcw, RefreshCw, Sun, Tag, X } from 'lucide-react-native';
 import { GitHubIssue } from '../api/github';
 import { Theme, ThemeMode } from '../theme';
-
-const webCursor = (cursor: string): any => Platform.OS === 'web' ? { cursor, touchAction: 'pan-y' } : {};
+import { webCursor } from '../utils/webCursor';
 
 interface SidebarProps {
   theme: Theme;

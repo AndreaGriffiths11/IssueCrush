@@ -11,8 +11,9 @@ import {
 } from 'react-native';
 import { Check, Heart, Sparkles, X } from 'lucide-react-native';
 
-const webCursor = (cursor: string): any => Platform.OS === 'web' ? { cursor, touchAction: 'pan-y' } : {};
 const isWeb = Platform.OS === 'web';
+
+import { webCursor } from '../utils/webCursor';
 
 interface AuthScreenProps {
   isDesktop: boolean;
