@@ -64,7 +64,7 @@ const ThemeContext = React.createContext<{
   theme: lightTheme,
   isDark: false,
   themeMode: 'system',
-  setThemeMode: () => {},
+  setThemeMode: () => { },
 });
 
 const useTheme = () => React.useContext(ThemeContext);
@@ -75,7 +75,7 @@ function AppContent() {
   const isDesktop = isWeb && SCREEN_WIDTH >= 1024;
 
   const { token, authError, setAuthError, copilotAvailable, startLogin, signOut } = useAuth();
-  
+
   const {
     issues, loadingIssues, loadingAiSummary, currentIndex, lastClosed, undoBusy,
     feedback, setFeedback, repoFilter, setRepoFilter, labelFilter, setLabelFilter,
@@ -150,33 +150,42 @@ function AppContent() {
     return (
       <SafeAreaView style={[appStyles.safeArea, { backgroundColor: theme.background }]}>
         <StatusBar style={isDark ? 'light' : 'dark'} />
-        {isDesktop && (
-          <Sidebar
-            theme={theme}
-            themeMode={themeMode}
-            repoFilter={repoFilter}
-            labelFilter={labelFilter}
-            loadingIssues={loadingIssues}
-            issues={issues}
-            currentIndex={currentIndex}
-            lastClosed={lastClosed}
-            undoBusy={undoBusy}
-            swiperRef={swiperRef}
-            progressAnimatedStyle={progressAnimatedStyle}
-            onRepoFilterChange={setRepoFilter}
-            onLabelFilterChange={setLabelFilter}
-            onRefresh={loadIssues}
-            onUndo={handleUndo}
-            onCycleTheme={cycleTheme}
-            onSignOut={signOut}
-          />
+        {isDesktop ? (
+          <View style={appStyles.desktopLayout}>
+            <Sidebar
+              theme={theme}
+              themeMode={themeMode}
+              repoFilter={repoFilter}
+              labelFilter={labelFilter}
+              loadingIssues={loadingIssues}
+              issues={issues}
+              currentIndex={currentIndex}
+              lastClosed={lastClosed}
+              undoBusy={undoBusy}
+              swiperRef={swiperRef}
+              progressAnimatedStyle={progressAnimatedStyle}
+              onRepoFilterChange={setRepoFilter}
+              onLabelFilterChange={setLabelFilter}
+              onRefresh={loadIssues}
+              onUndo={handleUndo}
+              onCycleTheme={cycleTheme}
+              onSignOut={signOut}
+            />
+            <View style={appStyles.emptyContainer}>
+              <Inbox size={64} color={theme.textMuted} strokeWidth={1.5} />
+              <Text style={[appStyles.emptyTitle, { color: theme.text }]}>All caught up!</Text>
+              <Text style={[appStyles.emptySubtitle, { color: theme.textSecondary }]}>No open issues found{repoFilter ? ` in ${repoFilter}` : ''}.</Text>
+              <TouchableOpacity style={[appStyles.emptyButton, { backgroundColor: theme.primary }, webCursor('pointer')]} onPress={loadIssues}><Text style={appStyles.emptyButtonText}>REFRESH</Text></TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <View style={appStyles.emptyContainer}>
+            <Inbox size={64} color={theme.textMuted} strokeWidth={1.5} />
+            <Text style={[appStyles.emptyTitle, { color: theme.text }]}>All caught up!</Text>
+            <Text style={[appStyles.emptySubtitle, { color: theme.textSecondary }]}>No open issues found{repoFilter ? ` in ${repoFilter}` : ''}.</Text>
+            <TouchableOpacity style={[appStyles.emptyButton, { backgroundColor: theme.primary }, webCursor('pointer')]} onPress={loadIssues}><Text style={appStyles.emptyButtonText}>REFRESH</Text></TouchableOpacity>
+          </View>
         )}
-        <View style={appStyles.emptyContainer}>
-          <Inbox size={64} color={theme.textMuted} strokeWidth={1.5} />
-          <Text style={[appStyles.emptyTitle, { color: theme.text }]}>All caught up!</Text>
-          <Text style={[appStyles.emptySubtitle, { color: theme.textSecondary }]}>No open issues found{repoFilter ? ` in ${repoFilter}` : ''}.</Text>
-          <TouchableOpacity style={[appStyles.emptyButton, { backgroundColor: theme.primary }, webCursor('pointer')]} onPress={loadIssues}><Text style={appStyles.emptyButtonText}>REFRESH</Text></TouchableOpacity>
-        </View>
       </SafeAreaView>
     );
   }
