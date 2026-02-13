@@ -8,7 +8,7 @@ const CLIENT_ID = process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID ?? '';
 const DEFAULT_SCOPE = process.env.EXPO_PUBLIC_GITHUB_SCOPE || 'repo';
 const REDIRECT_URI =
   Platform.OS === 'web' && typeof window !== 'undefined'
-    ? window.location.origin
+    ? window.location.origin + '/'
     : AuthSession.makeRedirectUri({ preferLocalhost: true });
 
 export function useAuth() {
@@ -111,7 +111,7 @@ export function useAuth() {
       fetch(`${apiUrl}/api/logout`, {
         method: 'POST',
         headers: { 'X-Session-Token': sessionId },
-      }).catch(() => {});
+      }).catch(() => { });
     }
   }, [token]);
 
