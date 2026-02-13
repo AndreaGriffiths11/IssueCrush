@@ -156,9 +156,17 @@ async function destroySession(sessionId) {
  */
 function sessionMiddleware() {
   return async (req, res, next) => {
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const sessionId = authHeader.slice(7);
+    // Read X-Session-Token first (Azure SWA intercepts Authorization header),
+    // fall back to Authorization: Bearer for compatibility
+    let sessionId = req.headers['x-session-token'];
+    if (!sessionId) {
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        sessionId = authHeader.slice(7);
+      }
+    }
+
+    if (sessionId) {
       const token = await getSessionToken(sessionId);
       if (token) {
         req.githubToken = token;
