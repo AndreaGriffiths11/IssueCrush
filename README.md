@@ -127,6 +127,10 @@ The AI summary is powered by the GitHub Copilot SDK running on your backend serv
 
 <img width="800" height="800" alt="architecture" src="https://github.com/user-attachments/assets/b585d9c4-6dbd-4af8-9c35-2bb19472577f" />
 
+**Learn more:**
+- [OAuth Flow Architecture](docs/architecture/oauth-flow.md) - Detailed authentication flow
+- [Session Storage Architecture](docs/architecture/session-storage.md) - How sessions are managed with Cosmos DB
+- [API Reference](docs/api/) - Complete API documentation
 
 ## Project Structure
 
@@ -168,7 +172,19 @@ npm start         # Start Expo app only
 npm run web       # Open in web browser only
 npm run ios       # Open in iOS simulator
 npm run android   # Open in Android emulator
+npm test          # Run Jest tests
 ```
+
+## Documentation
+
+Comprehensive documentation is available in the [`docs/`](docs/) directory:
+
+- **[Documentation Index](docs/README.md)** - Full documentation organized by the Diátaxis framework
+- **[Frontend API Reference](docs/api/frontend-api.md)** - TypeScript API documentation
+- **[Backend API Reference](docs/api/backend-api.md)** - Azure Functions endpoint reference
+- **[OAuth Flow Guide](docs/architecture/oauth-flow.md)** - Authentication architecture
+- **[Session Storage Guide](docs/architecture/session-storage.md)** - Cosmos DB session management
+- **[Azure Deployment Guide](docs/guides/azure-deployment.md)** - Production deployment steps
 
 ## Troubleshooting
 
@@ -214,9 +230,9 @@ npm run android   # Open in Android emulator
 - **[Agentation](https://github.com/benjitaylor/agentation)** - Visual feedback UI component (web only) by [Benji Taylor](https://github.com/benjitaylor)
 - **TypeScript** - Type-safe development
 
-### Other Platforms
+### Deployment
 
-For Azure Static Web Apps, Vercel, or similar platforms, set the environment variables in their configuration panel.
+For production deployment to Azure Static Web Apps, see the [Azure Deployment Guide](docs/guides/azure-deployment.md).
 
 ## Contributing
 
