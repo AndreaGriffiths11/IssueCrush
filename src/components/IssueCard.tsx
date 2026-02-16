@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -40,6 +40,33 @@ export function IssueCard({
   isCurrentIssue,
   onGetAiSummary,
 }: IssueCardProps) {
+  const bodyScrollRef = useRef<ScrollView>(null);
+
+  // On web, get the real DOM node and make it actually scrollable.
+  // React Native Web's ScrollView renders overflow:hidden by default;
+  // the swiper's PanResponder also captures pointer events at DOM level.
+  // Setting overflow + touchAction directly on the scrollable node bypasses both.
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const node = bodyScrollRef.current as any;
+    if (!node) return;
+    // getScrollableNode() returns the inner scrollable DOM element in RNW
+    const el: HTMLElement | null = node.getScrollableNode?.() ?? null;
+    if (!el) return;
+    el.style.overflowY = 'auto';
+    el.style.touchAction = 'pan-y';
+    // Stop touch/wheel events from bubbling to the swiper's PanResponder
+    const stop = (e: Event) => e.stopPropagation();
+    el.addEventListener('touchstart', stop, { passive: true });
+    el.addEventListener('touchmove', stop, { passive: true });
+    el.addEventListener('wheel', stop, { passive: true });
+    return () => {
+      el.removeEventListener('touchstart', stop);
+      el.removeEventListener('touchmove', stop);
+      el.removeEventListener('wheel', stop);
+    };
+  }, [issue?.id]);
+
   const openIssueLink = async (url: string) => {
     try {
       const canOpen = await Linking.canOpenURL(url);
@@ -67,7 +94,7 @@ export function IssueCard({
 
   return (
     <View style={[styles.cardBrutalist, isDesktop && styles.cardBrutalistDesktop]}>
-      {/* Card Header - White with black text */}
+      {/* Card Header */}
       <View style={styles.cardHeaderBrutalist}>
         <View style={styles.issueIdBadge}>
           <Text style={styles.issueIdText}>#{issue.number}</Text>
@@ -88,8 +115,15 @@ export function IssueCard({
         </TouchableOpacity>
       </View>
 
-      {/* Card Body */}
-      <View style={[styles.cardBodyBrutalist, styles.cardBodyContent]} pointerEvents="box-none">
+      {/* Card Body — scrollable */}
+      <ScrollView
+        ref={bodyScrollRef}
+        style={styles.cardBodyBrutalist}
+        contentContainerStyle={styles.cardBodyContent}
+        nestedScrollEnabled={true}
+        showsVerticalScrollIndicator={true}
+        scrollEventThrottle={16}
+      >
         {/* User row */}
         {issue.user && (
           <View style={styles.userRowBrutalist}>
@@ -127,12 +161,10 @@ export function IssueCard({
             <Text style={styles.aiStickerText}>AI INSIGHT</Text>
           </View>
           {issue.aiSummary ? (
-            <ScrollView style={styles.aiSummaryScroll} nestedScrollEnabled={true} showsVerticalScrollIndicator={true}>
-              <Text style={styles.aiTextBrutalist}>
-                <Text style={[styles.aiTextHighlight, { color: theme.primary }]}>// SUMMARY{'\n'}</Text>
-                {issue.aiSummary}
-              </Text>
-            </ScrollView>
+            <Text style={[styles.aiTextBrutalist, { marginTop: 8 }]}>
+              <Text style={[styles.aiTextHighlight, { color: theme.primary }]}>// SUMMARY{'\n'}</Text>
+              {issue.aiSummary}
+            </Text>
           ) : copilotAvailable === false ? (
             <View style={styles.aiUnavailableContainer}>
               <Text style={styles.aiUnavailableText}>
@@ -159,7 +191,7 @@ export function IssueCard({
             </TouchableOpacity>
           )}
         </View>
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -186,18 +218,17 @@ const styles = StyleSheet.create({
   },
   cardHeaderBrutalist: {
     backgroundColor: '#ffffff',
-    paddingVertical: 24,
-    paddingHorizontal: 24,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
     borderBottomWidth: 3,
     borderBottomColor: '#000000',
-    minHeight: 120,
   },
   issueIdBadge: {
     backgroundColor: '#000000',
     paddingVertical: 4,
     paddingHorizontal: 12,
     alignSelf: 'flex-start',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   issueIdText: {
     color: '#ffffff',
@@ -211,8 +242,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headlineBrutalist: {
-    fontSize: 22,
-    lineHeight: 28,
+    fontSize: 20,
+    lineHeight: 26,
     color: '#000000',
     flex: 1,
   },
@@ -224,11 +255,12 @@ const styles = StyleSheet.create({
   },
   cardBodyBrutalist: {
     backgroundColor: '#f5f5f5',
-    padding: 24,
+    flex: 1,
   },
   cardBodyContent: {
-    gap: 16,
-    flex: 1,
+    padding: 16,
+    gap: 12,
+    paddingBottom: 24,
   },
   userRowBrutalist: {
     flexDirection: 'row',
@@ -278,7 +310,8 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: '#000000',
     padding: 16,
-    minHeight: 140,
+    paddingTop: 20,
+    minHeight: 100,
     position: 'relative',
   },
   aiStickerBadge: {
@@ -298,8 +331,11 @@ const styles = StyleSheet.create({
     color: '#000000',
     letterSpacing: 1,
   },
+  scrollWrapper: {
+    flex: 1,
+  },
   aiSummaryScroll: {
-    maxHeight: 180,
+    maxHeight: 120,
   },
   aiTextBrutalist: {
     fontSize: 13,
@@ -312,6 +348,7 @@ const styles = StyleSheet.create({
   },
   aiUnavailableContainer: {
     gap: 8,
+    marginTop: 8,
   },
   aiUnavailableText: {
     fontSize: 13,
@@ -334,6 +371,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderWidth: 2,
     borderColor: '#DFFF00',
+    marginTop: 8,
   },
   aiButtonTextBrutalist: {
     fontSize: 12,

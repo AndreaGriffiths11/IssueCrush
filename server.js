@@ -314,6 +314,16 @@ function generateFallbackSummary(issue) {
   return parts.join('');
 }
 
+// OAuth callback relay — GitHub redirects here, we forward to the frontend
+app.get('/callback', (req, res) => {
+  const params = new URLSearchParams();
+  if (req.query.code) params.set('code', req.query.code);
+  if (req.query.state) params.set('state', req.query.state);
+  if (req.query.error) params.set('error', req.query.error);
+  const frontendUrl = process.env.WEB_FRONTEND_URL || 'http://localhost:8081';
+  res.redirect(`${frontendUrl}?${params.toString()}`);
+});
+
 app.listen(PORT, async () => {
   await initCosmos();
   console.log(`\n\u2705 Server running on http://localhost:${PORT}`);
