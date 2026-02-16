@@ -118,7 +118,7 @@ export function useAuth() {
       fetch(`${apiUrl}/api/logout`, {
         method: 'POST',
         headers: { 'X-Session-Token': sessionId },
-      }).catch(() => {});
+      }).catch(() => { });
     }
   }, [token]);
 
