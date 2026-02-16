@@ -185,8 +185,10 @@ const styles = StyleSheet.create({
     },
     cardAreaDesktop: {
         position: 'relative',
-        width: 480,
-        height: 640,
+        flex: 1,
+        width: '100%',
+        alignSelf: 'stretch',
+        overflow: 'hidden',
     },
     cardLayerPink: {
         position: 'absolute',

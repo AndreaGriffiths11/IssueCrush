@@ -8,7 +8,7 @@ const CLIENT_ID = process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID ?? '';
 const DEFAULT_SCOPE = process.env.EXPO_PUBLIC_GITHUB_SCOPE || 'repo';
 const REDIRECT_URI =
   Platform.OS === 'web' && typeof window !== 'undefined'
-    ? window.location.origin
+    ? process.env.EXPO_PUBLIC_REDIRECT_URI || window.location.origin
     : AuthSession.makeRedirectUri({ preferLocalhost: true });
 
 export function useAuth() {
