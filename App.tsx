@@ -223,7 +223,9 @@ function AppContent() {
                   repoLabel={repoLabel}
                   copilotAvailable={copilotAvailable}
                   loadingAiSummary={loadingAiSummary}
+                  loadingIssues={loadingIssues}
                   onGetAiSummary={handleGetAiSummary}
+                  onRefresh={loadIssues}
                 />
 
                 {/* Toast Feedback */}
