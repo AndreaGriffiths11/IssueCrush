@@ -227,9 +227,12 @@ const styles = StyleSheet.create({
     cardAreaDesktop: {
         position: 'relative',
         flex: 1,
+        maxWidth: 520,
+        maxHeight: 680,
         width: '100%',
-        alignSelf: 'stretch',
-        overflow: 'hidden',
+        height: '100%',
+        alignSelf: 'center',
+        overflow: 'visible',
     },
     cardLayerPink: {
         position: 'absolute',
