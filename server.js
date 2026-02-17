@@ -207,7 +207,7 @@ app.post('/api/ai-summary', requireSession(), async (req, res) => {
     session = await client.createSession({
       model: 'gpt-4.1',
     });
-    
+
     // Build the prompt for Copilot
     const prompt = `You are analyzing a GitHub issue to help a developer quickly understand it and decide how to handle it.
 
@@ -229,10 +229,10 @@ Provide a concise 2-3 sentence summary that:
 3. Suggests a recommended action (e.g., "needs investigation", "ready to implement", "assign to backend team", "close as duplicate")
 
 Keep it clear, actionable, and helpful for quick triage. No markdown formatting.`;
-    
+
     console.log('   Sending prompt to Copilot...');
     const response = await session.sendAndWait({ prompt }, 30000); // 30 second timeout
-    
+
     let summary;
     if (response && response.data && response.data.content) {
       summary = response.data.content;
@@ -241,37 +241,37 @@ Keep it clear, actionable, and helpful for quick triage. No markdown formatting.
     } else {
       throw new Error('No content received from Copilot');
     }
-    
+
     // Clean up
     if (session) {
-      await session.destroy().catch(() => {});
+      await session.destroy().catch(() => { });
     }
     if (client) {
-      await client.stop().catch(() => {});
+      await client.stop().catch(() => { });
     }
-    
+
     res.json({ summary });
-    
+
   } catch (error) {
     console.error('\u274c AI Summary generation failed:', error.message);
-    
+
     // Clean up on error
     try {
-      if (session) await session.destroy().catch(() => {});
-      if (client) await client.stop().catch(() => {});
+      if (session) await session.destroy().catch(() => { });
+      if (client) await client.stop().catch(() => { });
     } catch (cleanupError) {
       // Ignore cleanup errors
     }
-    
+
     // Check for specific Copilot-related errors
     const errorMessage = error.message.toLowerCase();
-    
-    if (errorMessage.includes('unauthorized') || 
-        errorMessage.includes('401') ||
-        errorMessage.includes('forbidden') ||
-        errorMessage.includes('403') ||
-        errorMessage.includes('copilot') ||
-        errorMessage.includes('subscription')) {
+
+    if (errorMessage.includes('unauthorized') ||
+      errorMessage.includes('401') ||
+      errorMessage.includes('forbidden') ||
+      errorMessage.includes('403') ||
+      errorMessage.includes('copilot') ||
+      errorMessage.includes('subscription')) {
       // User likely doesn't have Copilot access
       console.log('   User may not have Copilot subscription');
       return res.status(403).json({
@@ -280,11 +280,11 @@ Keep it clear, actionable, and helpful for quick triage. No markdown formatting.
         requiresCopilot: true
       });
     }
-    
+
     // Generic error - return fallback summary
     const fallbackSummary = generateFallbackSummary(issue);
     console.log('   Using fallback summary');
-    res.json({ 
+    res.json({
       summary: fallbackSummary,
       fallback: true
     });
@@ -294,13 +294,13 @@ Keep it clear, actionable, and helpful for quick triage. No markdown formatting.
 // Generate a basic summary without AI
 function generateFallbackSummary(issue) {
   const parts = [];
-  
+
   parts.push(`\ud83d\udccb ${issue.title}`);
-  
+
   if (issue.labels?.length) {
     parts.push(`\nLabels: ${issue.labels.map(l => l.name).join(', ')}`);
   }
-  
+
   if (issue.body) {
     // Extract first meaningful sentence
     const firstSentence = issue.body.split(/[.!?]\s/)[0];
@@ -308,11 +308,21 @@ function generateFallbackSummary(issue) {
       parts.push(`\n\n${firstSentence}.`);
     }
   }
-  
+
   parts.push('\n\n\ud83d\udca1 Review the full issue details to determine next steps.');
-  
+
   return parts.join('');
 }
+
+// OAuth callback relay — GitHub redirects here, we forward to the frontend
+app.get('/callback', (req, res) => {
+  const params = new URLSearchParams();
+  if (req.query.code) params.set('code', req.query.code);
+  if (req.query.state) params.set('state', req.query.state);
+  if (req.query.error) params.set('error', req.query.error);
+  const frontendUrl = process.env.WEB_FRONTEND_URL || 'http://localhost:8081';
+  res.redirect(`${frontendUrl}?${params.toString()}`);
+});
 
 app.listen(PORT, async () => {
   await initCosmos();

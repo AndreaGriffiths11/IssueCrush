@@ -6,9 +6,16 @@ import { getToken, saveToken, deleteToken } from '../lib/tokenStorage';
 
 const CLIENT_ID = process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID ?? '';
 const DEFAULT_SCOPE = process.env.EXPO_PUBLIC_GITHUB_SCOPE || 'repo';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || '';
+
+// On web: use the server's /callback relay so the redirect_uri matches what's
+// registered in the GitHub OAuth app (port 3000). In production both the app
+// and the API share the same origin, so window.location.origin works directly.
 const REDIRECT_URI =
   Platform.OS === 'web' && typeof window !== 'undefined'
-    ? window.location.origin
+    ? API_URL && API_URL.startsWith('http://localhost')
+      ? `${API_URL}/callback`
+      : window.location.origin
     : AuthSession.makeRedirectUri({ preferLocalhost: true });
 
 export function useAuth() {
@@ -111,7 +118,7 @@ export function useAuth() {
       fetch(`${apiUrl}/api/logout`, {
         method: 'POST',
         headers: { 'X-Session-Token': sessionId },
-      }).catch(() => {});
+      }).catch(() => { });
     }
   }, [token]);
 
