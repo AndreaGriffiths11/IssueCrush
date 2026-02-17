@@ -198,6 +198,7 @@ export function IssueCard({
 
 const styles = StyleSheet.create({
   cardBrutalist: {
+    flex: 1,
     backgroundColor: '#ffffff',
     borderRadius: 0,
     borderWidth: 3,
