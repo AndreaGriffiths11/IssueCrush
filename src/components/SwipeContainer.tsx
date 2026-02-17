@@ -273,11 +273,14 @@ const styles = StyleSheet.create({
   },
   cardAreaDesktop: {
     position: 'relative',
-    flex: 1,
+    width: 480,
+    height: 640,
     overflow: 'hidden',
   },
   cardAreaMobile: {
-    flex: 1,
+    width: '100%',
+    height: '55%',
+    minHeight: 340,
   },
   cardLayerPink: {
     position: 'absolute',
