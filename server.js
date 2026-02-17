@@ -23,6 +23,18 @@ app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(sessionMiddleware());
 
+// OAuth callback relay — GitHub redirects here, server relays code to Expo frontend
+// (GitHub App only knows about port 3000; Expo runs on 8081)
+app.get('/callback', (req, res) => {
+  const { code, error } = req.query;
+  const frontendUrl = process.env.EXPO_PUBLIC_FRONTEND_URL || 'http://localhost:8081';
+  if (code) {
+    res.redirect(`${frontendUrl}?code=${code}`);
+  } else {
+    res.redirect(`${frontendUrl}?error=${error || 'oauth_failed'}`);
+  }
+});
+
 // OAuth token exchange — stores token server-side, returns session ID
 app.post('/api/github-token', async (req, res) => {
   console.log('📥 Token exchange request received');

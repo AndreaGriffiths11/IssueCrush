@@ -2,7 +2,8 @@
     "chat.tools.terminal.autoApprove": {
         "git merge": true,
         "npx expo": true,
-        "xcrun": true
+        "xcrun": true,
+        "lsof": true
     },
     "azureFunctions.deploySubpath": "api",
     "azureFunctions.postDeployTask": "npm install (functions)",

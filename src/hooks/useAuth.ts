@@ -13,9 +13,7 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL || '';
 // and the API share the same origin, so window.location.origin works directly.
 const REDIRECT_URI =
   Platform.OS === 'web' && typeof window !== 'undefined'
-    ? API_URL && API_URL.startsWith('http://localhost')
-      ? `${API_URL}/callback`
-      : window.location.origin
+    ? process.env.EXPO_PUBLIC_REDIRECT_URI || window.location.origin
     : AuthSession.makeRedirectUri({ preferLocalhost: true });
 
 export function useAuth() {

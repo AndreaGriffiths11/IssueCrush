@@ -1,383 +1,366 @@
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
 import {
-  View,
-  Text,
-  Image,
-  TouchableOpacity,
-  ScrollView,
-  ActivityIndicator,
-  StyleSheet,
-  Platform,
-  Linking,
+    ActivityIndicator,
+    Image,
+    Linking,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
 import { ExternalLink, Sparkles } from 'lucide-react-native';
 import { GitHubIssue } from '../api/github';
-import { Theme } from '../theme';
-import { getLabelColor } from '../utils/colors';
-
-const webCursor = (cursor: string): any => Platform.OS === 'web' ? { cursor, touchAction: 'pan-y' } : {};
+import { useTheme } from '../theme';
+import { getLabelColor, webCursor } from '../utils';
 
 interface IssueCardProps {
-  issue: GitHubIssue | null;
-  theme: Theme;
-  isDark: boolean;
-  isDesktop: boolean;
-  repoLabel: (issue: GitHubIssue) => string;
-  copilotAvailable: boolean | null;
-  loadingAiSummary: boolean;
-  isCurrentIssue: boolean;
-  onGetAiSummary: () => void;
+    issue: GitHubIssue;
+    isDesktop: boolean;
+    /** Whether this card is the active/current card in the swiper */
+    isCurrent: boolean;
+    copilotAvailable: boolean | null;
+    loadingAiSummary: boolean;
+    /** Computed "owner/repo" label for the issue */
+    repoLabel: string;
+    onGetAiSummary: () => void;
+}
+
+async function openIssueLink(url: string) {
+    try {
+        if (Platform.OS === 'web') {
+            const link = document.createElement('a');
+            link.href = url;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.click();
+        } else {
+            await WebBrowser.openBrowserAsync(url, {
+                controlsColor: '#38bdf8',
+                toolbarColor: '#0b1224',
+                presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
+            });
+        }
+    } catch {
+        await Linking.openURL(url);
+    }
 }
 
 export function IssueCard({
-  issue,
-  theme,
-  isDark,
-  isDesktop,
-  repoLabel,
-  copilotAvailable,
-  loadingAiSummary,
-  isCurrentIssue,
-  onGetAiSummary,
+    issue,
+    isDesktop,
+    isCurrent,
+    copilotAvailable,
+    loadingAiSummary,
+    repoLabel,
+    onGetAiSummary,
 }: IssueCardProps) {
-  const bodyScrollRef = useRef<ScrollView>(null);
+    const { theme, isDark } = useTheme();
 
-  // On web, get the real DOM node and make it actually scrollable.
-  // React Native Web's ScrollView renders overflow:hidden by default;
-  // the swiper's PanResponder also captures pointer events at DOM level.
-  // Setting overflow + touchAction directly on the scrollable node bypasses both.
-  useEffect(() => {
-    if (Platform.OS !== 'web') return;
-    const node = bodyScrollRef.current as any;
-    if (!node) return;
-    // getScrollableNode() returns the inner scrollable DOM element in RNW
-    const el: HTMLElement | null = node.getScrollableNode?.() ?? null;
-    if (!el) return;
-    el.style.overflowY = 'auto';
-    el.style.touchAction = 'pan-y';
-    // Stop touch/wheel events from bubbling to the swiper's PanResponder
-    const stop = (e: Event) => e.stopPropagation();
-    el.addEventListener('touchstart', stop, { passive: true });
-    el.addEventListener('touchmove', stop, { passive: true });
-    el.addEventListener('wheel', stop, { passive: true });
-    return () => {
-      el.removeEventListener('touchstart', stop);
-      el.removeEventListener('touchmove', stop);
-      el.removeEventListener('wheel', stop);
-    };
-  }, [issue?.id]);
-
-  const openIssueLink = async (url: string) => {
-    try {
-      const canOpen = await Linking.canOpenURL(url);
-      if (canOpen) {
-        await Linking.openURL(url);
-      } else {
-        console.warn(`Cannot open URL: ${url}`);
-      }
-    } catch (error) {
-      await Linking.openURL(url);
-    }
-  };
-
-  if (!issue) {
     return (
-      <View
-        style={[
-          styles.cardBrutalist,
-          isDesktop && styles.cardBrutalistDesktop,
-          { backgroundColor: '#222' },
-        ]}
-      />
+        <View style={[styles.cardBrutalist, isDesktop && styles.cardBrutalistDesktop]}>
+            {/* Card Header */}
+            <View style={styles.cardHeaderBrutalist}>
+                <View style={styles.issueIdBadge}>
+                    <Text style={styles.issueIdText}>#{issue.number}</Text>
+                </View>
+                <TouchableOpacity
+                    onPress={() => openIssueLink(issue.html_url)}
+                    style={[styles.headlineWrap, webCursor('pointer')]}
+                    activeOpacity={0.7}
+                >
+                    <Text style={styles.headlineBrutalist} numberOfLines={2}>
+                        {issue.title.split(' ').map((word, i) => (
+                            <Text key={i} style={i % 3 === 0 ? styles.headlineHeavy : styles.headlineLight}>
+                                {word}{' '}
+                            </Text>
+                        ))}
+                    </Text>
+                    <ExternalLink size={20} color="#000000" style={{ marginTop: 4, opacity: 0.6 }} />
+                </TouchableOpacity>
+            </View>
+
+            {/* Card Body */}
+            <View style={[styles.cardBodyBrutalist, styles.cardBodyContent]} pointerEvents="box-none">
+                {/* User row */}
+                {issue.user && (
+                    <View style={styles.userRowBrutalist}>
+                        <Image
+                            source={{ uri: issue.user.avatar_url }}
+                            style={styles.avatarBrutalist}
+                            resizeMode="cover"
+                        />
+                        <View style={styles.userMetaBrutalist}>
+                            <Text style={styles.userNameBrutalist}>{issue.user.login.toUpperCase()}</Text>
+                            <Text style={styles.repoNameBrutalist}>{repoLabel}</Text>
+                        </View>
+                    </View>
+                )}
+
+                {/* Labels */}
+                <View style={styles.labelsBrutalist}>
+                    {issue.labels?.length
+                        ? issue.labels.slice(0, 4).map((label) => (
+                            <View
+                                key={label.id}
+                                style={[
+                                    styles.labelBrutalist,
+                                    { backgroundColor: `#${label.color || '000000'}` },
+                                ]}
+                            >
+                                <Text
+                                    style={[
+                                        styles.labelTextBrutalist,
+                                        { color: getLabelColor(label.color || '000000') },
+                                    ]}
+                                >
+                                    {label.name.toUpperCase()}
+                                </Text>
+                            </View>
+                        ))
+                        : null}
+                </View>
+
+                {/* AI Block */}
+                <View
+                    style={[
+                        styles.aiBlockBrutalist,
+                        { backgroundColor: isDark ? '#050505' : '#1a1a2e' },
+                    ]}
+                >
+                    <View style={styles.aiStickerBadge}>
+                        <Text style={styles.aiStickerText}>AI INSIGHT</Text>
+                    </View>
+                    {issue.aiSummary ? (
+                        <ScrollView
+                            style={styles.aiSummaryScroll}
+                            nestedScrollEnabled
+                            showsVerticalScrollIndicator
+                        >
+                            <Text style={styles.aiTextBrutalist}>
+                                <Text style={[styles.aiTextHighlight, { color: theme.primary }]}>
+                                    {'// SUMMARY\n'}
+                                </Text>
+                                {issue.aiSummary}
+                            </Text>
+                        </ScrollView>
+                    ) : copilotAvailable === false ? (
+                        <View style={styles.aiUnavailableContainer}>
+                            <Text style={styles.aiUnavailableText}>
+                                AI summaries require running locally with GitHub Copilot.
+                            </Text>
+                            <Text style={[styles.aiUnavailableSubtext, { color: theme.textMuted }]}>
+                                Clone the repo and run with: npm run dev
+                            </Text>
+                        </View>
+                    ) : (
+                        <TouchableOpacity
+                            style={[
+                                styles.aiButtonBrutalist,
+                                webCursor(loadingAiSummary ? 'default' : 'pointer'),
+                            ]}
+                            onPress={isCurrent && !loadingAiSummary ? onGetAiSummary : undefined}
+                            disabled={!isCurrent || loadingAiSummary}
+                        >
+                            {loadingAiSummary && isCurrent ? (
+                                <ActivityIndicator color={theme.primary} size="small" />
+                            ) : (
+                                <>
+                                    <Sparkles size={18} color={theme.primary} />
+                                    <Text style={styles.aiButtonTextBrutalist}>GET AI SUMMARY</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    )}
+                </View>
+            </View>
+        </View>
     );
-  }
-
-  return (
-    <View style={[styles.cardBrutalist, isDesktop && styles.cardBrutalistDesktop]}>
-      {/* Card Header */}
-      <View style={styles.cardHeaderBrutalist}>
-        <View style={styles.issueIdBadge}>
-          <Text style={styles.issueIdText}>#{issue.number}</Text>
-        </View>
-        <TouchableOpacity
-          onPress={() => openIssueLink(issue.html_url)}
-          style={[styles.headlineWrap, webCursor('pointer')]}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.headlineBrutalist} numberOfLines={2}>
-            {issue.title.split(' ').map((word, i) => (
-              <Text key={i} style={i % 3 === 0 ? styles.headlineHeavy : styles.headlineLight}>
-                {word}{' '}
-              </Text>
-            ))}
-          </Text>
-          <ExternalLink size={20} color="#000000" style={{ marginTop: 4, opacity: 0.6 }} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Card Body — scrollable */}
-      <ScrollView
-        ref={bodyScrollRef}
-        style={styles.cardBodyBrutalist}
-        contentContainerStyle={styles.cardBodyContent}
-        nestedScrollEnabled={true}
-        showsVerticalScrollIndicator={true}
-        scrollEventThrottle={16}
-      >
-        {/* User row */}
-        {issue.user && (
-          <View style={styles.userRowBrutalist}>
-            <Image
-              source={{ uri: issue.user.avatar_url }}
-              style={styles.avatarBrutalist}
-              resizeMode="cover"
-            />
-            <View style={styles.userMetaBrutalist}>
-              <Text style={styles.userNameBrutalist}>{issue.user.login.toUpperCase()}</Text>
-              <Text style={styles.repoNameBrutalist}>{repoLabel(issue)}</Text>
-            </View>
-          </View>
-        )}
-
-        {/* Labels */}
-        <View style={styles.labelsBrutalist}>
-          {issue.labels?.length ? (
-            issue.labels.slice(0, 4).map((label) => (
-              <View
-                key={label.id}
-                style={[styles.labelBrutalist, { backgroundColor: `#${label.color || '000000'}` }]}
-              >
-                <Text style={[styles.labelTextBrutalist, { color: getLabelColor(label.color || '000000') }]}>
-                  {label.name.toUpperCase()}
-                </Text>
-              </View>
-            ))
-          ) : null}
-        </View>
-
-        {/* AI Block */}
-        <View style={[styles.aiBlockBrutalist, { backgroundColor: isDark ? '#050505' : '#1a1a2e' }]}>
-          <View style={styles.aiStickerBadge}>
-            <Text style={styles.aiStickerText}>AI INSIGHT</Text>
-          </View>
-          {issue.aiSummary ? (
-            <Text style={[styles.aiTextBrutalist, { marginTop: 8 }]}>
-              <Text style={[styles.aiTextHighlight, { color: theme.primary }]}>// SUMMARY{'\n'}</Text>
-              {issue.aiSummary}
-            </Text>
-          ) : copilotAvailable === false ? (
-            <View style={styles.aiUnavailableContainer}>
-              <Text style={styles.aiUnavailableText}>
-                AI summaries require running locally with GitHub Copilot.
-              </Text>
-              <Text style={[styles.aiUnavailableSubtext, { color: theme.textMuted }]}>
-                Clone the repo and run with: npm run dev
-              </Text>
-            </View>
-          ) : (
-            <TouchableOpacity
-              style={[styles.aiButtonBrutalist, webCursor(loadingAiSummary ? 'default' : 'pointer')]}
-              onPress={loadingAiSummary ? undefined : onGetAiSummary}
-              disabled={loadingAiSummary}
-            >
-              {loadingAiSummary && isCurrentIssue ? (
-                <ActivityIndicator color={theme.primary} size="small" />
-              ) : (
-                <>
-                  <Sparkles size={18} color={theme.primary} />
-                  <Text style={styles.aiButtonTextBrutalist}>GET AI SUMMARY</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          )}
-        </View>
-      </ScrollView>
-    </View>
-  );
 }
 
 const styles = StyleSheet.create({
-  cardBrutalist: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-    borderRadius: 0,
-    borderWidth: 3,
-    borderColor: '#000000',
-    overflow: 'hidden',
-    shadowColor: '#000000',
-    shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 8,
-  },
-  cardBrutalistDesktop: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    width: '100%',
-    height: '100%',
-  },
-  cardHeaderBrutalist: {
-    backgroundColor: '#ffffff',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderBottomWidth: 3,
-    borderBottomColor: '#000000',
-  },
-  issueIdBadge: {
-    backgroundColor: '#000000',
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    alignSelf: 'flex-start',
-    marginBottom: 8,
-  },
-  issueIdText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 1,
-  },
-  headlineWrap: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-  },
-  headlineBrutalist: {
-    fontSize: 20,
-    lineHeight: 26,
-    color: '#000000',
-    flex: 1,
-  },
-  headlineHeavy: {
-    fontWeight: '900',
-  },
-  headlineLight: {
-    fontWeight: '400',
-  },
-  cardBodyBrutalist: {
-    backgroundColor: '#f5f5f5',
-    flex: 1,
-  },
-  cardBodyContent: {
-    padding: 16,
-    gap: 12,
-    paddingBottom: 24,
-  },
-  userRowBrutalist: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  avatarBrutalist: {
-    width: 40,
-    height: 40,
-    borderRadius: 0,
-    borderWidth: 2,
-    borderColor: '#000000',
-  },
-  userMetaBrutalist: {
-    flex: 1,
-    gap: 2,
-  },
-  userNameBrutalist: {
-    fontSize: 14,
-    fontWeight: '900',
-    color: '#000000',
-    letterSpacing: 0.5,
-  },
-  repoNameBrutalist: {
-    fontSize: 12,
-    fontWeight: '400',
-    color: '#555555',
-    letterSpacing: 0.2,
-  },
-  labelsBrutalist: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  labelBrutalist: {
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderWidth: 2,
-    borderColor: '#000000',
-  },
-  labelTextBrutalist: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-  },
-  aiBlockBrutalist: {
-    borderWidth: 3,
-    borderColor: '#000000',
-    padding: 16,
-    paddingTop: 20,
-    minHeight: 100,
-    position: 'relative',
-  },
-  aiStickerBadge: {
-    position: 'absolute',
-    top: -12,
-    left: 16,
-    backgroundColor: '#DFFF00',
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    borderWidth: 2,
-    borderColor: '#000000',
-    zIndex: 10,
-  },
-  aiStickerText: {
-    fontSize: 10,
-    fontWeight: '900',
-    color: '#000000',
-    letterSpacing: 1,
-  },
-  scrollWrapper: {
-    flex: 1,
-  },
-  aiSummaryScroll: {
-    maxHeight: 120,
-  },
-  aiTextBrutalist: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: '#ffffff',
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-  },
-  aiTextHighlight: {
-    fontWeight: '700',
-  },
-  aiUnavailableContainer: {
-    gap: 8,
-    marginTop: 8,
-  },
-  aiUnavailableText: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: '#ffffff',
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-  },
-  aiUnavailableSubtext: {
-    fontSize: 11,
-    lineHeight: 16,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-  },
-  aiButtonBrutalist: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#000000',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderWidth: 2,
-    borderColor: '#DFFF00',
-    marginTop: 8,
-  },
-  aiButtonTextBrutalist: {
-    fontSize: 12,
-    fontWeight: '900',
-    color: '#ffffff',
-    letterSpacing: 1,
-  },
+    cardBrutalist: {
+        flex: 1,
+        backgroundColor: '#ffffff',
+        borderRadius: 16,
+        borderWidth: 2,
+        borderColor: '#000000',
+        justifyContent: 'flex-start',
+        overflow: 'hidden',
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.15,
+        shadowRadius: 16,
+        elevation: 5,
+    },
+    cardBrutalistDesktop: {
+        borderRadius: 24,
+        borderWidth: 3,
+        shadowOffset: { width: 0, height: 20 },
+        shadowOpacity: 0.5,
+        shadowRadius: 40,
+        elevation: 10,
+    },
+    cardHeaderBrutalist: {
+        backgroundColor: '#ffffff',
+        padding: 20,
+        borderBottomWidth: 2,
+        borderBottomColor: '#000000',
+        position: 'relative',
+    },
+    issueIdBadge: {
+        position: 'absolute',
+        top: 24,
+        right: 24,
+        borderWidth: 1,
+        borderColor: '#000000',
+        borderRadius: 50,
+        paddingVertical: 6,
+        paddingHorizontal: 14,
+    },
+    issueIdText: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#000000',
+        textTransform: 'uppercase',
+    },
+    headlineWrap: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 12,
+        marginTop: 16,
+        paddingRight: 80,
+    },
+    headlineBrutalist: {
+        fontSize: 24,
+        lineHeight: 28,
+        flex: 1,
+    },
+    headlineHeavy: {
+        fontWeight: '900',
+        color: '#000000',
+        textTransform: 'uppercase',
+    },
+    headlineLight: {
+        fontWeight: '300',
+        color: '#000000',
+    },
+    cardBodyBrutalist: {
+        backgroundColor: '#ffffff',
+        flex: 1,
+    },
+    cardBodyContent: {
+        padding: 16,
+        gap: 12,
+        paddingBottom: 16,
+    },
+    userRowBrutalist: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+    },
+    avatarBrutalist: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: '#000000',
+    },
+    userMetaBrutalist: {
+        flexDirection: 'column',
+    },
+    userNameBrutalist: {
+        fontWeight: '900',
+        fontSize: 16,
+        color: '#000000',
+        textTransform: 'uppercase',
+    },
+    repoNameBrutalist: {
+        fontWeight: '300',
+        fontSize: 13,
+        color: '#555555',
+    },
+    labelsBrutalist: {
+        flexDirection: 'row',
+        flexWrap: 'nowrap',
+        gap: 8,
+        overflow: 'visible',
+        paddingBottom: 4,
+    },
+    labelBrutalist: {
+        paddingVertical: 6,
+        paddingHorizontal: 14,
+        borderRadius: 50,
+    },
+    labelTextBrutalist: {
+        fontWeight: '700',
+        fontSize: 11,
+        letterSpacing: 0.5,
+        textTransform: 'uppercase',
+    },
+    aiBlockBrutalist: {
+        backgroundColor: '#050505',
+        padding: 24,
+        borderRadius: 16,
+        position: 'relative',
+        justifyContent: 'center',
+    },
+    aiSummaryScroll: {
+        maxHeight: 120,
+    },
+    aiStickerBadge: {
+        position: 'absolute',
+        top: -12,
+        right: 20,
+        backgroundColor: '#ffffff',
+        borderWidth: 1,
+        borderColor: '#000000',
+        paddingVertical: 6,
+        paddingHorizontal: 16,
+        borderRadius: 50,
+        shadowColor: '#000000',
+        shadowOffset: { width: 2, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 0,
+    },
+    aiStickerText: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: '#000000',
+        textTransform: 'uppercase',
+    },
+    aiTextBrutalist: {
+        fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
+        lineHeight: 22,
+        fontSize: 14,
+        color: '#ffffff',
+    },
+    aiTextHighlight: {
+        fontWeight: '700',
+    },
+    aiButtonBrutalist: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+    },
+    aiButtonTextBrutalist: {
+        color: '#DFFF00',
+        fontWeight: '700',
+        fontSize: 14,
+        textTransform: 'uppercase',
+    },
+    aiUnavailableContainer: {
+        paddingVertical: 8,
+    },
+    aiUnavailableText: {
+        color: '#888888',
+        fontSize: 13,
+        fontWeight: '500',
+        marginBottom: 4,
+    },
+    aiUnavailableSubtext: {
+        fontSize: 12,
+        fontWeight: '400',
+    },
 });

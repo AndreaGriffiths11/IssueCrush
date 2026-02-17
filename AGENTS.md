@@ -16,7 +16,11 @@ IssueCrush - Tinder-style GitHub issue triage app. Swipe left to close issues, r
 
 ## Architecture
 ```
-App.tsx (UI + swipe logic)
+App.tsx (composition only: ThemeContext, ErrorBoundary, layout branching)
+    ├── src/components/AuthScreen.tsx    (OAuth UI, login/logout actions)
+    ├── src/components/IssueCard.tsx     (pure render, no network)
+    ├── src/components/Sidebar.tsx       (desktop: filters, progress, actions)
+    ├── src/components/SwipeContainer.tsx (swiper + overlays, delegates to hooks)
     ├── src/api/github.ts (GitHub API client)
     ├── src/lib/tokenStorage.ts (secure token storage)
     └── src/lib/copilotService.ts (AI summary frontend)
@@ -47,6 +51,19 @@ api/src/sessionStore.js (Cosmos DB session storage)
 - Requires `GH_TOKEN` or `COPILOT_PAT` in SWA app settings
 - Frontend calls copilotService.ts → Azure Function → Copilot SDK
 
+### Refactor Boundaries (issue #38)
+- `ErrorBoundary` (class component) stays in `App.tsx` — must wrap all children
+- `ThemeContext` provider stays in `App.tsx` — root-level context
+- Mobile/desktop layout branching (`isDesktop` / `useWindowDimensions`) stays in `App.tsx`
+- Components receive props/callbacks; they do NOT call hooks or APIs directly
+- Hook APIs (`useAuth`, `useIssues`, `useAnimations`) are frozen — no renames or signature changes for this issue; if a signature must change, update all call sites and explain why in the PR
+- `swiperRef` from `useIssues` must be passed as a prop or via `forwardRef` into `SwipeContainer` — do not recreate the ref inside the component
+- No new dependencies unless absolutely required by the issue
+
+### Known Gotchas
+- `expo export` may fail due to blocked network access to `cdp.expo.dev` — do not block a PR on this; use `npx tsc --noEmit` as the build check instead
+- `react-native-deck-swiper` requires a `ref` wired via `useIssues().swiperRef` for undo (swipeBack) — this ref must survive the refactor
+
 ## File Quick Reference
 |File|Purpose|
 |---|---|
@@ -63,6 +80,7 @@ api/src/sessionStore.js (Cosmos DB session storage)
 - `npm run web-dev` - Server + web browser
 - `npm run server` - OAuth/AI server only (port 3000)
 - `swa start` - Azure SWA emulator (local)
+- `npx tsc --noEmit` - Type-check without building (run before committing any refactor work)
 
 ## Deployment
 - Azure SWA: `https://gray-water-08b04e810.6.azurestaticapps.net`
