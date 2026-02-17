@@ -180,24 +180,23 @@ function AppContent() {
           {/* Web Sidebar - Brutalist Design (Desktop Only) */}
           {isDesktop && token && (
             <Sidebar
-              theme={theme}
               themeMode={themeMode}
               repoFilter={repoFilter}
-              setRepoFilter={setRepoFilter}
               labelFilter={labelFilter}
-              setLabelFilter={setLabelFilter}
-              loadingIssues={loadingIssues}
-              onRefresh={loadIssues}
-              issuesCount={issues.length}
+              issues={issues}
               currentIndex={currentIndex}
+              lastClosed={lastClosed}
+              undoBusy={undoBusy}
+              loadingIssues={loadingIssues}
               progressAnimatedStyle={progressAnimatedStyle}
+              onChangeRepoFilter={setRepoFilter}
+              onChangeLabelFilter={setLabelFilter}
+              onRefresh={loadIssues}
               onSwipeLeft={() => swiperRef.current?.swipeLeft()}
               onSwipeRight={() => swiperRef.current?.swipeRight()}
-              lastClosed={lastClosed}
               onUndo={handleUndo}
-              undoBusy={undoBusy}
-              onCycleTheme={cycleTheme}
               onSignOut={signOut}
+              onCycleTheme={cycleTheme}
             />
           )}
 
@@ -207,7 +206,6 @@ function AppContent() {
               <AuthScreen
                 onLogin={startLogin}
                 authError={authError}
-                clientIdMissing={!CLIENT_ID}
                 isDesktop={isDesktop}
               />
             ) : (
@@ -215,8 +213,6 @@ function AppContent() {
                 {authError ? <Text style={[styles.error, { color: theme.danger, padding: 16 }]}>{authError}</Text> : null}
 
                 <SwipeContainer
-                  theme={theme}
-                  isDark={isDark}
                   isDesktop={isDesktop}
                   issues={issues}
                   currentIndex={currentIndex}
@@ -224,12 +220,10 @@ function AppContent() {
                   onSwipeLeft={handleSwipeLeft}
                   onSwipeRight={handleSwipeRight}
                   onSwiped={onSwiped}
-                  loadingIssues={loadingIssues}
                   repoLabel={repoLabel}
                   copilotAvailable={copilotAvailable}
                   loadingAiSummary={loadingAiSummary}
                   onGetAiSummary={handleGetAiSummary}
-                  onRefresh={loadIssues}
                 />
 
                 {/* Toast Feedback */}
