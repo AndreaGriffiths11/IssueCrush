@@ -217,12 +217,27 @@ Provide a concise 2-3 sentence summary that:
 
 Keep it clear, actionable, and helpful for quick triage. No markdown formatting.`;
 
-      const response = await copilotSession.sendAndWait({ prompt }, 30000);
+      // Use send() + event listener instead of sendAndWait() which hangs
+      const summary = await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('Copilot response timeout')), 30000);
+        copilotSession.on('assistant.message', (event) => {
+          clearTimeout(timeout);
+          resolve(event.data.content);
+        });
+        copilotSession.on('error', (event) => {
+          clearTimeout(timeout);
+          reject(new Error(event.data?.message || 'Copilot session error'));
+        });
+        copilotSession.send({ prompt }).catch((err) => {
+          clearTimeout(timeout);
+          reject(err);
+        });
+      });
 
-      if (response?.data?.content) {
+      if (summary) {
         if (copilotSession) await copilotSession.destroy().catch(() => {});
         if (client) await client.stop().catch(() => {});
-        return { jsonBody: { summary: response.data.content } };
+        return { jsonBody: { summary } };
       }
       throw new Error('No content received from Copilot');
     } catch (error) {
