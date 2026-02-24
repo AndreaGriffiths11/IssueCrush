@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Image,
     Linking,
@@ -9,8 +9,9 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { Check, Heart, Sparkles, X } from 'lucide-react-native';
+import { Check, Heart, Info, Sparkles, X } from 'lucide-react-native';
 import { webCursor, isWeb } from '../utils';
+import { AboutModal } from './AboutModal';
 
 const CLIENT_ID = process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID ?? '';
 
@@ -21,7 +22,11 @@ interface AuthScreenProps {
 }
 
 export function AuthScreen({ onLogin, authError, isDesktop }: AuthScreenProps) {
+    const [showAbout, setShowAbout] = useState(false);
+
     return (
+        <>
+        <AboutModal visible={showAbout} onClose={() => setShowAbout(false)} />
         <ScrollView
             style={styles.authContainerScroll}
             contentContainerStyle={styles.authContainer}
@@ -102,8 +107,19 @@ export function AuthScreen({ onLogin, authError, isDesktop }: AuthScreenProps) {
                         <Text style={styles.error}>{authError}</Text>
                     </View>
                 ) : null}
+
+                {/* About button */}
+                <TouchableOpacity
+                    style={[styles.aboutBtn, webCursor('pointer')]}
+                    onPress={() => setShowAbout(true)}
+                    accessibilityLabel="About IssueCrush"
+                >
+                    <Info size={14} color="#999999" />
+                    <Text style={styles.aboutBtnText}>About</Text>
+                </TouchableOpacity>
             </View>
         </ScrollView>
+        </>
     );
 }
 
@@ -246,5 +262,18 @@ const styles = StyleSheet.create({
         lineHeight: 18,
         fontWeight: '600',
         color: '#ff4444',
+    },
+    aboutBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        alignSelf: 'center',
+    },
+    aboutBtnText: {
+        fontSize: 12,
+        fontWeight: '500',
+        color: '#999999',
     },
 });
