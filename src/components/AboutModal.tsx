@@ -19,7 +19,7 @@ interface AboutModalProps {
 }
 
 const APP_VERSION = '1.0.0';
-const REPO_URL = 'https://github.com/alacolombiadev/IssueCrush';
+const REPO_URL = 'https://github.com/AndreaGriffiths11/IssueCrush';
 
 export function AboutModal({ visible, onClose }: AboutModalProps) {
     const { theme } = useTheme();

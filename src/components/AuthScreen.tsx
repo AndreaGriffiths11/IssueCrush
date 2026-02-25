@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Image,
     Linking,
@@ -9,8 +9,9 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { Check, Heart, Sparkles, X } from 'lucide-react-native';
+import { Check, Heart, Info, Sparkles, X } from 'lucide-react-native';
 import { webCursor, isWeb } from '../utils';
+import { AboutModal } from './AboutModal';
 
 const CLIENT_ID = process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID ?? '';
 
@@ -21,6 +22,8 @@ interface AuthScreenProps {
 }
 
 export function AuthScreen({ onLogin, authError, isDesktop }: AuthScreenProps) {
+    const [aboutVisible, setAboutVisible] = useState(false);
+
     return (
         <ScrollView
             style={styles.authContainerScroll}
@@ -89,6 +92,15 @@ export function AuthScreen({ onLogin, authError, isDesktop }: AuthScreenProps) {
                     <Text style={styles.contributeLinkText}>Want to contribute?</Text>
                 </TouchableOpacity>
 
+                {/* About button */}
+                <TouchableOpacity
+                    style={[styles.aboutLink, webCursor('pointer')]}
+                    onPress={() => setAboutVisible(true)}
+                >
+                    <Info size={14} color="#999999" />
+                    <Text style={styles.aboutLinkText}>About IssueCrush</Text>
+                </TouchableOpacity>
+
                 {!CLIENT_ID ? (
                     <View style={styles.errorBox}>
                         <Text style={styles.error}>
@@ -103,6 +115,7 @@ export function AuthScreen({ onLogin, authError, isDesktop }: AuthScreenProps) {
                     </View>
                 ) : null}
             </View>
+            <AboutModal visible={aboutVisible} onClose={() => setAboutVisible(false)} />
         </ScrollView>
     );
 }
@@ -234,6 +247,18 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontWeight: '500',
         color: '#666666',
+    },
+    aboutLink: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+    },
+    aboutLinkText: {
+        fontSize: 13,
+        fontWeight: '400',
+        color: '#999999',
     },
     errorBox: {
         padding: 12,
