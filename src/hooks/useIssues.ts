@@ -39,7 +39,7 @@ export function useIssues(token: string | null) {
 
   const handleSwipeLeft = useCallback(async (cardIndex: number) => {
     if (Platform.OS !== 'web') {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     }
 
     const issue = issues[cardIndex];
@@ -50,6 +50,9 @@ export function useIssues(token: string | null) {
     try {
       await updateIssueState(token, issue, 'closed');
     } catch (error) {
+      if (Platform.OS !== 'web') {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
       setFeedback(`Close failed: ${(error as Error).message}`);
       setLastClosed(null);
     }
@@ -57,7 +60,7 @@ export function useIssues(token: string | null) {
 
   const handleSwipeRight = useCallback(async (cardIndex: number) => {
     if (Platform.OS !== 'web') {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
 
     const issue = issues[cardIndex];
@@ -84,9 +87,15 @@ export function useIssues(token: string | null) {
       setCurrentIndex((prev) => Math.max(0, prev - 1));
 
       await updateIssueState(token, lastClosed, 'open');
+      if (Platform.OS !== 'web') {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
       setFeedback(`Reopened #${lastClosed.number}`);
       setLastClosed(null);
     } catch (error) {
+      if (Platform.OS !== 'web') {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
       setFeedback(`Undo failed: ${(error as Error).message}`);
     } finally {
       setUndoBusy(false);
