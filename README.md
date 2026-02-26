@@ -204,6 +204,14 @@ npm run android   # Open in Android emulator
 - Don't navigate directly to `http://localhost:8081` - that's the Metro bundler endpoint
 - Use `npm run web-dev` instead, which opens the correct web URL automatically
 
+## Documentation
+
+📚 **[Complete Documentation](docs/README.md)**
+
+- **[API Reference](docs/API.md)** - Detailed documentation for all components, hooks, and utilities
+- **[Architecture Guide](docs/ARCHITECTURE.md)** - System design, data flow, and technical decisions  
+- **[Developer Guide](docs/DEVELOPER_GUIDE.md)** - Setup instructions and development workflow
+
 ## Tech Stack
 
 - **React Native** + **Expo** - Cross-platform mobile framework
