@@ -116,6 +116,42 @@ npx tsc --noEmit
 npm run lint
 ```
 
+### Testing AI Features Locally
+
+To test AI summary generation:
+
+1. **Get Copilot Access**:
+   - Ensure you have GitHub Copilot subscription
+   - Create Personal Access Token at https://github.com/settings/tokens
+   - Add `copilot` scope to the token
+
+2. **Configure Environment**:
+   ```bash
+   # Add to .env
+   GH_TOKEN=ghp_your_token_with_copilot_access
+   ```
+
+3. **Verify SDK Version**:
+   ```bash
+   npm list @github/copilot-sdk
+   # Should show 0.1.32 or higher
+   ```
+
+4. **Test Health Check**:
+   ```bash
+   npm run server &
+   curl http://localhost:3000/api/health
+   # Should return: { "copilotAvailable": true }
+   ```
+
+5. **Debug Postinstall Patch**:
+   If you see ESM import errors:
+   ```bash
+   node scripts/patch-vscode-jsonrpc.js
+   ```
+
+   This patches `vscode-jsonrpc` to add ESM-compatible exports field.
+
 ## Style Guidelines
 
 ### TypeScript/JavaScript

@@ -116,12 +116,43 @@ Click the **"✨ Get AI Summary"** button on any issue card to get an AI-generat
 - Technical context and requirements
 - Recommended next steps
 
-The AI summary is powered by the GitHub Copilot SDK running on your backend server.
+The AI summary is powered by the **GitHub Copilot SDK v0.1.32+** running on your backend server.
 
 ### Requirements for AI Features
 
-- GitHub Copilot subscription or access
-- `GH_TOKEN` environment variable with Copilot access (or use `COPILOT_PAT`)
+To enable AI-powered issue summaries, you need:
+
+1. **GitHub Copilot subscription** - Active Copilot Individual, Business, or Enterprise subscription
+2. **Personal Access Token** - GitHub token with Copilot access:
+   - Go to https://github.com/settings/tokens
+   - Create a classic token with `copilot` scope
+   - Add to `.env` as `GH_TOKEN` (or `COPILOT_PAT`)
+
+```bash
+# In your .env file
+GH_TOKEN=ghp_your_token_with_copilot_access
+```
+
+### How It Works
+
+1. App sends issue data to `/api/ai-summary` endpoint
+2. Backend initializes Copilot SDK client with your token
+3. SDK generates contextual summary using GPT-4.1
+4. Summary returned to app and displayed on issue card
+
+### Error Handling
+
+- **No token configured**: AI button disabled, app works normally
+- **Invalid/expired token**: Graceful fallback to manual triage
+- **Copilot access required**: Clear error message with setup instructions
+- **Startup delay**: Health check retries up to 3 times (6 seconds) if server is starting
+
+### Technical Notes
+
+- **SDK Version**: Requires `@github/copilot-sdk@0.1.32` or higher
+- **Postinstall Patch**: Automatic ESM compatibility patch for `vscode-jsonrpc` dependency
+- **Permission Handler**: Uses `approveAll` handler for SDK v0.1.32+ compatibility
+- **Timeout**: 30-second timeout per summary request
 
 ## Architecture
 
@@ -189,7 +220,20 @@ npm run android   # Open in Android emulator
 
 **"AI summary failed: Failed to fetch"**
 - Make sure the Express server is running (`npm run server`)
-- Check that `GH_TOKEN` or `COPILOT_PAT` is set for Copilot access
+- Check that `GH_TOKEN` or `COPILOT_PAT` is set in `.env` for Copilot access
+- Verify your token has Copilot scope: https://github.com/settings/tokens
+
+**"Copilot access required" or "must have Copilot account"**
+- Verify you have an active GitHub Copilot subscription (Individual, Business, or Enterprise)
+- Create a new Personal Access Token with `copilot` scope
+- Ensure token is added to `.env` as `GH_TOKEN` or `COPILOT_PAT`
+- Restart the server after adding the token
+
+**"Health check failed" or AI button disabled**
+- Server may be starting up - wait 6 seconds for automatic retry
+- Check server logs for startup errors
+- Verify `@github/copilot-sdk` version is 0.1.32 or higher: `npm list @github/copilot-sdk`
+- If postinstall patch failed, run: `node scripts/patch-vscode-jsonrpc.js`
 
 ### Build/Bundling Issues
 
@@ -225,6 +269,13 @@ We welcome contributions! Check out the [Contributing Guide](CONTRIBUTING.md) to
 - Look for issues labeled `good first issue` or `help wanted`
 - Fork the repo and create a feature branch
 - Cosmos DB is **optional** for local development (sessions fall back to in-memory)
+
+## Documentation
+
+- **[API Reference](docs/API.md)** - Complete API endpoint documentation
+- **[Architecture](docs/ARCHITECTURE.md)** - System design and technical decisions
+- **[Contributing Guide](CONTRIBUTING.md)** - How to contribute
+- **[AGENTS.md](AGENTS.md)** - AI agent context for coding assistants
 
 ## Credits
 
