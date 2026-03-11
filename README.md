@@ -136,17 +136,46 @@ IssueCrush/
 ├── server.js                  # Express server (OAuth + AI proxy)
 ├── sessionStore.js            # Cosmos DB / in-memory session storage
 ├── AGENTS.md                  # AI agent context (project knowledge)
+├── SECURITY.md                # Security policy and vulnerability reporting
 ├── .agents/                   # Installed agent skills (see below)
+├── api/                       # Azure Functions backend (production)
+│   ├── src/
+│   │   ├── app.js            # API endpoints (OAuth, issues, AI)
+│   │   └── sessionStore.js   # Cosmos DB session management
+│   ├── package.json          # Backend dependencies
+│   └── README.md             # API documentation
 ├── src/
 │   ├── api/
 │   │   └── github.ts         # GitHub API client
-│   └── lib/
-│       ├── tokenStorage.ts   # Secure token storage
-│       └── copilotService.ts # Frontend Copilot service
+│   ├── lib/
+│   │   ├── tokenStorage.ts   # Secure token storage
+│   │   └── copilotService.ts # Frontend Copilot service
+│   ├── components/           # React Native UI components
+│   │   ├── AuthScreen.tsx
+│   │   ├── IssueCard.tsx
+│   │   ├── Sidebar.tsx
+│   │   └── SwipeContainer.tsx
+│   └── hooks/                # Custom React hooks
+│       ├── useAuth.ts
+│       ├── useIssues.ts
+│       └── useAnimations.ts
 ├── .env.example              # Environment template
-├── package.json              # Dependencies and scripts
+├── package.json              # Root dependencies and scripts
 └── README.md                 # This file
 ```
+
+### Dual Package Structure
+
+IssueCrush uses two separate `package.json` files:
+
+- **Root `package.json`**: React Native app dependencies (Expo, React, UI libraries)
+- **`api/package.json`**: Azure Functions backend dependencies (Copilot SDK, Cosmos DB, Functions runtime)
+
+This separation ensures:
+- Clean deployment boundaries (frontend vs backend)
+- Independent dependency versioning
+- Optimized bundle sizes for each environment
+- Separate Dependabot monitoring for security updates
 
 ### Agent Context System
 
@@ -170,12 +199,37 @@ npm run ios       # Open in iOS simulator
 npm run android   # Open in Android emulator
 ```
 
+### Backend Development
+
+The API has separate scripts for Azure Functions deployment:
+
+```bash
+cd api/
+npm install       # Install backend dependencies
+npm run build     # Build for production (if needed)
+```
+
+For local development, use `npm run server` from the root directory, which runs the Express mirror of the Azure Functions API.
+
 ### Testing
 
 ```bash
 npm test              # Run Jest test suite
 npx tsc --noEmit      # Type-check without building
 ```
+
+### Dependency Management
+
+```bash
+# Update root dependencies
+npm install <package>
+
+# Update API dependencies
+cd api/
+npm install <package>
+```
+
+**Note:** Always run `npm install` in the appropriate directory. Root and API dependencies are managed independently.
 
 ## Troubleshooting
 
@@ -215,11 +269,19 @@ npx tsc --noEmit      # Type-check without building
 
 - **React Native** + **Expo** - Cross-platform mobile framework
 - **react-native-deck-swiper** - Tinder-style swipe cards
-- **Express** - OAuth token exchange and AI proxy server
+- **Express** - OAuth token exchange and AI proxy server (local dev)
+- **Azure Functions** - Serverless API backend (production)
 - **Azure Cosmos DB** - Persistent session storage (optional)
 - **GitHub Copilot SDK** (0.1.32) - AI-powered issue analysis
 - **[Agentation](https://github.com/benjitaylor/agentation)** - Visual feedback UI component (web only) by [Benji Taylor](https://github.com/benjitaylor)
 - **TypeScript** - Type-safe development
+
+### Recent Updates
+
+**March 2026 - Security Update**
+- Updated `@github/copilot-sdk` from 0.1.14 to 0.1.32 in both root and API packages
+- Resolved Dependabot security alert #17 (transitive `@github/copilot` dependency)
+- Enhanced Dependabot configuration to monitor both root and API dependencies independently
 
 ### Other Platforms
 
@@ -240,9 +302,20 @@ We welcome contributions! Check out the [Contributing Guide](CONTRIBUTING.md) to
 
 ## Security
 
+See our [Security Policy](SECURITY.md) for:
+
+- How to report security vulnerabilities responsibly
+- Supported versions and security update policy
+- Security best practices for deployment
+- Dependency management and monitoring
+
+### Quick Security Notes
+
 - OAuth tokens stored securely using `expo-secure-store` (mobile) or `AsyncStorage` (web)
 - Client Secret only used server-side, never exposed to client
 - All GitHub API calls use user's OAuth token
+- Dependencies monitored by Dependabot for both root and API packages
+- Session tokens expire after 24 hours
 
 ## License
 

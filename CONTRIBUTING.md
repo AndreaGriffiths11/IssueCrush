@@ -18,7 +18,11 @@ The following is a set of guidelines for contributing to IssueCrush. These are m
 
 ## Code of Conduct
 
-This project and everyone participating in it is governed by the [IssueCrush Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to the project maintainers.
+This project and everyone participating in it is governed by our commitment to fostering an open and welcoming environment. By participating, you are expected to uphold respectful and professional conduct. Please report unacceptable behavior to the project maintainers.
+
+## Security Vulnerabilities
+
+**Do not open public issues for security vulnerabilities.** Instead, please follow our [Security Policy](SECURITY.md) to report them responsibly.
 
 ## How Can I Contribute?
 
@@ -97,14 +101,29 @@ npm run dev        # For mobile development
 ```
 IssueCrush/
 ├── App.tsx           # Main React Native component
-├── server.js         # Express server for OAuth & AI
-├── sessionStore.js   # Cosmos DB / in-memory session storage
+├── server.js         # Express server for OAuth & AI (local dev)
+├── sessionStore.js   # Cosmos DB / in-memory session storage (local)
+├── api/              # Azure Functions backend (production)
+│   ├── src/
+│   │   ├── app.js            # API endpoints
+│   │   └── sessionStore.js   # Cosmos DB session store
+│   ├── package.json          # Backend dependencies
+│   └── README.md             # API documentation
 ├── src/
 │   ├── api/          # GitHub API client
-│   └── lib/          # Utilities (token storage, Copilot service)
+│   ├── lib/          # Utilities (token storage, Copilot service)
+│   ├── components/   # React Native UI components
+│   └── hooks/        # Custom React hooks
 ├── assets/           # Images and static files
 └── .github/          # GitHub templates and workflows
 ```
+
+### Key Architecture Points
+
+- **Dual Package Structure**: Root `package.json` for React Native, `api/package.json` for Azure Functions
+- **Local vs Production**: `server.js` mirrors `api/src/app.js` for local development
+- **Component Organization**: UI components in `src/components/`, business logic in `src/hooks/`
+- **Type Safety**: TypeScript throughout (run `npx tsc --noEmit` to check)
 
 ### Running Tests
 
@@ -114,7 +133,31 @@ npm test
 
 # Type checking
 npx tsc --noEmit
+
+# Test specific file
+npm test -- server.test.js
 ```
+
+### Working with Dependencies
+
+```bash
+# Root dependencies (React Native app)
+npm install <package>
+
+# API dependencies (Azure Functions)
+cd api/
+npm install <package>
+```
+
+**Important:** Root and API have separate `package.json` files. Always install dependencies in the correct directory.
+
+### API Development
+
+For API changes, see [api/README.md](api/README.md) for:
+- Endpoint documentation
+- Azure Functions deployment
+- Session management details
+- Environment variable configuration
 
 ## Style Guidelines
 

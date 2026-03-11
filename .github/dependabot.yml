@@ -5,7 +5,23 @@
 
 version: 2
 updates:
-  - package-ecosystem: "npm" # See documentation for possible values
-    directory: "/IssueCrush" # Location of package manifests
+  # Root package.json (React Native app)
+  - package-ecosystem: "npm"
+    directory: "/"
     schedule:
       interval: "weekly"
+    labels:
+      - "dependencies"
+      - "automation"
+    open-pull-requests-limit: 10
+  
+  # Azure Functions API
+  - package-ecosystem: "npm"
+    directory: "/api"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "api"
+      - "automation"
+    open-pull-requests-limit: 5
