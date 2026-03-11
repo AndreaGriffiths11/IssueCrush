@@ -205,7 +205,7 @@ app.post('/api/ai-summary', requireSession(), async (req, res) => {
   let session = null;
 
   try {
-    const { CopilotClient } = await import('@github/copilot-sdk');
+    const { CopilotClient, approveAll } = await import('@github/copilot-sdk');
 
     console.log('   Initializing Copilot SDK...');
 
@@ -218,6 +218,7 @@ app.post('/api/ai-summary', requireSession(), async (req, res) => {
     console.log('   Creating Copilot session...');
     session = await client.createSession({
       model: 'gpt-4.1',
+      onPermissionRequest: approveAll,
     });
 
     // Build the prompt for Copilot
@@ -275,16 +276,22 @@ Keep it clear, actionable, and helpful for quick triage. No markdown formatting.
       // Ignore cleanup errors
     }
 
-    // Check for specific Copilot-related errors
+    // Only treat genuine auth/subscription errors as "Copilot required".
+    // Other errors (protocol mismatch, timeouts, SDK bugs) should fall
+    // through to the fallback summary so the user still gets value.
     const errorMessage = error.message.toLowerCase();
-
-    if (errorMessage.includes('unauthorized') ||
-      errorMessage.includes('401') ||
+    const isAuthError =
+      errorMessage.includes('unauthorized') ||
       errorMessage.includes('forbidden') ||
-      errorMessage.includes('403') ||
-      errorMessage.includes('copilot') ||
-      errorMessage.includes('subscription')) {
-      // User likely doesn't have Copilot access
+      errorMessage.includes('subscription') ||
+      errorMessage.includes('not authenticated') ||
+      errorMessage.includes('sign in');
+
+    // HTTP status codes in the message (e.g. from fetch responses)
+    const isAuthStatusCode =
+      errorMessage.includes('401') || errorMessage.includes('403');
+
+    if (isAuthError || isAuthStatusCode) {
       console.log('   User may not have Copilot subscription');
       return res.status(403).json({
         error: 'Copilot access required',
@@ -293,9 +300,10 @@ Keep it clear, actionable, and helpful for quick triage. No markdown formatting.
       });
     }
 
-    // Generic error - return fallback summary
+    // For all other errors (SDK version mismatch, timeouts, network, etc.)
+    // return a fallback summary so the user still gets useful output.
+    console.log('   Using fallback summary due to:', error.message);
     const fallbackSummary = generateFallbackSummary(issue);
-    console.log('   Using fallback summary');
     res.json({
       summary: fallbackSummary,
       fallback: true

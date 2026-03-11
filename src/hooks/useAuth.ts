@@ -128,16 +128,22 @@ export function useAuth() {
     };
     hydrate();
 
-    // Check if Copilot is available
-    const checkCopilot = async () => {
-      try {
-        const apiUrl = process.env.EXPO_PUBLIC_API_URL || '';
-        const response = await fetch(`${apiUrl}/api/health`);
-        const data = await response.json();
-        setCopilotAvailable(data.copilotAvailable === true);
-      } catch {
-        setCopilotAvailable(false);
+    // Check if Copilot is available (retry up to 3 times if server isn't ready)
+    const checkCopilot = async (retries = 3) => {
+      const apiUrl = process.env.EXPO_PUBLIC_API_URL || '';
+      for (let i = 0; i < retries; i++) {
+        try {
+          const response = await fetch(`${apiUrl}/api/health`);
+          const data = await response.json();
+          setCopilotAvailable(data.copilotAvailable === true);
+          return;
+        } catch {
+          if (i < retries - 1) {
+            await new Promise(r => setTimeout(r, 2000));
+          }
+        }
       }
+      setCopilotAvailable(false);
     };
     checkCopilot();
   }, []);

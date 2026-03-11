@@ -191,10 +191,10 @@ app.http('aiSummary', {
     let copilotSession = null;
 
     try {
-      const { CopilotClient } = await import('@github/copilot-sdk');
+      const { CopilotClient, approveAll } = await import('@github/copilot-sdk');
       client = new CopilotClient();
       await client.start();
-      copilotSession = await client.createSession({ model: 'gpt-4.1' });
+      copilotSession = await client.createSession({ model: 'gpt-4.1', onPermissionRequest: approveAll });
 
       const prompt = `You are analyzing a GitHub issue to help a developer quickly understand it and decide how to handle it.
 
@@ -247,7 +247,13 @@ Keep it clear, actionable, and helpful for quick triage. No markdown formatting.
       } catch { /* ignore cleanup errors */ }
 
       const msg = error.message.toLowerCase();
-      if (msg.includes('unauthorized') || msg.includes('401') || msg.includes('forbidden') || msg.includes('403') || msg.includes('copilot') || msg.includes('subscription')) {
+      const isAuthError =
+        msg.includes('unauthorized') || msg.includes('forbidden') ||
+        msg.includes('subscription') || msg.includes('not authenticated') ||
+        msg.includes('sign in');
+      const isAuthStatusCode = msg.includes('401') || msg.includes('403');
+
+      if (isAuthError || isAuthStatusCode) {
         return {
           status: 403,
           jsonBody: {
