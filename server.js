@@ -26,13 +26,12 @@ app.use(sessionMiddleware());
 // OAuth callback relay — GitHub redirects here, server relays code to Expo frontend
 // (GitHub App only knows about port 3000; Expo runs on 8081)
 app.get('/callback', (req, res) => {
-  const { code, error } = req.query;
+  const params = new URLSearchParams();
+  if (req.query.code) params.set('code', req.query.code);
+  if (req.query.state) params.set('state', req.query.state);
+  if (req.query.error) params.set('error', req.query.error || 'oauth_failed');
   const frontendUrl = process.env.EXPO_PUBLIC_FRONTEND_URL || 'http://localhost:8081';
-  if (code) {
-    res.redirect(`${frontendUrl}?code=${code}`);
-  } else {
-    res.redirect(`${frontendUrl}?error=${error || 'oauth_failed'}`);
-  }
+  res.redirect(`${frontendUrl}?${params.toString()}`);
 });
 
 // OAuth token exchange — stores token server-side, returns session ID
@@ -86,9 +85,9 @@ app.post('/api/github-token', async (req, res) => {
       return res.json({ session_id: sessionId });
     }
 
-    res.status(400).json({ error: 'No access token received' });
+    return res.status(400).json({ error: 'No access token received' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -160,7 +159,7 @@ app.get('/api/issues', requireSession(), async (req, res) => {
     const filtered = issues.filter((i) => !i.pull_request);
     res.json(filtered);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -185,7 +184,7 @@ app.patch('/api/issues/:owner/:repo/:number', requireSession(), async (req, res)
     const data = await response.json();
     res.json(data);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -334,15 +333,6 @@ function generateFallbackSummary(issue) {
   return parts.join('');
 }
 
-// OAuth callback relay — GitHub redirects here, we forward to the frontend
-app.get('/callback', (req, res) => {
-  const params = new URLSearchParams();
-  if (req.query.code) params.set('code', req.query.code);
-  if (req.query.state) params.set('state', req.query.state);
-  if (req.query.error) params.set('error', req.query.error);
-  const frontendUrl = process.env.WEB_FRONTEND_URL || 'http://localhost:8081';
-  res.redirect(`${frontendUrl}?${params.toString()}`);
-});
 
 app.listen(PORT, async () => {
   await initCosmos();
