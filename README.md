@@ -127,6 +127,7 @@ The AI summary is powered by the GitHub Copilot SDK running on your backend serv
 
 <img width="800" height="800" alt="architecture" src="https://github.com/user-attachments/assets/b585d9c4-6dbd-4af8-9c35-2bb19472577f" />
 
+**[→ Read the full architecture documentation](docs/architecture.md)** for in-depth technical details about the system design, authentication flow, and component interactions.
 
 ## Project Structure
 
@@ -172,37 +173,15 @@ npm run android   # Open in Android emulator
 
 ## Troubleshooting
 
-### Authentication Issues
+**Quick fixes for common issues:**
 
-**"Failed to connect to auth server"**
-- Make sure you run `npm run dev` (not just `npm start`)
-- The OAuth server must be running on port 3000
+- **"Failed to connect to auth server"** - Run `npm run dev` (not just `npm start`) to start both the server and Expo
+- **"Issues won't close"** - Use OAuth scope `repo` (not `public_repo`), sign out and sign in again
+- **"AI summary failed"** - Ensure backend server is running and `GH_TOKEN` environment variable is set
+- **Build errors** - Run `npm install` to ensure all dependencies are installed
+- **Blank web page** - Use `npm run web-dev` instead of navigating to `http://localhost:8081` directly
 
-**"GitHub OAuth failed: bad_verification_code"**
-- Code expired or already used. Click "Start GitHub login" again
-
-**Issues won't close**
-- Check that your OAuth scope is `repo` (not `public_repo`)
-- Sign out and sign in again to get a new token with the correct scope
-
-### AI Summary Issues
-
-**"AI summary failed: Failed to fetch"**
-- Make sure the Express server is running (`npm run server`)
-- Check that `GH_TOKEN` or `COPILOT_PAT` is set for Copilot access
-
-### Build/Bundling Issues
-
-**"Cannot find module 'babel-preset-expo'"**
-- Run `npm install` to ensure all dependencies are installed
-- If the issue persists, manually install: `npm install --save-dev babel-preset-expo`
-
-**"Cannot find module 'react-dom' or 'react-native-web'"**
-- Install web dependencies: `npx expo install react-dom react-native-web`
-
-**Blank page or JSON manifest displayed**
-- Don't navigate directly to `http://localhost:8081` - that's the Metro bundler endpoint
-- Use `npm run web-dev` instead, which opens the correct web URL automatically
+**[→ See the complete Troubleshooting Guide](docs/guides/troubleshooting.md)** for detailed solutions to authentication, build, deployment, and other issues.
 
 ## Tech Stack
 
@@ -217,6 +196,13 @@ npm run android   # Open in Android emulator
 ### Other Platforms
 
 For Azure Static Web Apps, Vercel, or similar platforms, set the environment variables in their configuration panel.
+
+## Documentation
+
+- **[Architecture Guide](docs/architecture.md)** - System design, authentication flow, and component structure
+- **[API Reference](docs/api/README.md)** - Backend API endpoints and request/response formats
+- **[Troubleshooting Guide](docs/guides/troubleshooting.md)** - Solutions for common issues
+- **[Contributing Guide](CONTRIBUTING.md)** - How to contribute to the project
 
 ## Contributing
 
