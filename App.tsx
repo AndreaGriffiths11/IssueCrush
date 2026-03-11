@@ -115,7 +115,6 @@ function AppContent() {
   // Mobile check using new breakpoint < 1024px for Desktop vs Mobile layout switch
   const isDesktop = isWeb && SCREEN_WIDTH >= 1024;
   const isTablet = isWeb && SCREEN_WIDTH >= 768 && SCREEN_WIDTH < 1024;
-  const isMobile = !isWeb || SCREEN_WIDTH < 768;
 
   // Responsive card dimensions
   const cardWidth = SCREEN_WIDTH < 768
@@ -291,7 +290,7 @@ function AppContent() {
 
                 {/* Mobile/Tablet Bottom Controls */}
                 {!isDesktop && (
-                  <ScrollView style={[styles.mobileBottomPanel, { backgroundColor: theme.background }]} contentContainerStyle={styles.mobileBottomPanelContent} bounces={false} showsVerticalScrollIndicator={false}>
+                  <ScrollView style={[styles.mobileBottomPanel, { backgroundColor: theme.background }]} contentContainerStyle={styles.mobileBottomPanelContent} bounces={false} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
                     {/* Filter */}
                     <View style={styles.mobileFilterRow}>
                       <View style={[styles.mobileFilterInput, { backgroundColor: theme.inputBackground, borderColor: theme.border }]}>

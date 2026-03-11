@@ -106,7 +106,7 @@ export function SwipeContainer({
         // Re-read from issues array so aiSummary updates are reflected
         const issue = issues.find((i) => i.id === card?.id) || card;
         if (!issue) {
-            return <View style={[styles.cardPlaceholder, isDesktop && styles.cardPlaceholderDesktop]} />;
+            return <View style={[styles.cardPlaceholder, (isDesktop || isTablet) && styles.cardPlaceholderDesktop]} />;
         }
         const label =
             issue.repository?.full_name ?? extractRepoPath(issue.repository_url);
@@ -114,7 +114,7 @@ export function SwipeContainer({
         return (
             <IssueCard
                 issue={issue}
-                isDesktop={isDesktop}
+                isDesktop={isDesktop || isTablet}
                 isCurrent={isCurrent}
                 copilotAvailable={copilotAvailable}
                 loadingAiSummary={loadingAiSummary}
@@ -199,7 +199,7 @@ export function SwipeContainer({
                         cardHorizontalMargin={(isDesktop || isTablet) ? 0 : 16}
                         marginTop={0}
                         containerStyle={
-                            isDesktop
+                            (isDesktop || isTablet)
                                 ? {
                                     position: 'absolute',
                                     left: 0,
