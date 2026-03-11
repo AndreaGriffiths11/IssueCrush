@@ -170,6 +170,13 @@ npm run ios       # Open in iOS simulator
 npm run android   # Open in Android emulator
 ```
 
+### Testing
+
+```bash
+npm test              # Run Jest test suite
+npx tsc --noEmit      # Type-check without building
+```
+
 ## Troubleshooting
 
 ### Authentication Issues
@@ -210,7 +217,7 @@ npm run android   # Open in Android emulator
 - **react-native-deck-swiper** - Tinder-style swipe cards
 - **Express** - OAuth token exchange and AI proxy server
 - **Azure Cosmos DB** - Persistent session storage (optional)
-- **GitHub Copilot SDK** - AI-powered issue analysis
+- **GitHub Copilot SDK** (0.1.32) - AI-powered issue analysis
 - **[Agentation](https://github.com/benjitaylor/agentation)** - Visual feedback UI component (web only) by [Benji Taylor](https://github.com/benjitaylor)
 - **TypeScript** - Type-safe development
 
