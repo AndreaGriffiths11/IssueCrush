@@ -114,7 +114,16 @@ function AppContent() {
   const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
   // Mobile check using new breakpoint < 1024px for Desktop vs Mobile layout switch
   const isDesktop = isWeb && SCREEN_WIDTH >= 1024;
+  const isTablet = isWeb && SCREEN_WIDTH >= 768 && SCREEN_WIDTH < 1024;
   const isMobile = !isWeb || SCREEN_WIDTH < 768;
+
+  // Responsive card dimensions
+  const cardWidth = SCREEN_WIDTH < 768
+    ? Math.floor(SCREEN_WIDTH * 0.9)
+    : SCREEN_WIDTH < 1024
+      ? Math.min(480, Math.floor(SCREEN_WIDTH * 0.7))
+      : 480;
+  const cardHeight = Math.floor(cardWidth * (640 / 480));
 
   const { token, authError, setAuthError, copilotAvailable, startLogin, signOut } = useAuth();
   const { issues, loadingIssues, loadingAiSummary, currentIndex, lastClosed, undoBusy, feedback, setFeedback, repoFilter, setRepoFilter, labelFilter, setLabelFilter, swiperRef, confettiRef, repoLabel, loadIssues, handleSwipeLeft, handleSwipeRight, onSwiped, handleUndo, handleGetAiSummary } = useIssues(token);
@@ -201,19 +210,24 @@ function AppContent() {
           )}
 
           {/* Main Content Area */}
-          <View style={[styles.contentMax, isDesktop && styles.contentMaxWeb, isDesktop && !token && styles.contentMaxLogin]}>
+          <View style={[styles.contentMax, (isDesktop || isTablet) && styles.contentMaxWeb, isDesktop && !token && styles.contentMaxLogin]}>
             {!token ? (
               <AuthScreen
                 onLogin={startLogin}
                 authError={authError}
                 isDesktop={isDesktop}
+                isTablet={isTablet}
+                screenWidth={SCREEN_WIDTH}
               />
             ) : (
-              <View style={[styles.triageContent, isDesktop && styles.triageContentDesktop]}>
+              <View style={[styles.triageContent, (isDesktop || isTablet) && styles.triageContentDesktop]}>
                 {authError ? <Text style={[styles.error, { color: theme.danger, padding: 16 }]}>{authError}</Text> : null}
 
                 <SwipeContainer
                   isDesktop={isDesktop}
+                  isTablet={isTablet}
+                  cardWidth={cardWidth}
+                  cardHeight={cardHeight}
                   issues={issues}
                   currentIndex={currentIndex}
                   swiperRef={swiperRef}
@@ -275,9 +289,9 @@ function AppContent() {
                   </View>
                 </Animated.View>
 
-                {/* Mobile Bottom Controls */}
+                {/* Mobile/Tablet Bottom Controls */}
                 {!isDesktop && (
-                  <View style={[styles.mobileBottomPanel, { backgroundColor: theme.background }]}>
+                  <ScrollView style={[styles.mobileBottomPanel, { backgroundColor: theme.background }]} contentContainerStyle={styles.mobileBottomPanelContent} bounces={false} showsVerticalScrollIndicator={false}>
                     {/* Filter */}
                     <View style={styles.mobileFilterRow}>
                       <View style={[styles.mobileFilterInput, { backgroundColor: theme.inputBackground, borderColor: theme.border }]}>
@@ -391,7 +405,7 @@ function AppContent() {
                         </Animated.View>
                       )}
                     </View>
-                  </View>
+                  </ScrollView>
                 )}
               </View>
             )}
@@ -2023,8 +2037,7 @@ const styles = StyleSheet.create({
   },
   cardAreaMobile: {
     width: '100%',
-    height: '55%',
-    minHeight: 340,
+    flex: 1,
   },
   cardAreaDesktop: {
     position: 'relative',
@@ -2041,10 +2054,12 @@ const styles = StyleSheet.create({
   },
   mobileBottomPanel: {
     paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 24,
-    gap: 12,
-    marginTop: 'auto',
+    paddingTop: 8,
+    paddingBottom: 16,
+    maxHeight: 280,
+  },
+  mobileBottomPanelContent: {
+    gap: 8,
   },
   mobileProgressRow: {
     flexDirection: 'row',

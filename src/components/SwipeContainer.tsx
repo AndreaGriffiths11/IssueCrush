@@ -11,6 +11,9 @@ interface SwipeContainerProps {
     issues: GitHubIssue[];
     currentIndex: number;
     isDesktop: boolean;
+    isTablet?: boolean;
+    cardWidth?: number;
+    cardHeight?: number;
     copilotAvailable: boolean | null;
     loadingAiSummary: boolean;
     loadingIssues: boolean;
@@ -27,6 +30,9 @@ export function SwipeContainer({
     issues,
     currentIndex,
     isDesktop,
+    isTablet = false,
+    cardWidth = 480,
+    cardHeight = 640,
     copilotAvailable,
     loadingAiSummary,
     loadingIssues,
@@ -121,10 +127,10 @@ export function SwipeContainer({
     return (
         <View
             style={[
-                isDesktop ? styles.cardAreaDesktop : styles.cardAreaMobile,
+                (isDesktop || isTablet) ? [styles.cardAreaDesktop, { maxWidth: cardWidth + 40, maxHeight: cardHeight + 40 }] : styles.cardAreaMobile,
                 webCursor('grab'),
             ]}
-            {...(isDesktop ? { nativeID: 'card-stack-container' } : {})}
+            {...((isDesktop || isTablet) ? { nativeID: 'card-stack-container' } : {})}
         >
             {/* Loading state */}
             {loadingIssues && issues.length === 0 && (
@@ -161,7 +167,7 @@ export function SwipeContainer({
             {issues.length > 0 && (
                 <>
                     {/* Stacked background layers (desktop only) */}
-                    {isDesktop && (
+                    {(isDesktop || isTablet) && (
                         <>
                             <View
                                 style={[styles.cardLayerPink, { backgroundColor: theme.danger }]}
@@ -175,7 +181,7 @@ export function SwipeContainer({
                     )}
 
                     <Swiper
-                        key={isDesktop ? 'desktop' : 'mobile'}
+                        key={(isDesktop || isTablet) ? 'desktop' : 'mobile'}
                         ref={swiperRef}
                         cards={issues}
                         cardIndex={currentIndex}
@@ -184,13 +190,13 @@ export function SwipeContainer({
                         onSwipedLeft={onSwipeLeft}
                         onSwipedRight={onSwipeRight}
                         backgroundColor="transparent"
-                        stackSize={isDesktop ? 2 : 1}
-                        stackSeparation={isDesktop ? 12 : 0}
-                        stackScale={isDesktop ? 4 : 0}
+                        stackSize={(isDesktop || isTablet) ? 2 : 1}
+                        stackSeparation={(isDesktop || isTablet) ? 12 : 0}
+                        stackScale={(isDesktop || isTablet) ? 4 : 0}
                         animateCardOpacity
                         overlayLabels={overlayLabels}
-                        cardVerticalMargin={isDesktop ? 0 : 8}
-                        cardHorizontalMargin={isDesktop ? 0 : 16}
+                        cardVerticalMargin={(isDesktop || isTablet) ? 0 : 8}
+                        cardHorizontalMargin={(isDesktop || isTablet) ? 0 : 16}
                         marginTop={0}
                         containerStyle={
                             isDesktop
@@ -204,7 +210,7 @@ export function SwipeContainer({
                                 }
                                 : { flex: 1 }
                         }
-                        cardStyle={isDesktop ? { left: 0, top: 0, width: '100%', height: '100%' } : {}}
+                        cardStyle={(isDesktop || isTablet) ? { left: 0, top: 0, width: '100%', height: '100%' } : {}}
                         verticalSwipe={false}
                         disableTopSwipe
                         disableBottomSwipe
@@ -221,8 +227,7 @@ export function SwipeContainer({
 const styles = StyleSheet.create({
     cardAreaMobile: {
         width: '100%',
-        height: '55%',
-        minHeight: 340,
+        flex: 1,
     },
     cardAreaDesktop: {
         position: 'relative',
