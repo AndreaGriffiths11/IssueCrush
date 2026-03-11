@@ -143,6 +143,8 @@ IssueCrush/
 │   └── lib/
 │       ├── tokenStorage.ts   # Secure token storage
 │       └── copilotService.ts # Frontend Copilot service
+├── docs/
+│   └── API.md                # API endpoint documentation
 ├── .env.example              # Environment template
 ├── package.json              # Dependencies and scripts
 └── README.md                 # This file
@@ -217,6 +219,12 @@ npm run android   # Open in Android emulator
 ### Other Platforms
 
 For Azure Static Web Apps, Vercel, or similar platforms, set the environment variables in their configuration panel.
+
+## Documentation
+
+- **[API Documentation](docs/API.md)** - Complete API endpoint reference
+- **[Contributing Guide](CONTRIBUTING.md)** - How to contribute to the project
+- **[AGENTS.md](AGENTS.md)** - AI agent context and project conventions
 
 ## Contributing
 
