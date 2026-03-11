@@ -125,7 +125,7 @@ The AI summary is powered by the GitHub Copilot SDK running on your backend serv
 
 ## Architecture
 
-<img width="800" height="800" alt="architecture" src="https://github.com/user-attachments/assets/b585d9c4-6dbd-4af8-9c35-2bb19472577f" />
+![IssueCrush Architecture](assets/architecture-diagram.png)
 
 
 ## Project Structure
