@@ -9,6 +9,6 @@
   "dependencies": {
     "@azure/cosmos": "^4.3.1",
     "@azure/functions": "^4.7.0",
-    "@github/copilot-sdk": "^0.1.14"
+    "@github/copilot-sdk": "^0.1.32"
   }
 }
