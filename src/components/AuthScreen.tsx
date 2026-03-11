@@ -18,16 +18,21 @@ interface AuthScreenProps {
     onLogin: () => void;
     authError: string;
     isDesktop: boolean;
+    isTablet?: boolean;
+    screenWidth?: number;
 }
 
-export function AuthScreen({ onLogin, authError, isDesktop }: AuthScreenProps) {
+export function AuthScreen({ onLogin, authError, isDesktop, isTablet = false, screenWidth = 400 }: AuthScreenProps) {
+    // Responsive brand font size
+    const brandFontSize = screenWidth < 400 ? 32 : isWeb ? 52 : 36;
+
     return (
         <ScrollView
             style={styles.authContainerScroll}
-            contentContainerStyle={styles.authContainer}
+            contentContainerStyle={[styles.authContainer, isTablet && styles.authContainerTablet]}
             showsVerticalScrollIndicator={false}
         >
-            <View style={[styles.authCard, !isDesktop && styles.authCardMobile]}>
+            <View style={[styles.authCard, !isDesktop && !isTablet && styles.authCardMobile, isTablet && styles.authCardTablet]}>
                 {/* App Icon */}
                 <View style={styles.authLogoWrap}>
                     <Image
@@ -38,8 +43,8 @@ export function AuthScreen({ onLogin, authError, isDesktop }: AuthScreenProps) {
                 </View>
 
                 <View style={styles.authCardBrand}>
-                    <Text style={styles.authBrandIssue}>ISSUE</Text>
-                    <Text style={styles.authBrandCrush}>CRUSH</Text>
+                    <Text style={[styles.authBrandIssue, { fontSize: brandFontSize }]}>ISSUE</Text>
+                    <Text style={[styles.authBrandCrush, { fontSize: brandFontSize }]}>CRUSH</Text>
                 </View>
 
                 <Text style={styles.authCardSub}>
@@ -135,6 +140,15 @@ const styles = StyleSheet.create({
         borderRadius: 0,
         maxWidth: '100%',
     },
+    authCardTablet: {
+        maxWidth: 520,
+        minHeight: 500,
+        justifyContent: 'center',
+    },
+    authContainerTablet: {
+        justifyContent: 'center',
+        minHeight: '100%',
+    },
     authLogoWrap: {
         width: isWeb ? 120 : 100,
         height: isWeb ? 120 : 100,
@@ -150,7 +164,7 @@ const styles = StyleSheet.create({
         alignItems: 'baseline',
         gap: 8,
         justifyContent: 'center',
-        flexWrap: 'wrap',
+        flexWrap: 'nowrap',
     },
     authBrandIssue: {
         fontSize: isWeb ? 52 : 36,
