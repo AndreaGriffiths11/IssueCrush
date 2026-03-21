@@ -60,11 +60,11 @@ export function IssueCard({
     const { theme, isDark } = useTheme();
 
     return (
-        <View style={[styles.cardBrutalist, isDesktop && styles.cardBrutalistDesktop]}>
+        <View style={[styles.cardBrutalist, isDesktop && styles.cardBrutalistDesktop, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
             {/* Card Header */}
-            <View style={styles.cardHeaderBrutalist}>
-                <View style={styles.issueIdBadge}>
-                    <Text style={styles.issueIdText}>#{issue.number}</Text>
+            <View style={[styles.cardHeaderBrutalist, { backgroundColor: theme.cardBackground, borderBottomColor: theme.cardBorder }]}>
+                <View style={[styles.issueIdBadge, { borderColor: theme.cardBorder }]}>
+                    <Text style={[styles.issueIdText, { color: theme.ink }]}>#{issue.number}</Text>
                 </View>
                 <TouchableOpacity
                     onPress={() => openIssueLink(issue.html_url)}
@@ -76,18 +76,18 @@ export function IssueCard({
                             const isHeavyWord = i % 3 === 0;
                             const wordStyle = isHeavyWord ? styles.headlineHeavy : styles.headlineLight;
                             return (
-                                <Text key={i} style={wordStyle}>
+                                <Text key={i} style={[wordStyle, { color: theme.ink }]}>
                                     {word}{' '}
                                 </Text>
                             );
                         })}
                     </Text>
-                    <ExternalLink size={20} color="#000000" style={{ marginTop: 4, opacity: 0.6 }} />
+                    <ExternalLink size={20} color={theme.ink} style={{ marginTop: 4, opacity: 0.6 }} />
                 </TouchableOpacity>
             </View>
 
             {/* Card Body */}
-            <View style={[styles.cardBodyBrutalist, styles.cardBodyContent]} pointerEvents="box-none">
+            <View style={[styles.cardBodyBrutalist, styles.cardBodyContent, { backgroundColor: theme.cardBackground }]} pointerEvents="box-none">
                 {/* User row */}
                 {issue.user && (
                     <View style={styles.userRowBrutalist}>
@@ -97,7 +97,7 @@ export function IssueCard({
                             resizeMode="cover"
                         />
                         <View style={styles.userMetaBrutalist}>
-                            <Text style={styles.userNameBrutalist}>{issue.user.login.toUpperCase()}</Text>
+                            <Text style={[styles.userNameBrutalist, { color: theme.ink }]}>{issue.user.login.toUpperCase()}</Text>
                             <Text style={styles.repoNameBrutalist}>{repoLabel}</Text>
                         </View>
                     </View>
@@ -134,8 +134,8 @@ export function IssueCard({
                         { backgroundColor: isDark ? '#050505' : '#1a1a2e' },
                     ]}
                 >
-                    <View style={styles.aiStickerBadge}>
-                        <Text style={styles.aiStickerText}>AI INSIGHT</Text>
+                    <View style={[styles.aiStickerBadge, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
+                        <Text style={[styles.aiStickerText, { color: theme.ink }]}>AI INSIGHT</Text>
                     </View>
                     {issue.aiSummary ? (
                         <ScrollView
