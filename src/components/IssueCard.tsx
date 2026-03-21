@@ -93,7 +93,7 @@ export function IssueCard({
                     <View style={styles.userRowBrutalist}>
                         <Image
                             source={{ uri: issue.user.avatar_url }}
-                            style={styles.avatarBrutalist}
+                            style={[styles.avatarBrutalist, { backgroundColor: theme.ink }]}
                             resizeMode="cover"
                         />
                         <View style={styles.userMetaBrutalist}>
@@ -187,7 +187,6 @@ export function IssueCard({
 const styles = StyleSheet.create({
     cardBrutalist: {
         flex: 1,
-        backgroundColor: '#ffffff',
         borderRadius: 16,
         borderWidth: 2,
         borderColor: '#000000',
@@ -208,7 +207,6 @@ const styles = StyleSheet.create({
         elevation: 10,
     },
     cardHeaderBrutalist: {
-        backgroundColor: '#ffffff',
         padding: 20,
         borderBottomWidth: 2,
         borderBottomColor: '#000000',
@@ -252,7 +250,6 @@ const styles = StyleSheet.create({
         color: '#000000',
     },
     cardBodyBrutalist: {
-        backgroundColor: '#ffffff',
         flex: 1,
     },
     cardBodyContent: {
@@ -269,7 +266,6 @@ const styles = StyleSheet.create({
         width: 48,
         height: 48,
         borderRadius: 24,
-        backgroundColor: '#000000',
     },
     userMetaBrutalist: {
         flexDirection: 'column',
@@ -317,7 +313,6 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: -12,
         right: 20,
-        backgroundColor: '#ffffff',
         borderWidth: 1,
         borderColor: '#000000',
         paddingVertical: 6,
