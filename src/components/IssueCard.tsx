@@ -57,7 +57,7 @@ export function IssueCard({
     repoLabel,
     onGetAiSummary,
 }: IssueCardProps) {
-    const { theme, isDark } = useTheme();
+    const { theme } = useTheme();
 
     return (
         <View style={[styles.cardBrutalist, isDesktop && styles.cardBrutalistDesktop, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
@@ -131,7 +131,7 @@ export function IssueCard({
                 <View
                     style={[
                         styles.aiBlockBrutalist,
-                        { backgroundColor: isDark ? '#050505' : '#1a1a2e' },
+                        { backgroundColor: '#1a1a2e' },
                     ]}
                 >
                     <View style={[styles.aiStickerBadge, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>

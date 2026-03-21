@@ -40,8 +40,6 @@ import {
   View,
   Image,
   useWindowDimensions,
-  useColorScheme,
-  Appearance,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as AuthSession from 'expo-auth-session';
@@ -49,7 +47,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Haptics from 'expo-haptics';
 import Swiper from 'react-native-deck-swiper';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { X, Check, RotateCcw, Sparkles, ExternalLink, Github, Filter, RefreshCw, Inbox, LogOut, Moon, Sun, Heart, Tag } from 'lucide-react-native';
+import { X, Check, RotateCcw, Sparkles, ExternalLink, Github, Filter, RefreshCw, Inbox, LogOut, Heart, Tag } from 'lucide-react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -74,13 +72,9 @@ import ConfettiCannon from 'react-native-confetti-cannon';
 const ThemeContext = createContext<{
   theme: Theme;
   isDark: boolean;
-  themeMode: ThemeMode;
-  setThemeMode: (mode: ThemeMode) => void;
 }>({
   theme: lightTheme,
   isDark: false,
-  themeMode: 'system',
-  setThemeMode: () => { },
 });
 
 const useTheme = () => useContext(ThemeContext);
@@ -93,7 +87,7 @@ const isWeb = Platform.OS === 'web';
 import { fetchIssues, GitHubIssue, updateIssueState, extractRepoPath } from './src/api/github';
 import { deleteToken, getToken, saveToken } from './src/lib/tokenStorage';
 import { copilotService } from './src/lib/copilotService';
-import { lightTheme, darkTheme, Theme, ThemeMode } from './src/theme/themes';
+import { lightTheme, Theme, ThemeMode } from './src/theme/themes';
 import { getLabelColor } from './src/utils/colors';
 import { useAuth } from './src/hooks/useAuth';
 import { useIssues } from './src/hooks/useIssues';
@@ -110,7 +104,7 @@ const REDIRECT_URI =
     : AuthSession.makeRedirectUri({ preferLocalhost: true });
 
 function AppContent() {
-  const { theme, isDark, themeMode, setThemeMode } = useTheme();
+  const { theme, isDark } = useTheme();
   const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
   // Mobile check using new breakpoint < 1024px for Desktop vs Mobile layout switch
   const isDesktop = isWeb && SCREEN_WIDTH >= 1024;
@@ -171,12 +165,6 @@ function AppContent() {
     }
   }, [isWeb]);
 
-  // Toggle theme
-  const cycleTheme = () => {
-    const modes: ThemeMode[] = ['light', 'dark', 'system'];
-    const currentIdx = modes.indexOf(themeMode);
-    setThemeMode(modes[(currentIdx + 1) % modes.length]);
-  };
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -188,7 +176,6 @@ function AppContent() {
           {/* Web Sidebar - Brutalist Design (Desktop Only) */}
           {isDesktop && token && (
             <Sidebar
-              themeMode={themeMode}
               repoFilter={repoFilter}
               labelFilter={labelFilter}
               issues={issues}
@@ -204,7 +191,6 @@ function AppContent() {
               onSwipeRight={() => swiperRef.current?.swipeRight()}
               onUndo={handleUndo}
               onSignOut={signOut}
-              onCycleTheme={cycleTheme}
             />
           )}
 
@@ -378,12 +364,6 @@ function AppContent() {
                     {/* Footer row */}
                     <View style={styles.mobileFooterRow}>
                       <TouchableOpacity
-                        style={[styles.mobileFooterBtn, { backgroundColor: theme.backgroundTertiary, borderColor: theme.border }, webCursor('pointer')]}
-                        onPress={cycleTheme}
-                      >
-                        {themeMode === 'dark' ? <Moon size={16} color={theme.primary} /> : <Sun size={16} color={theme.primary} />}
-                      </TouchableOpacity>
-                      <TouchableOpacity
                         style={[styles.mobileSignOutBtn, { backgroundColor: theme.cardBackground }, webCursor('pointer')]}
                         onPress={signOut}
                       >
@@ -426,18 +406,9 @@ function AppContent() {
 
 // Theme Provider Wrapper
 export default function App() {
-  const systemColorScheme = useColorScheme();
-  const [themeMode, setThemeMode] = useState<ThemeMode>('dark');
-
-  const isDark = themeMode === 'system'
-    ? systemColorScheme === 'dark'
-    : themeMode === 'dark';
-
-  const theme = isDark ? darkTheme : lightTheme;
-
   return (
     <ErrorBoundary>
-      <ThemeContext.Provider value={{ theme, isDark, themeMode, setThemeMode }}>
+      <ThemeContext.Provider value={{ theme: lightTheme, isDark: false }}>
         <AppContent />
       </ThemeContext.Provider>
     </ErrorBoundary>

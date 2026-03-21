@@ -7,10 +7,9 @@ import {
     View,
 } from 'react-native';
 import Animated from 'react-native-reanimated';
-import { Check, Filter, LogOut, Moon, RefreshCw, RotateCcw, Sun, Tag, X } from 'lucide-react-native';
+import { Check, Filter, LogOut, RefreshCw, RotateCcw, Tag, X } from 'lucide-react-native';
 import { GitHubIssue } from '../api/github';
 import { useTheme } from '../theme';
-import { ThemeMode } from '../theme/themes';
 import { webCursor } from '../utils';
 
 interface SidebarProps {
@@ -22,7 +21,6 @@ interface SidebarProps {
     undoBusy: boolean;
     loadingIssues: boolean;
     progressAnimatedStyle: any;
-    themeMode: ThemeMode;
     onChangeRepoFilter: (text: string) => void;
     onChangeLabelFilter: (text: string) => void;
     onRefresh: () => void;
@@ -30,7 +28,6 @@ interface SidebarProps {
     onSwipeRight: () => void;
     onUndo: () => void;
     onSignOut: () => void;
-    onCycleTheme: () => void;
 }
 
 export function Sidebar({
@@ -42,7 +39,6 @@ export function Sidebar({
     undoBusy,
     loadingIssues,
     progressAnimatedStyle,
-    themeMode,
     onChangeRepoFilter,
     onChangeLabelFilter,
     onRefresh,
@@ -50,7 +46,6 @@ export function Sidebar({
     onSwipeRight,
     onUndo,
     onSignOut,
-    onCycleTheme,
 }: SidebarProps) {
     const { theme } = useTheme();
 
@@ -190,26 +185,6 @@ export function Sidebar({
 
             {/* Footer */}
             <View style={[styles.sidebarFooter, { borderColor: theme.border }]}>
-                <TouchableOpacity
-                    style={[
-                        styles.themeToggle,
-                        { backgroundColor: theme.backgroundTertiary, borderColor: theme.border },
-                        webCursor('pointer'),
-                    ]}
-                    onPress={onCycleTheme}
-                    activeOpacity={0.7}
-                >
-                    {themeMode === 'dark' ? (
-                        <Moon size={18} color={theme.primary} />
-                    ) : themeMode === 'light' ? (
-                        <Sun size={18} color={theme.primary} />
-                    ) : (
-                        <View style={{ flexDirection: 'row', gap: 2 }}>
-                            <Sun size={12} color={theme.primary} />
-                            <Moon size={12} color={theme.primary} />
-                        </View>
-                    )}
-                </TouchableOpacity>
                 <TouchableOpacity
                     style={[styles.signOutBrutalist, { backgroundColor: theme.cardBackground }, webCursor('pointer')]}
                     onPress={onSignOut}
