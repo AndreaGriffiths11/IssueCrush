@@ -28,6 +28,7 @@ interface SidebarProps {
     onSwipeRight: () => void;
     onUndo: () => void;
     onSignOut: () => void;
+    onShowShortcuts: () => void;
 }
 
 export function Sidebar({
@@ -46,6 +47,7 @@ export function Sidebar({
     onSwipeRight,
     onUndo,
     onSignOut,
+    onShowShortcuts,
 }: SidebarProps) {
     const { theme } = useTheme();
 
@@ -191,6 +193,13 @@ export function Sidebar({
                 >
                     <LogOut size={18} color={theme.ink} />
                     <Text style={[styles.signOutTextBrutalist, { color: theme.ink }]}>Sign out</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.shortcutsBtn, { borderColor: theme.border }, webCursor('pointer')]}
+                    onPress={onShowShortcuts}
+                    accessibilityLabel="Keyboard shortcuts"
+                >
+                    <Text style={[styles.shortcutsBtnText, { color: theme.textMuted }]}>?</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -365,5 +374,17 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         fontSize: 13,
         textTransform: 'uppercase',
+    },
+    shortcutsBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+    },
+    shortcutsBtnText: {
+        fontSize: 18,
+        fontWeight: '700',
     },
 });

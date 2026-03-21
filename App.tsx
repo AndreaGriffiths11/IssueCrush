@@ -92,7 +92,9 @@ import { getLabelColor } from './src/utils/colors';
 import { useAuth } from './src/hooks/useAuth';
 import { useIssues } from './src/hooks/useIssues';
 import { useAnimations } from './src/hooks/useAnimations';
+import { useKeyboardShortcuts } from './src/hooks/useKeyboardShortcuts';
 import { AuthScreen } from './src/components/AuthScreen';
+import { KeyboardShortcutsHelp } from './src/components/KeyboardShortcutsHelp';
 import { SwipeContainer } from './src/components/SwipeContainer';
 import { Sidebar } from './src/components/Sidebar';
 
@@ -122,6 +124,14 @@ function AppContent() {
   const { issues, loadingIssues, loadingAiSummary, currentIndex, lastClosed, undoBusy, feedback, setFeedback, repoFilter, setRepoFilter, labelFilter, setLabelFilter, swiperRef, confettiRef, repoLabel, loadIssues, handleSwipeLeft, handleSwipeRight, onSwiped, handleUndo, handleGetAiSummary } = useIssues(token);
   const [inputFocused, setInputFocused] = useState(false);
   const { toastAnimatedStyle, progressAnimatedStyle, closeAnimatedStyle, keepAnimatedStyle, undoAnimatedStyle, handleClosePressIn, handleClosePressOut, handleKeepPressIn, handleKeepPressOut, handleUndoPressIn, handleUndoPressOut } = useAnimations(theme, feedback, currentIndex, issues.length, inputFocused);
+
+  const currentIssue = issues[currentIndex] ?? null;
+  const { showHelp, setShowHelp } = useKeyboardShortcuts({
+    swiperRef,
+    handleUndo,
+    currentIssue,
+    hasIssues: issues.length > currentIndex,
+  });
 
   // Inject CSS for web hover effects on card stack
   useEffect(() => {
@@ -191,6 +201,7 @@ function AppContent() {
               onSwipeRight={() => swiperRef.current?.swipeRight()}
               onUndo={handleUndo}
               onSignOut={signOut}
+              onShowShortcuts={() => setShowHelp(true)}
             />
           )}
 
@@ -399,6 +410,9 @@ function AppContent() {
           autoStart={false}
           fadeOut
         />
+
+        {/* Keyboard shortcuts help modal — web only */}
+        {isWeb && showHelp && <KeyboardShortcutsHelp onClose={() => setShowHelp(false)} />}
       </SafeAreaView>
     </GestureHandlerRootView>
   );
