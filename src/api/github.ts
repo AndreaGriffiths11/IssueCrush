@@ -85,7 +85,10 @@ export async function updateIssueState(
 
 export function extractRepoPath(repositoryUrl: string) {
   const marker = '/repos/';
-  const idx = repositoryUrl.indexOf(marker);
-  if (idx === -1) return repositoryUrl;
-  return repositoryUrl.slice(idx + marker.length);
+  const markerIndex = repositoryUrl.indexOf(marker);
+  const hasMarker = markerIndex !== -1;
+  if (!hasMarker) return repositoryUrl;
+
+  const startOfRepoPath = markerIndex + marker.length;
+  return repositoryUrl.slice(startOfRepoPath);
 }

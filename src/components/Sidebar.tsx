@@ -54,9 +54,10 @@ export function Sidebar({
 }: SidebarProps) {
     const { theme } = useTheme();
 
-    const progressPercent = issues.length > 0
-        ? Math.round((Math.min(currentIndex + 1, issues.length) / issues.length) * 100)
-        : 0;
+    const hasIssues = issues.length > 0;
+    const triagedCount = Math.min(currentIndex + 1, issues.length);
+    const triagedFraction = hasIssues ? triagedCount / issues.length : 0;
+    const progressPercent = Math.round(triagedFraction * 100);
 
     return (
         <View

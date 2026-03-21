@@ -72,11 +72,15 @@ export function IssueCard({
                     activeOpacity={0.7}
                 >
                     <Text style={styles.headlineBrutalist} numberOfLines={2}>
-                        {issue.title.split(' ').map((word, i) => (
-                            <Text key={i} style={i % 3 === 0 ? styles.headlineHeavy : styles.headlineLight}>
-                                {word}{' '}
-                            </Text>
-                        ))}
+                        {issue.title.split(' ').map((word, i) => {
+                            const isHeavyWord = i % 3 === 0;
+                            const wordStyle = isHeavyWord ? styles.headlineHeavy : styles.headlineLight;
+                            return (
+                                <Text key={i} style={wordStyle}>
+                                    {word}{' '}
+                                </Text>
+                            );
+                        })}
                     </Text>
                     <ExternalLink size={20} color="#000000" style={{ marginTop: 4, opacity: 0.6 }} />
                 </TouchableOpacity>
