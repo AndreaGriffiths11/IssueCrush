@@ -53,14 +53,14 @@ api/src/sessionStore.js (Cosmos DB session storage)
 - Requires `GH_TOKEN` or `COPILOT_PAT` in SWA app settings
 - Frontend calls copilotService.ts → Azure Function → Copilot SDK
 
-### Refactor Boundaries (issue #38)
+### Architecture Boundaries
 - `ErrorBoundary` (class component) stays in `App.tsx` — must wrap all children
 - `ThemeContext` provider stays in `App.tsx` — root-level context
 - Mobile/desktop layout branching (`isDesktop` / `useWindowDimensions`) stays in `App.tsx`
-- Components receive props/callbacks; they do NOT call hooks or APIs directly
-- Hook APIs (`useAuth`, `useIssues`, `useAnimations`) are frozen — no renames or signature changes for this issue; if a signature must change, update all call sites and explain why in the PR
-- `swiperRef` from `useIssues` must be passed as a prop or via `forwardRef` into `SwipeContainer` — do not recreate the ref inside the component
-- No new dependencies unless absolutely required by the issue
+- Components receive props/callbacks — they do NOT call hooks or APIs directly
+- Hook APIs (`useAuth`, `useIssues`, `useAnimations`) are frozen — if a signature must change, update all call sites and explain why in the PR
+- `swiperRef` from `useIssues` must be passed as a prop or via `forwardRef` — never recreate inside a component
+- No new dependencies unless absolutely required
 
 ### Known Gotchas
 - `expo export` may fail due to blocked network access to `cdp.expo.dev` — do not block a PR on this; use `npx tsc --noEmit` as the build check instead
@@ -106,14 +106,10 @@ api/src/sessionStore.js (Cosmos DB session storage)
 Every line of code should do exactly one thing. Use intermediate variables as documentation.
 
 ### Rules
-1. **No chained crypto** — split `createHash().update().digest()` into steps
-2. **No inline JSON.stringify with defaults** — extract `JSON.stringify(x || fallback)` into a named variable
-3. **No complex fallback chains** — split `a?.b || (c?.d ? e : f)` into `dedicatedX` / `fallbackX`
-4. **No parseInt with inline fallback** — extract the raw param first, then parse
-5. **Name magic numbers** — `30 * 24 * 60 * 60 * 1000` becomes `const thirtyDaysMs = ...`
-6. **Split compound conditions** — `if (a !== -1 && b >= c)` becomes named booleans like `isUnlimited`, `isOverLimit`
-7. **No chained string methods** — `.replace().replace().replace()` should be sequential assignments
-8. **Split key/token generation** — `prefix + randomBytes(24).toString('base64url')` → extract `randomPart`
+1. **No complex fallback chains** — split `a?.b || (c?.d ? e : f)` into `dedicatedX` / `fallbackX`
+2. **Name magic numbers** — `30 * 24 * 60 * 60 * 1000` becomes `const thirtyDaysMs = ...`
+3. **Split compound conditions** — `if (a !== -1 && b >= c)` becomes named booleans like `isUnlimited`, `isOverLimit`
+4. **No chained string methods** — `.replace().replace().replace()` should be sequential assignments
 
 ## Local Context
 Read `.agents.local.md` at session start for accumulated learnings.
