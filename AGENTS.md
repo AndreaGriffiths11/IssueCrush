@@ -116,9 +116,23 @@ Read `.agents.local.md` at session start for accumulated learnings.
 At session end, append a Session Log entry: what changed, what worked, what didn't, decisions made, patterns learned.
 Subagents: explicitly read `.agents.local.md` — you don't inherit main conversation history.
 
+### Auto-Reflect
+
+This project uses auto-reflect. Check `.agents.local.md` for the promotion mode (`<!-- auto-reflect: promote=auto|suggest|off -->`).
+
+**Continuous observation:** After significant events (commits, bug fixes, pattern reuse, dead ends), append a one-liner to `## Session Observations (auto)`:
+```
+- <ISO-timestamp> | <what happened>
+```
+
+**Session-end reflection:** Before logging the session summary:
+1. Read all of `.agents.local.md`
+2. Identify patterns/gotchas/boundaries that recurred 3+ sessions
+3. In `auto` mode: promote directly to `AGENTS.md` and log under `## Auto-Promoted`
+4. In `suggest` mode: write suggestions to `## Ready to Promote` for human review
+5. In `off` mode: skip reflection
+
 ### Promotion Workflow
-- During compression (300+ lines), flag patterns that recurred 3+ sessions in `.agents.local.md` → "Ready to Promote"
 - Use pipe-delimited format: `pattern | context` → target section (Patterns, Gotchas, or Boundaries)
-- Human decides when to move flagged items into this file
 - After promoting: remove the item from Ready to Promote in `.agents.local.md`
 - If an item is already captured in AGENTS.md, clear it from Ready to Promote — don't duplicate
