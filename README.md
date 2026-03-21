@@ -13,6 +13,7 @@ Swipe through your GitHub issues like Tinder. Close with a left swipe, keep with
 - **AI-Powered Summaries** ✨ - Get intelligent issue analysis powered by GitHub Copilot SDK
 - **Instant Undo** - Accidentally closed an issue? Undo it instantly
 - **Repository Filtering** - Focus on specific repos or view all your issues
+- **Keyboard Shortcuts** ⌨️ - Fast triage on web with arrow keys, vim-style navigation, and more
 - **Cross-Platform** - Works on web, iOS, and Android via React Native + Expo
 - **Native Feel** - Action bar with Close/Undo/Keep buttons, toast notifications, stamp-style swipe overlays
 
@@ -107,6 +108,21 @@ This starts both the OAuth server (port 3000) and the Expo dev server (port 8081
 6. **Swipe left** to close an issue
 7. Tap the issue number to open it on GitHub
 8. Use the bottom action bar for button-based actions
+
+### Keyboard Shortcuts (Web Only)
+
+Speed up issue triage on the web with these keyboard shortcuts:
+
+| Key | Action |
+|-----|--------|
+| <kbd>←</kbd> or <kbd>H</kbd> | Close issue (swipe left) |
+| <kbd>→</kbd> or <kbd>L</kbd> | Keep issue (swipe right) |
+| <kbd>Z</kbd> or <kbd>Ctrl</kbd>+<kbd>Z</kbd> | Undo last action |
+| <kbd>O</kbd> | Open issue in GitHub |
+| <kbd>?</kbd> | Toggle keyboard shortcuts help |
+| <kbd>Esc</kbd> | Close help overlay |
+
+**Tip:** Shortcuts are disabled when typing in the filter field, so you can type naturally without triggering actions.
 
 ## AI Summaries (Optional)
 
