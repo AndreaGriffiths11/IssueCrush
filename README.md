@@ -125,27 +125,56 @@ The AI summary is powered by the GitHub Copilot SDK running on your backend serv
 
 ## Architecture
 
+IssueCrush uses a **modular, hook-based architecture** with clear separation of concerns:
+
+- **Custom Hooks** (`src/hooks/`) - Business logic for auth, issues, and animations
+- **Presentational Components** (`src/components/`) - UI-only, receive props/callbacks
+- **App.tsx** - Root orchestrator that composes hooks and components
+
+**Key principle:** Components don't call hooks or APIs directly. All business logic lives in custom hooks.
+
 ![IssueCrush Architecture](assets/architecture-diagram.png)
 
+📚 **[Read the full Architecture Guide →](docs/ARCHITECTURE.md)**
 
 ## Project Structure
 
 ```
 IssueCrush/
-├── App.tsx                    # Main app component (UI + swipe logic)
+├── App.tsx                    # Root orchestrator (composition only)
 ├── server.js                  # Express server (OAuth + AI proxy)
 ├── sessionStore.js            # Cosmos DB / in-memory session storage
 ├── AGENTS.md                  # AI agent context (project knowledge)
 ├── .agents/                   # Installed agent skills (see below)
+├── docs/                      # Technical documentation
+│   ├── ARCHITECTURE.md       # Architecture guide
+│   ├── HOOKS.md              # Hooks API reference
+│   └── COMPONENTS.md         # Component API reference
 ├── src/
+│   ├── components/           # Presentational components
+│   │   ├── AuthScreen.tsx   # OAuth login UI
+│   │   ├── IssueCard.tsx    # Issue display card
+│   │   ├── Sidebar.tsx      # Desktop sidebar
+│   │   └── SwipeContainer.tsx # Swiper wrapper
+│   ├── hooks/               # Custom React hooks (business logic)
+│   │   ├── useAuth.ts      # Authentication & OAuth
+│   │   ├── useIssues.ts    # Issue management
+│   │   └── useAnimations.ts # Animation coordination
 │   ├── api/
-│   │   └── github.ts         # GitHub API client
-│   └── lib/
-│       ├── tokenStorage.ts   # Secure token storage
-│       └── copilotService.ts # Frontend Copilot service
-├── .env.example              # Environment template
-├── package.json              # Dependencies and scripts
-└── README.md                 # This file
+│   │   └── github.ts       # GitHub API client
+│   ├── lib/
+│   │   ├── tokenStorage.ts # Secure token storage
+│   │   └── copilotService.ts # AI summary service
+│   └── theme/              # Theme system
+│       ├── ThemeContext.tsx
+│       └── themes.ts       # Light theme (dark mode removed)
+├── api/                    # Azure Functions (production backend)
+│   └── src/
+│       ├── app.js         # OAuth, issues, AI endpoints
+│       └── sessionStore.js # Cosmos DB session storage
+├── .env.example           # Environment template
+├── package.json           # Dependencies and scripts
+└── README.md              # This file
 ```
 
 ### Agent Context System
@@ -176,6 +205,13 @@ npm run android   # Open in Android emulator
 npm test              # Run Jest test suite
 npx tsc --noEmit      # Type-check without building
 ```
+
+## Documentation
+
+- 📖 **[Architecture Guide](docs/ARCHITECTURE.md)** - Modular design, separation of concerns, data flow
+- 🪝 **[Hooks API Reference](docs/HOOKS.md)** - useAuth, useIssues, useAnimations
+- 🧩 **[Component API Reference](docs/COMPONENTS.md)** - AuthScreen, IssueCard, SwipeContainer, Sidebar
+- 🤝 **[Contributing Guide](CONTRIBUTING.md)** - How to contribute to IssueCrush
 
 ## Troubleshooting
 

@@ -94,17 +94,43 @@ npm run dev        # For mobile development
 
 ### Project Structure
 
+IssueCrush follows a **modular, hook-based architecture**:
+
 ```
 IssueCrush/
-├── App.tsx           # Main React Native component
-├── server.js         # Express server for OAuth & AI
-├── sessionStore.js   # Cosmos DB / in-memory session storage
+├── App.tsx                # Root orchestrator (composition only)
+├── server.js              # Express server for OAuth & AI
+├── sessionStore.js        # Cosmos DB / in-memory session storage
+├── docs/                  # Technical documentation
+│   ├── ARCHITECTURE.md   # Architecture guide
+│   ├── HOOKS.md          # Hooks API reference
+│   ├── COMPONENTS.md     # Component API reference
+│   └── QUICK_REFERENCE.md # Quick lookup guide
 ├── src/
-│   ├── api/          # GitHub API client
-│   └── lib/          # Utilities (token storage, Copilot service)
-├── assets/           # Images and static files
-└── .github/          # GitHub templates and workflows
+│   ├── components/       # Presentational components (UI only)
+│   │   ├── AuthScreen.tsx
+│   │   ├── IssueCard.tsx
+│   │   ├── Sidebar.tsx
+│   │   └── SwipeContainer.tsx
+│   ├── hooks/            # Custom hooks (business logic)
+│   │   ├── useAuth.ts   # Authentication & OAuth
+│   │   ├── useIssues.ts # Issue management
+│   │   └── useAnimations.ts # Animation coordination
+│   ├── api/              # External service clients
+│   │   └── github.ts
+│   ├── lib/              # Utilities
+│   │   ├── tokenStorage.ts
+│   │   └── copilotService.ts
+│   └── theme/            # Theme system
+│       ├── ThemeContext.tsx
+│       └── themes.ts
+├── assets/               # Images and static files
+└── .github/              # GitHub templates and workflows
 ```
+
+**Key Principle:** Components don't call hooks or APIs directly. All business logic lives in custom hooks.
+
+📚 **[Read the Architecture Guide](docs/ARCHITECTURE.md)** for detailed design principles and patterns.
 
 ### Running Tests
 
@@ -131,6 +157,27 @@ npx tsc --noEmit
 - Keep components focused and single-purpose
 - Extract reusable logic into custom hooks
 - Use StyleSheet for styling (not inline styles)
+- **Components are presentational** - receive props and callbacks, don't call hooks directly
+- **Business logic lives in hooks** - useAuth, useIssues, useAnimations
+
+### Architecture Patterns
+
+IssueCrush follows specific architectural boundaries:
+
+✅ **Do:**
+- Put business logic in custom hooks (`src/hooks/`)
+- Make components presentational (props + callbacks only)
+- Pass theme as a prop to all components
+- Use `useCallback` and `useMemo` for optimization
+- Keep `swiperRef` in `useIssues` (never recreate in components)
+
+❌ **Don't:**
+- Call hooks inside presentational components (except useTheme, useState, useCallback)
+- Make API calls directly from components
+- Put business logic in App.tsx
+- Modify frozen hook signatures without updating all call sites
+
+📚 **[Read the Architecture Guide](docs/ARCHITECTURE.md)** for detailed patterns.
 
 ### Git Commit Messages
 
@@ -156,6 +203,14 @@ Update README with new setup instructions
 ## Community
 
 - **Issues:** Use GitHub Issues for bugs and feature requests
+- **Documentation:** See `docs/` for architecture, hooks, and component references
+
+## Further Reading
+
+- 📖 **[Architecture Guide](docs/ARCHITECTURE.md)** - Design principles and patterns
+- 🪝 **[Hooks API Reference](docs/HOOKS.md)** - useAuth, useIssues, useAnimations
+- 🧩 **[Component API Reference](docs/COMPONENTS.md)** - AuthScreen, IssueCard, SwipeContainer, Sidebar
+- ⚡ **[Quick Reference](docs/QUICK_REFERENCE.md)** - Common tasks and patterns
 
 ## Recognition
 
