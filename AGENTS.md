@@ -101,6 +101,20 @@ api/src/sessionStore.js (Cosmos DB session storage)
 - GitHub Copilot SDK: https://github.com/github/copilot-sdk
 - react-native-deck-swiper: https://github.com/alexbrillant/react-native-deck-swiper
 
+## Code Clarity Standard
+
+Every line of code should do exactly one thing. Use intermediate variables as documentation.
+
+### Rules
+1. **No chained crypto** — split `createHash().update().digest()` into steps
+2. **No inline JSON.stringify with defaults** — extract `JSON.stringify(x || fallback)` into a named variable
+3. **No complex fallback chains** — split `a?.b || (c?.d ? e : f)` into `dedicatedX` / `fallbackX`
+4. **No parseInt with inline fallback** — extract the raw param first, then parse
+5. **Name magic numbers** — `30 * 24 * 60 * 60 * 1000` becomes `const thirtyDaysMs = ...`
+6. **Split compound conditions** — `if (a !== -1 && b >= c)` becomes named booleans like `isUnlimited`, `isOverLimit`
+7. **No chained string methods** — `.replace().replace().replace()` should be sequential assignments
+8. **Split key/token generation** — `prefix + randomBytes(24).toString('base64url')` → extract `randomPart`
+
 ## Local Context
 Read `.agents.local.md` at session start for accumulated learnings.
 At session end, append a Session Log entry: what changed, what worked, what didn't, decisions made, patterns learned.
