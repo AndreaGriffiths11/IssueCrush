@@ -121,7 +121,7 @@ function AppContent() {
     ? Math.floor(SCREEN_WIDTH * 0.9)
     : SCREEN_WIDTH < 1024
       ? Math.min(480, Math.floor(SCREEN_WIDTH * 0.7))
-      : 480;
+      : Math.min(600, Math.floor((SCREEN_WIDTH - 280) * 0.55));
   const cardHeight = Math.floor(cardWidth * (640 / 480));
 
   const { token, authError, setAuthError, copilotAvailable, startLogin, signOut } = useAuth();
