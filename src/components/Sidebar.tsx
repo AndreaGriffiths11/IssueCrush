@@ -108,14 +108,15 @@ export function Sidebar({
                     <TouchableOpacity
                         style={[
                             styles.sidebarButtonBrutalist,
+                            { backgroundColor: theme.cardBackground },
                             loadingIssues && styles.refreshButtonDisabled,
                             webCursor('pointer'),
                         ]}
                         onPress={onRefresh}
                         disabled={loadingIssues}
                     >
-                        <RefreshCw size={16} color="#000000" />
-                        <Text style={styles.sidebarButtonTextBrutalist}>REFRESH</Text>
+                        <RefreshCw size={16} color={theme.ink} />
+                        <Text style={[styles.sidebarButtonTextBrutalist, { color: theme.ink }]}>REFRESH</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -210,11 +211,11 @@ export function Sidebar({
                     )}
                 </TouchableOpacity>
                 <TouchableOpacity
-                    style={[styles.signOutBrutalist, webCursor('pointer')]}
+                    style={[styles.signOutBrutalist, { backgroundColor: theme.cardBackground }, webCursor('pointer')]}
                     onPress={onSignOut}
                 >
-                    <LogOut size={18} color="#000000" />
-                    <Text style={styles.signOutTextBrutalist}>Sign out</Text>
+                    <LogOut size={18} color={theme.ink} />
+                    <Text style={[styles.signOutTextBrutalist, { color: theme.ink }]}>Sign out</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -285,7 +286,6 @@ const styles = StyleSheet.create({
         gap: 8,
         height: 48,
         borderRadius: 50,
-        backgroundColor: '#ffffff',
     },
     refreshButtonDisabled: {
         opacity: 0.5,
@@ -293,7 +293,6 @@ const styles = StyleSheet.create({
     sidebarButtonTextBrutalist: {
         fontSize: 14,
         fontWeight: '700',
-        color: '#000000',
         textTransform: 'uppercase',
     },
     progressLabelRow: {
@@ -386,10 +385,8 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         paddingHorizontal: 16,
         borderRadius: 50,
-        backgroundColor: '#ffffff',
     },
     signOutTextBrutalist: {
-        color: '#000000',
         fontWeight: '700',
         fontSize: 13,
         textTransform: 'uppercase',

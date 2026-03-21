@@ -157,11 +157,11 @@ export function SwipeContainer({
                         No open issues found. Try a different repo or refresh.
                     </Text>
                     <TouchableOpacity
-                        style={[styles.refreshButton, webCursor('pointer')]}
+                        style={[styles.refreshButton, { backgroundColor: theme.cardBackground }, webCursor('pointer')]}
                         onPress={onRefresh}
                     >
-                        <RefreshCw size={16} color="#000000" />
-                        <Text style={styles.refreshText}>REFRESH</Text>
+                        <RefreshCw size={16} color={theme.ink} />
+                        <Text style={[styles.refreshText, { color: theme.ink }]}>REFRESH</Text>
                     </TouchableOpacity>
                 </View>
             )}

@@ -46,7 +46,7 @@ export const darkTheme = {
   successBorder: '#4B9F5D',
   border: '#333333',
   borderLight: '#222222',
-  cardBackground: '#ffffff',
+  cardBackground: '#1a1a1a',
   cardBorder: '#000000',
   inputBackground: '#111111',
   shadow: '#000000',
@@ -56,8 +56,8 @@ export const darkTheme = {
   pink: '#FF1493',
   forest: '#4B9F5D',
   void: '#050505',
-  canvas: '#ffffff',
-  ink: '#000000',
+  canvas: '#0a0a0a',
+  ink: '#ffffff',
 };
 
 export type Theme = typeof lightTheme;
