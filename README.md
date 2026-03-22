@@ -127,6 +127,8 @@ The AI summary is powered by the GitHub Copilot SDK running on your backend serv
 
 ![IssueCrush Architecture](assets/architecture-diagram.png)
 
+For a detailed architecture deep-dive, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
 
 ## Project Structure
 
@@ -176,6 +178,17 @@ npm run android   # Open in Android emulator
 npm test              # Run Jest test suite
 npx tsc --noEmit      # Type-check without building
 ```
+
+## Documentation
+
+Comprehensive documentation is available in the [`docs/`](docs/) directory:
+
+- **[Development Guide](docs/DEVELOPMENT.md)** — Setup, workflows, patterns, debugging
+- **[API Reference](docs/API.md)** — Complete endpoint documentation with examples
+- **[Architecture Deep-Dive](docs/ARCHITECTURE.md)** — System design, patterns, data flow
+- **[Deployment Guide](docs/DEPLOYMENT.md)** — Azure deployment, configuration, monitoring
+
+See [docs/README.md](docs/README.md) for a complete documentation index.
 
 ## Troubleshooting
 
