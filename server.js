@@ -198,7 +198,7 @@ app.patch('/api/issues/:owner/:repo/:number', requireSession(), async (req, res)
   }
 });
 
-// AI Summary endpoint - uses the user's GitHub token to call Copilot API
+// AI Summary endpoint - uses Copilot SDK with user's GitHub token
 app.post('/api/ai-summary', requireSession(), async (req, res) => {
   const { issue } = req.body;
 
@@ -209,7 +209,22 @@ app.post('/api/ai-summary', requireSession(), async (req, res) => {
 
   console.log(`\n\ud83e\udd16 Generating AI Summary for issue #${issue.number}: ${issue.title}`);
 
-  const prompt = `You are analyzing a GitHub issue to help a developer quickly understand it and decide how to handle it.
+  let client = null;
+  let session = null;
+
+  try {
+    const { CopilotClient, approveAll } = await import('@github/copilot-sdk');
+
+    // Use the logged-in user's GitHub OAuth token
+    client = new CopilotClient({ githubToken: req.githubToken });
+    await client.start();
+
+    session = await client.createSession({
+      model: 'gpt-4.1',
+      onPermissionRequest: approveAll,
+    });
+
+    const prompt = `You are analyzing a GitHub issue to help a developer quickly understand it and decide how to handle it.
 
 Issue Details:
 - Title: ${issue.title}
@@ -230,54 +245,39 @@ Provide a concise 2-3 sentence summary that:
 
 Keep it clear, actionable, and helpful for quick triage. No markdown formatting.`;
 
-  try {
-    // Use the user's GitHub OAuth token to call Copilot API
-    const response = await fetch('https://api.githubcopilot.com/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${req.githubToken}`,
-        'Content-Type': 'application/json',
-        'Editor-Version': 'IssueCrush/1.0.0',
-        'Copilot-Integration-Id': 'vscode-chat',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4.1',
-        messages: [
-          { role: 'system', content: 'You are a concise GitHub issue triage assistant.' },
-          { role: 'user', content: prompt }
-        ],
-        max_tokens: 300,
-      }),
-    });
+    console.log('   Sending prompt to Copilot...');
+    const response = await session.sendAndWait({ prompt }, 30000);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`   Copilot API ${response.status}: ${errorText}`);
-
-      if (response.status === 401 || response.status === 403) {
-        return res.status(403).json({
-          error: 'Copilot access required',
-          message: 'AI summaries require a GitHub Copilot subscription. You can still use IssueCrush to triage issues without AI summaries.',
-          requiresCopilot: true
-        });
-      }
-      throw new Error(`Copilot API returned ${response.status}`);
+    let summary;
+    if (response && response.data && response.data.content) {
+      summary = response.data.content;
+      console.log('\u2705 AI Summary generated successfully');
+    } else {
+      throw new Error('No content received from Copilot');
     }
 
-    const data = await response.json();
-    const summary = data.choices?.[0]?.message?.content;
+    if (session) await session.destroy().catch(() => {});
+    if (client) await client.stop().catch(() => {});
 
-    if (!summary) {
-      throw new Error('No content in Copilot response');
-    }
-
-    console.log('\u2705 AI Summary generated successfully');
     res.json({ summary });
 
   } catch (error) {
     console.error('\u274c AI Summary failed:', error.message);
 
-    // Fallback summary
+    try {
+      if (session) await session.destroy().catch(() => {});
+      if (client) await client.stop().catch(() => {});
+    } catch (_) {}
+
+    const msg = error.message.toLowerCase();
+    if (msg.includes('401') || msg.includes('403') || msg.includes('unauthorized') || msg.includes('forbidden')) {
+      return res.status(403).json({
+        error: 'Copilot access required',
+        message: 'AI summaries require a GitHub Copilot subscription.',
+        requiresCopilot: true
+      });
+    }
+
     const fallbackSummary = generateFallbackSummary(issue);
     res.json({
       summary: fallbackSummary,
