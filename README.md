@@ -116,12 +116,11 @@ Click the **"✨ Get AI Summary"** button on any issue card to get an AI-generat
 - Technical context and requirements
 - Recommended next steps
 
-The AI summary is powered by the GitHub Copilot SDK running on your backend server.
+The AI summary is powered by GitHub Copilot and uses your authenticated GitHub account.
 
 ### Requirements for AI Features
 
-- GitHub Copilot subscription or access
-- `GH_TOKEN` environment variable with Copilot access (or use `COPILOT_PAT`)
+- GitHub Copilot subscription (the feature uses your GitHub OAuth token to access Copilot API)
 
 ## Architecture
 
@@ -196,7 +195,11 @@ npx tsc --noEmit      # Type-check without building
 
 **"AI summary failed: Failed to fetch"**
 - Make sure the Express server is running (`npm run server`)
-- Check that `GH_TOKEN` or `COPILOT_PAT` is set for Copilot access
+- Ensure you're signed in with a GitHub account that has Copilot access
+
+**"AI summaries require a GitHub Copilot subscription"**
+- You need an active GitHub Copilot subscription to use this feature
+- Sign up at https://github.com/features/copilot
 
 ### Build/Bundling Issues
 
