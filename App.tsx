@@ -293,7 +293,7 @@ function AppContent() {
                     {/* Filter */}
                     <View style={styles.mobileFilterRow}>
                       <View style={[styles.mobileFilterInput, { backgroundColor: theme.inputBackground, borderColor: theme.border }]}>
-                        <Filter size={14} color={theme.textMuted} />
+                        <Text style={{ fontSize: 13, color: theme.textMuted }}>🔍</Text>
                         <TextInput
                           placeholder="owner/repo"
                           placeholderTextColor={theme.textMuted}
@@ -314,7 +314,7 @@ function AppContent() {
                     {/* Label Filter */}
                     <View style={styles.mobileFilterRow}>
                       <View style={[styles.mobileFilterInput, { backgroundColor: theme.inputBackground, borderColor: theme.border }]}>
-                        <Tag size={14} color={theme.textMuted} />
+                        <Text style={{ fontSize: 13, color: theme.textMuted }}>🏷️</Text>
                         <TextInput
                           placeholder="bug, feature, help wanted"
                           placeholderTextColor={theme.textMuted}
@@ -362,7 +362,7 @@ function AppContent() {
                         style={[styles.mobileSignOutBtn, { backgroundColor: theme.cardBackground }, webCursor('pointer')]}
                         onPress={signOut}
                       >
-                        <LogOut size={16} color="#000000" />
+                        <Text style={{ fontSize: 14 }}>↩️</Text>
                         <Text style={styles.mobileSignOutText}>SIGN OUT</Text>
                       </TouchableOpacity>
                       {lastClosed && (
@@ -2023,8 +2023,8 @@ const styles = StyleSheet.create({
   mobileBottomPanel: {
     paddingHorizontal: 12,
     paddingTop: 4,
-    paddingBottom: 8,
-    maxHeight: 160,
+    paddingBottom: 24,
+    maxHeight: 180,
   },
   mobileBottomPanelContent: {
     gap: 4,
