@@ -7,7 +7,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "postinstall": "node ../scripts/patch-vscode-jsonrpc.js"
+    "postinstall": "node patch-vscode-jsonrpc.js"
   },
   "dependencies": {
     "@azure/cosmos": "^4.3.1",
