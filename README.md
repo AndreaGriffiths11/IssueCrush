@@ -16,6 +16,16 @@ Swipe through your GitHub issues like Tinder. Close with a left swipe, keep with
 - **Cross-Platform** - Works on web, iOS, and Android via React Native + Expo
 - **Native Feel** - Action bar with Close/Undo/Keep buttons, toast notifications, stamp-style swipe overlays
 
+## Documentation
+
+📚 **[Full Documentation](docs/README.md)** - Comprehensive guides, API reference, and architecture docs
+
+- **[Getting Started Tutorial](docs/tutorials/getting-started.md)** - Step-by-step setup guide
+- **[Hooks API Reference](docs/reference/api/hooks.md)** - Deep dive into useAuth, useIssues, and more
+- **[Architecture Overview](docs/reference/architecture/overview.md)** - System design and patterns
+- **[Deploy to Azure](docs/how-to/deploy-azure.md)** - Production deployment guide
+- **[Contributing Guide](CONTRIBUTING.md)** - How to contribute
+
 ## Quick Start
 
 ### Prerequisites
