@@ -21,10 +21,12 @@ function patchPackage(pkgDir) {
   return true;
 }
 
-// Patch wherever vscode-jsonrpc lives (could be hoisted or nested under copilot-sdk)
+// Patch wherever vscode-jsonrpc lives (root, nested under copilot-sdk, or in api/)
 const candidates = [
   path.resolve(__dirname, '..', 'node_modules', 'vscode-jsonrpc'),
   path.resolve(__dirname, '..', 'node_modules', '@github', 'copilot-sdk', 'node_modules', 'vscode-jsonrpc'),
+  path.resolve(__dirname, '..', 'api', 'node_modules', 'vscode-jsonrpc'),
+  path.resolve(__dirname, '..', 'api', 'node_modules', '@github', 'copilot-sdk', 'node_modules', 'vscode-jsonrpc'),
 ];
 
 for (const dir of candidates) {
