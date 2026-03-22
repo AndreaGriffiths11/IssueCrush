@@ -123,26 +123,44 @@ The AI summary is powered by the GitHub Copilot SDK running on your backend serv
 - GitHub Copilot subscription or access
 - `GH_TOKEN` environment variable with Copilot access (or use `COPILOT_PAT`)
 
+## Documentation
+
+📚 **[Full Documentation](docs/README.md)** - Comprehensive guides and API reference
+
+Quick links:
+- [Getting Started Tutorial](docs/tutorials/getting-started.md) - 15-minute walkthrough
+- [Architecture Guide](docs/guides/architecture.md) - How IssueCrush works
+- [Deployment Guide](docs/guides/deployment.md) - Deploy to Azure or other platforms
+- [API Reference](docs/api/README.md) - Backend API documentation
+- [Component Reference](docs/reference/components.md) - Frontend components and hooks
+
 ## Architecture
 
 ![IssueCrush Architecture](assets/architecture-diagram.png)
 
+For a deep dive into the architecture, see the [Architecture Guide](docs/guides/architecture.md).
 
 ## Project Structure
 
 ```
 IssueCrush/
+├── docs/                      # Documentation (guides, tutorials, API reference)
 ├── App.tsx                    # Main app component (UI + swipe logic)
 ├── server.js                  # Express server (OAuth + AI proxy)
 ├── sessionStore.js            # Cosmos DB / in-memory session storage
 ├── AGENTS.md                  # AI agent context (project knowledge)
 ├── .agents/                   # Installed agent skills (see below)
 ├── src/
-│   ├── api/
-│   │   └── github.ts         # GitHub API client
-│   └── lib/
-│       ├── tokenStorage.ts   # Secure token storage
-│       └── copilotService.ts # Frontend Copilot service
+│   ├── components/           # React components
+│   ├── hooks/                # Custom React hooks
+│   ├── api/                  # GitHub API client
+│   ├── lib/                  # Utilities (token storage, Copilot)
+│   ├── theme/                # Theme and styling
+│   └── utils/                # Helper functions
+├── api/                      # Azure Functions (backend)
+│   └── src/
+│       ├── app.js            # API endpoints
+│       └── sessionStore.js   # Session management
 ├── .env.example              # Environment template
 ├── package.json              # Dependencies and scripts
 └── README.md                 # This file
