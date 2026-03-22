@@ -59,31 +59,37 @@ export function IssueCard({
 }: IssueCardProps) {
     const { theme, isDark } = useTheme();
 
+    // Theme-aware colors for better contrast in both light and dark mode
+    const cardBackground = isDark ? theme.background : '#ffffff';
+    const textColor = isDark ? theme.text : '#000000';
+    const textSecondaryColor = isDark ? theme.textSecondary : '#555555';
+    const borderColor = isDark ? theme.border : '#000000';
+
     return (
-        <View style={[styles.cardBrutalist, isDesktop && styles.cardBrutalistDesktop]}>
+        <View style={[styles.cardBrutalist, isDesktop && styles.cardBrutalistDesktop, { backgroundColor: cardBackground, borderColor }]}>
             {/* Card Header */}
-            <View style={styles.cardHeaderBrutalist}>
-                <View style={styles.issueIdBadge}>
-                    <Text style={styles.issueIdText}>#{issue.number}</Text>
+            <View style={[styles.cardHeaderBrutalist, { backgroundColor: cardBackground, borderBottomColor: borderColor }]}>
+                <View style={[styles.issueIdBadge, { borderColor }]}>
+                    <Text style={[styles.issueIdText, { color: textColor }]}>#{issue.number}</Text>
                 </View>
                 <TouchableOpacity
                     onPress={() => openIssueLink(issue.html_url)}
                     style={[styles.headlineWrap, webCursor('pointer')]}
                     activeOpacity={0.7}
                 >
-                    <Text style={styles.headlineBrutalist} numberOfLines={2}>
+                    <Text style={[styles.headlineBrutalist, { color: textColor }]} numberOfLines={2}>
                         {issue.title.split(' ').map((word, i) => (
-                            <Text key={i} style={i % 3 === 0 ? styles.headlineHeavy : styles.headlineLight}>
+                            <Text key={i} style={i % 3 === 0 ? [styles.headlineHeavy, { color: textColor }] : [styles.headlineLight, { color: textColor }]}>
                                 {word}{' '}
                             </Text>
                         ))}
                     </Text>
-                    <ExternalLink size={20} color="#000000" style={{ marginTop: 4, opacity: 0.6 }} />
+                    <ExternalLink size={20} color={textColor} style={{ marginTop: 4, opacity: 0.6 }} />
                 </TouchableOpacity>
             </View>
 
             {/* Card Body */}
-            <View style={[styles.cardBodyBrutalist, styles.cardBodyContent]} pointerEvents="box-none">
+            <View style={[styles.cardBodyBrutalist, styles.cardBodyContent, { backgroundColor: cardBackground }]} pointerEvents="box-none">
                 {/* User row */}
                 {issue.user && (
                     <View style={styles.userRowBrutalist}>
@@ -93,8 +99,8 @@ export function IssueCard({
                             resizeMode="cover"
                         />
                         <View style={styles.userMetaBrutalist}>
-                            <Text style={styles.userNameBrutalist}>{issue.user.login.toUpperCase()}</Text>
-                            <Text style={styles.repoNameBrutalist}>{repoLabel}</Text>
+                            <Text style={[styles.userNameBrutalist, { color: textColor }]}>{issue.user.login.toUpperCase()}</Text>
+                            <Text style={[styles.repoNameBrutalist, { color: textSecondaryColor }]}>{repoLabel}</Text>
                         </View>
                     </View>
                 )}
