@@ -71,7 +71,7 @@ export function IssueCard({
                     style={[styles.headlineWrap, webCursor('pointer')]}
                     activeOpacity={0.7}
                 >
-                    <Text style={styles.headlineBrutalist} numberOfLines={2}>
+                    <Text style={[styles.headlineBrutalist, !isDesktop && styles.headlineMobile]} numberOfLines={3}>
                         {issue.title.split(' ').map((word, i) => {
                             const isHeavyWord = i % 3 === 0;
                             const wordStyle = isHeavyWord ? styles.headlineHeavy : styles.headlineLight;
@@ -231,14 +231,17 @@ const styles = StyleSheet.create({
     headlineWrap: {
         flexDirection: 'row',
         alignItems: 'flex-start',
-        gap: 12,
+        gap: 8,
         marginTop: 16,
-        paddingRight: 80,
     },
     headlineBrutalist: {
         fontSize: 24,
         lineHeight: 28,
         flex: 1,
+    },
+    headlineMobile: {
+        fontSize: 18,
+        lineHeight: 22,
     },
     headlineHeavy: {
         fontWeight: '900',
