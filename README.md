@@ -127,6 +127,11 @@ The AI summary is powered by the GitHub Copilot SDK running on your backend serv
 
 ![IssueCrush Architecture](assets/architecture-diagram.png)
 
+For detailed architecture documentation, see:
+- **[Architecture Guide](docs/ARCHITECTURE.md)** — System design, data flow, security architecture
+- **[API Reference](docs/API.md)** — Backend endpoints and frontend APIs
+- **[Deployment Guide](docs/DEPLOYMENT.md)** — Deploy to Azure, Vercel, Docker, mobile app stores
+
 
 ## Project Structure
 
@@ -223,7 +228,21 @@ npx tsc --noEmit      # Type-check without building
 
 ### Other Platforms
 
-For Azure Static Web Apps, Vercel, or similar platforms, set the environment variables in their configuration panel.
+For Azure Static Web Apps, Vercel, or similar platforms, set the environment variables in their configuration panel. See the [Deployment Guide](docs/DEPLOYMENT.md) for detailed instructions.
+
+## Documentation
+
+- **[Architecture Guide](docs/ARCHITECTURE.md)** — System design and architecture decisions
+- **[API Reference](docs/API.md)** — Complete REST API and frontend API documentation
+- **[Deployment Guide](docs/DEPLOYMENT.md)** — Deploy to production (Azure, Vercel, Docker, mobile)
+- **[Contributing Guide](CONTRIBUTING.md)** — Development setup and contribution guidelines
+
+### External Documentation
+
+- [Expo SDK 54](https://docs.expo.dev) — Cross-platform framework
+- [React Native 0.81](https://reactnative.dev/docs) — Mobile framework
+- [GitHub Copilot SDK](https://github.com/github/copilot-sdk) — AI integration
+- [react-native-deck-swiper](https://github.com/alexbrillant/react-native-deck-swiper) — Swipe component
 
 ## Contributing
 
