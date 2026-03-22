@@ -118,7 +118,9 @@ function AppContent() {
     : SCREEN_WIDTH < 1024
       ? Math.min(480, Math.floor(SCREEN_WIDTH * 0.7))
       : Math.min(600, Math.floor((SCREEN_WIDTH - 280) * 0.55));
-  const cardHeight = Math.floor(cardWidth * (640 / 480));
+  const cardHeight = SCREEN_WIDTH < 768
+    ? Math.floor(SCREEN_HEIGHT * 0.6)
+    : Math.floor(cardWidth * (640 / 480));
 
   const { token, authError, setAuthError, copilotAvailable, startLogin, signOut } = useAuth();
   const { issues, loadingIssues, loadingAiSummary, currentIndex, lastClosed, undoBusy, feedback, setFeedback, repoFilter, setRepoFilter, labelFilter, setLabelFilter, swiperRef, confettiRef, repoLabel, loadIssues, handleSwipeLeft, handleSwipeRight, onSwiped, handleUndo, handleGetAiSummary } = useIssues(token);
@@ -310,7 +312,7 @@ function AppContent() {
                       </TouchableOpacity>
                     </View>
                     {/* Label Filter */}
-                    <View style={[styles.mobileFilterRow, { marginTop: 8 }]}>
+                    <View style={styles.mobileFilterRow}>
                       <View style={[styles.mobileFilterInput, { backgroundColor: theme.inputBackground, borderColor: theme.border }]}>
                         <Tag size={14} color={theme.textMuted} />
                         <TextInput
@@ -324,25 +326,7 @@ function AppContent() {
                       </View>
                     </View>
 
-                    {/* Progress */}
-                    {issues.length > 0 && (
-                      <View style={styles.mobileProgressRow}>
-                        <Text style={[styles.mobileProgressLabel, { color: theme.textMuted }]}>Triaged</Text>
-                        <Text style={[styles.mobileProgressValue, { color: theme.text }]}>{Math.round((Math.min(currentIndex + 1, issues.length) / issues.length) * 100)}%</Text>
-                      </View>
-                    )}
-                    {issues.length > 0 && (
-                      <View style={[styles.mobileProgressBar, { backgroundColor: theme.backgroundTertiary }]}>
-                        <Animated.View style={[styles.mobileProgressFill, { backgroundColor: theme.primary }, progressAnimatedStyle]} />
-                      </View>
-                    )}
-
                     {/* Actions */}
-                    {issues.length > currentIndex && (
-                      <View style={styles.mobileActionsLabel}>
-                        <Text style={[styles.sidebarLabel, { color: theme.textMuted }]}>ACTIONS</Text>
-                      </View>
-                    )}
                     {issues.length > currentIndex && (
                       <View style={styles.mobileActionRow}>
                         <Animated.View style={[closeAnimatedStyle, { flex: 1 }]}>
@@ -2037,13 +2021,13 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   mobileBottomPanel: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 16,
-    maxHeight: 280,
+    paddingHorizontal: 12,
+    paddingTop: 4,
+    paddingBottom: 8,
+    maxHeight: 160,
   },
   mobileBottomPanelContent: {
-    gap: 8,
+    gap: 4,
   },
   mobileProgressRow: {
     flexDirection: 'row',
@@ -2079,14 +2063,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
+    gap: 6,
+    paddingVertical: 10,
     borderRadius: 50,
   },
   mobileActionBtnText: {
     color: '#ffffff',
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: 12,
     textTransform: 'uppercase',
   },
   mobileFooterRow: {
