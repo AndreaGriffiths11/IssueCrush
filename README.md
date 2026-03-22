@@ -225,6 +225,25 @@ npx tsc --noEmit      # Type-check without building
 
 For Azure Static Web Apps, Vercel, or similar platforms, set the environment variables in their configuration panel.
 
+## Documentation
+
+Comprehensive documentation is available in the [`docs/`](./docs/) directory:
+
+### 📚 Guides
+- **[Architecture Guide](./docs/guides/architecture.md)** - System design and technical decisions
+- **[Component Development](./docs/guides/component-development.md)** - Building and styling components
+- **[Testing Guide](./docs/guides/testing.md)** - Writing and running tests
+- **[Deployment Guide](./docs/guides/deployment.md)** - Deploying to Azure Static Web Apps
+
+### 📖 API Reference
+- **[Hooks API](./docs/api/hooks.md)** - useAuth, useIssues, useAnimations, useKeyboardShortcuts
+- **[Components API](./docs/api/components.md)** - AuthScreen, IssueCard, Sidebar, SwipeContainer
+- **[Utilities API](./docs/api/utilities.md)** - GitHub client, token storage, Copilot service
+
+### 🏗️ Architecture
+- **[System Overview](./docs/architecture/overview.md)** - High-level architecture and diagrams
+- **[Data Flow](./docs/architecture/data-flow.md)** - How data moves through the application
+
 ## Contributing
 
 We welcome contributions! Check out the [Contributing Guide](CONTRIBUTING.md) to get started.
