@@ -127,6 +127,8 @@ The AI summary is powered by the GitHub Copilot SDK running on your backend serv
 
 ![IssueCrush Architecture](assets/architecture-diagram.png)
 
+See the [Documentation](./docs/README.md) for detailed API reference, component guides, and development patterns.
+
 
 ## Project Structure
 
@@ -176,6 +178,17 @@ npm run android   # Open in Android emulator
 npm test              # Run Jest test suite
 npx tsc --noEmit      # Type-check without building
 ```
+
+## Documentation
+
+Comprehensive developer documentation is available in the [docs/](./docs/) directory:
+
+- **[API Reference](./docs/api/github-client.md)** - GitHub API client, Copilot service, token storage
+- **[Server Endpoints](./docs/api/server-endpoints.md)** - Express/Azure Functions REST API
+- **[Components](./docs/components/README.md)** - React Native UI components with props
+- **[Hooks](./docs/hooks/README.md)** - Custom React hooks for auth, issues, animations
+
+For architecture and AI agent context, see [AGENTS.md](./AGENTS.md).
 
 ## Troubleshooting
 
