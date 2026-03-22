@@ -198,7 +198,7 @@ app.patch('/api/issues/:owner/:repo/:number', requireSession(), async (req, res)
   }
 });
 
-// AI Summary endpoint - uses Copilot SDK with server's gh authentication
+// AI Summary endpoint - uses the user's GitHub token to call Copilot API
 app.post('/api/ai-summary', requireSession(), async (req, res) => {
   const { issue } = req.body;
 
@@ -208,30 +208,8 @@ app.post('/api/ai-summary', requireSession(), async (req, res) => {
   }
 
   console.log(`\n\ud83e\udd16 Generating AI Summary for issue #${issue.number}: ${issue.title}`);
-  console.log(`   Repository: ${issue.repository?.full_name || 'Unknown'}`);
 
-  let client = null;
-  let session = null;
-
-  try {
-    const { CopilotClient, approveAll } = await import('@github/copilot-sdk');
-
-    console.log('   Initializing Copilot SDK...');
-
-    // Uses the server's gh copilot CLI authentication
-    client = new CopilotClient();
-
-    console.log('   Starting Copilot client...');
-    await client.start();
-
-    console.log('   Creating Copilot session...');
-    session = await client.createSession({
-      model: 'gpt-4.1',
-      onPermissionRequest: approveAll,
-    });
-
-    // Build the prompt for Copilot
-    const prompt = `You are analyzing a GitHub issue to help a developer quickly understand it and decide how to handle it.
+  const prompt = `You are analyzing a GitHub issue to help a developer quickly understand it and decide how to handle it.
 
 Issue Details:
 - Title: ${issue.title}
@@ -252,73 +230,59 @@ Provide a concise 2-3 sentence summary that:
 
 Keep it clear, actionable, and helpful for quick triage. No markdown formatting.`;
 
-    console.log('   Sending prompt to Copilot...');
-    const response = await session.sendAndWait({ prompt }, 30000); // 30 second timeout
+  try {
+    // Use the user's GitHub OAuth token to call Copilot API
+    const response = await fetch('https://api.githubcopilot.com/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${req.githubToken}`,
+        'Content-Type': 'application/json',
+        'Editor-Version': 'IssueCrush/1.0.0',
+        'Copilot-Integration-Id': 'vscode-chat',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4.1',
+        messages: [
+          { role: 'system', content: 'You are a concise GitHub issue triage assistant.' },
+          { role: 'user', content: prompt }
+        ],
+        max_tokens: 300,
+      }),
+    });
 
-    let summary;
-    if (response && response.data && response.data.content) {
-      summary = response.data.content;
-      const summaryPreview = summary.substring(0, 100);
-      console.log('\u2705 AI Summary generated successfully');
-      console.log(`   Summary preview: ${summaryPreview}...`);
-    } else {
-      throw new Error('No content received from Copilot');
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`   Copilot API ${response.status}: ${errorText}`);
+
+      if (response.status === 401 || response.status === 403) {
+        return res.status(403).json({
+          error: 'Copilot access required',
+          message: 'AI summaries require a GitHub Copilot subscription. You can still use IssueCrush to triage issues without AI summaries.',
+          requiresCopilot: true
+        });
+      }
+      throw new Error(`Copilot API returned ${response.status}`);
     }
 
-    // Clean up
-    if (session) {
-      await session.destroy().catch(() => { });
-    }
-    if (client) {
-      await client.stop().catch(() => { });
+    const data = await response.json();
+    const summary = data.choices?.[0]?.message?.content;
+
+    if (!summary) {
+      throw new Error('No content in Copilot response');
     }
 
+    console.log('\u2705 AI Summary generated successfully');
     res.json({ summary });
 
   } catch (error) {
-    console.error('\u274c AI Summary generation failed:', error.message);
+    console.error('\u274c AI Summary failed:', error.message);
 
-    // Clean up on error
-    try {
-      if (session) await session.destroy().catch(() => { });
-      if (client) await client.stop().catch(() => { });
-    } catch (cleanupError) {
-      // Ignore cleanup errors
-    }
-
-    // Only treat genuine auth/subscription errors as "Copilot required".
-    // Other errors (protocol mismatch, timeouts, SDK bugs) should fall
-    // through to the fallback summary so the user still gets value.
-    const errorMessage = error.message.toLowerCase();
-    const isAuthKeyword =
-      errorMessage.includes('unauthorized') ||
-      errorMessage.includes('forbidden') ||
-      errorMessage.includes('subscription') ||
-      errorMessage.includes('not authenticated') ||
-      errorMessage.includes('sign in');
-
-    // HTTP status codes in the message (e.g. from fetch responses)
-    const isAuthStatusCode =
-      errorMessage.includes('401') || errorMessage.includes('403');
-
-    const isAuthError = isAuthKeyword || isAuthStatusCode;
-
-    if (isAuthError) {
-      console.log('   User may not have Copilot subscription');
-      return res.status(403).json({
-        error: 'Copilot access required',
-        message: 'AI summaries require a GitHub Copilot subscription. You can still use IssueCrush to triage issues without AI summaries.',
-        requiresCopilot: true
-      });
-    }
-
-    // For all other errors (SDK version mismatch, timeouts, network, etc.)
-    // return a fallback summary so the user still gets useful output.
-    console.log('   Using fallback summary due to:', error.message);
+    // Fallback summary
     const fallbackSummary = generateFallbackSummary(issue);
     res.json({
       summary: fallbackSummary,
-      fallback: true
+      fallback: true,
+      note: 'AI summary unavailable — showing basic analysis'
     });
   }
 });
