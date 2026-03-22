@@ -62,7 +62,7 @@ export function IssueCard({
     return (
         <View style={[styles.cardBrutalist, isDesktop && styles.cardBrutalistDesktop, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
             {/* Card Header */}
-            <View style={[styles.cardHeaderBrutalist, { backgroundColor: theme.cardBackground, borderBottomColor: theme.cardBorder }]}>
+            <View style={[styles.cardHeaderBrutalist, !isDesktop && styles.cardHeaderMobile, { backgroundColor: theme.cardBackground, borderBottomColor: theme.cardBorder }]}>
                 <View style={[styles.issueIdBadge, { borderColor: theme.cardBorder }]}>
                     <Text style={[styles.issueIdText, { color: theme.ink }]}>#{issue.number}</Text>
                 </View>
@@ -87,99 +87,120 @@ export function IssueCard({
             </View>
 
             {/* Card Body */}
-            <View style={[styles.cardBodyBrutalist, styles.cardBodyContent, { backgroundColor: theme.cardBackground }]} pointerEvents="box-none">
-                {/* User row */}
-                {issue.user && (
-                    <View style={styles.userRowBrutalist}>
-                        <Image
-                            source={{ uri: issue.user.avatar_url }}
-                            style={[styles.avatarBrutalist, { backgroundColor: theme.ink }]}
-                            resizeMode="cover"
-                        />
-                        <View style={styles.userMetaBrutalist}>
-                            <Text style={[styles.userNameBrutalist, { color: theme.ink }]}>{issue.user.login.toUpperCase()}</Text>
-                            <Text style={styles.repoNameBrutalist}>{repoLabel}</Text>
-                        </View>
-                    </View>
-                )}
-
-                {/* Labels */}
-                <View style={styles.labelsBrutalist}>
-                    {issue.labels?.length
-                        ? issue.labels.slice(0, 4).map((label) => (
-                            <View
-                                key={label.id}
-                                style={[
-                                    styles.labelBrutalist,
-                                    { backgroundColor: `#${label.color || '000000'}` },
-                                ]}
-                            >
-                                <Text
-                                    style={[
-                                        styles.labelTextBrutalist,
-                                        { color: getLabelColor(label.color || '000000') },
-                                    ]}
-                                >
-                                    {label.name.toUpperCase()}
-                                </Text>
+            {(() => {
+                const bodyContent = (
+                    <>
+                        {/* User row */}
+                        {issue.user && (
+                            <View style={styles.userRowBrutalist}>
+                                <Image
+                                    source={{ uri: issue.user.avatar_url }}
+                                    style={[styles.avatarBrutalist, !isDesktop && styles.avatarMobile, { backgroundColor: theme.ink }]}
+                                    resizeMode="cover"
+                                />
+                                {!isDesktop ? (
+                                    <Text style={[styles.userNameBrutalist, styles.userNameMobile, { color: theme.ink }]} numberOfLines={1}>
+                                        {issue.user.login.toUpperCase()} <Text style={styles.repoNameBrutalist}>· {repoLabel}</Text>
+                                    </Text>
+                                ) : (
+                                    <View style={styles.userMetaBrutalist}>
+                                        <Text style={[styles.userNameBrutalist, { color: theme.ink }]}>{issue.user.login.toUpperCase()}</Text>
+                                        <Text style={styles.repoNameBrutalist}>{repoLabel}</Text>
+                                    </View>
+                                )}
                             </View>
-                        ))
-                        : null}
-                </View>
+                        )}
 
-                {/* AI Block */}
-                <View
-                    style={[
-                        styles.aiBlockBrutalist,
-                        { backgroundColor: '#1a1a2e' },
-                    ]}
-                >
-                    <View style={[styles.aiStickerBadge, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
-                        <Text style={[styles.aiStickerText, { color: theme.ink }]}>AI INSIGHT</Text>
-                    </View>
-                    {issue.aiSummary ? (
-                        <ScrollView
-                            style={styles.aiSummaryScroll}
-                            nestedScrollEnabled
-                            showsVerticalScrollIndicator
-                        >
-                            <Text style={styles.aiTextBrutalist}>
-                                <Text style={[styles.aiTextHighlight, { color: theme.primary }]}>
-                                    {'// SUMMARY\n'}
-                                </Text>
-                                {issue.aiSummary}
-                            </Text>
-                        </ScrollView>
-                    ) : copilotAvailable === false ? (
-                        <View style={styles.aiUnavailableContainer}>
-                            <Text style={styles.aiUnavailableText}>
-                                AI summaries require running locally with GitHub Copilot.
-                            </Text>
-                            <Text style={[styles.aiUnavailableSubtext, { color: theme.textMuted }]}>
-                                Clone the repo and run with: npm run dev
-                            </Text>
+                        {/* Labels */}
+                        <View style={styles.labelsBrutalist}>
+                            {issue.labels?.length
+                                ? issue.labels.slice(0, isDesktop ? 4 : 2).map((label) => (
+                                    <View
+                                        key={label.id}
+                                        style={[
+                                            styles.labelBrutalist,
+                                            { backgroundColor: `#${label.color || '000000'}` },
+                                        ]}
+                                    >
+                                        <Text
+                                            style={[
+                                                styles.labelTextBrutalist,
+                                                { color: getLabelColor(label.color || '000000') },
+                                            ]}
+                                        >
+                                            {label.name.toUpperCase()}
+                                        </Text>
+                                    </View>
+                                ))
+                                : null}
                         </View>
-                    ) : (
-                        <TouchableOpacity
+
+                        {/* AI Block */}
+                        <View
                             style={[
-                                styles.aiButtonBrutalist,
-                                webCursor(loadingAiSummary ? 'default' : 'pointer'),
+                                styles.aiBlockBrutalist,
+                                !isDesktop && styles.aiBlockMobile,
+                                { backgroundColor: '#1a1a2e' },
                             ]}
-                            onPress={isCurrent && !loadingAiSummary ? onGetAiSummary : undefined}
-                            disabled={!isCurrent || loadingAiSummary}
                         >
-                            {loadingAiSummary && isCurrent ? (
-                                <ActivityIndicator color={theme.primary} size="small" />
+                            <View style={[styles.aiStickerBadge, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
+                                <Text style={[styles.aiStickerText, { color: theme.ink }]}>AI INSIGHT</Text>
+                            </View>
+                            {issue.aiSummary ? (
+                                <ScrollView
+                                    style={styles.aiSummaryScroll}
+                                    nestedScrollEnabled
+                                    showsVerticalScrollIndicator
+                                >
+                                    <Text style={styles.aiTextBrutalist}>
+                                        <Text style={[styles.aiTextHighlight, { color: theme.primary }]}>
+                                            {'// SUMMARY\n'}
+                                        </Text>
+                                        {issue.aiSummary}
+                                    </Text>
+                                </ScrollView>
+                            ) : copilotAvailable === false ? (
+                                <View style={styles.aiUnavailableContainer}>
+                                    <Text style={styles.aiUnavailableText}>
+                                        AI summaries require running locally with GitHub Copilot.
+                                    </Text>
+                                    <Text style={[styles.aiUnavailableSubtext, { color: theme.textMuted }]}>
+                                        Clone the repo and run with: npm run dev
+                                    </Text>
+                                </View>
                             ) : (
-                                <>
-                                    <Sparkles size={18} color={theme.primary} />
-                                    <Text style={styles.aiButtonTextBrutalist}>GET AI SUMMARY</Text>
-                                </>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.aiButtonBrutalist,
+                                        webCursor(loadingAiSummary ? 'default' : 'pointer'),
+                                    ]}
+                                    onPress={isCurrent && !loadingAiSummary ? onGetAiSummary : undefined}
+                                    disabled={!isCurrent || loadingAiSummary}
+                                >
+                                    {loadingAiSummary && isCurrent ? (
+                                        <ActivityIndicator color={theme.primary} size="small" />
+                                    ) : (
+                                        <>
+                                            <Sparkles size={18} color={theme.primary} />
+                                            <Text style={styles.aiButtonTextBrutalist}>GET AI SUMMARY</Text>
+                                        </>
+                                    )}
+                                </TouchableOpacity>
                             )}
-                        </TouchableOpacity>
-                    )}
-                </View>
-            </View>
+                        </View>
+                    </>
+                );
+
+                return !isDesktop ? (
+                    <ScrollView style={[styles.cardBodyBrutalist, { backgroundColor: theme.cardBackground }]} contentContainerStyle={[styles.cardBodyContent, styles.cardBodyMobile]} showsVerticalScrollIndicator={false} nestedScrollEnabled>
+                        {bodyContent}
+                    </ScrollView>
+                ) : (
+                    <View style={[styles.cardBodyBrutalist, styles.cardBodyContent, { backgroundColor: theme.cardBackground }]} pointerEvents="box-none">
+                        {bodyContent}
+                    </View>
+                );
+            })()}
         </View>
     );
 }
@@ -260,6 +281,16 @@ const styles = StyleSheet.create({
         gap: 12,
         paddingBottom: 16,
     },
+    cardHeaderMobile: {
+        padding: 12,
+    },
+    cardBodyMobile: {
+        padding: 12,
+        gap: 8,
+    },
+    aiBlockMobile: {
+        padding: 16,
+    },
     userRowBrutalist: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -270,6 +301,11 @@ const styles = StyleSheet.create({
         height: 48,
         borderRadius: 24,
     },
+    avatarMobile: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+    },
     userMetaBrutalist: {
         flexDirection: 'column',
     },
@@ -278,6 +314,9 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#000000',
         textTransform: 'uppercase',
+    },
+    userNameMobile: {
+        fontSize: 13,
     },
     repoNameBrutalist: {
         fontWeight: '300',
