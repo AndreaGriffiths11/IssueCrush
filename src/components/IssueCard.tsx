@@ -63,7 +63,7 @@ export function IssueCard({
         <View style={[styles.cardBrutalist, isDesktop && styles.cardBrutalistDesktop, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
             {/* Card Header */}
             <View style={[styles.cardHeaderBrutalist, !isDesktop && styles.cardHeaderMobile, { backgroundColor: theme.cardBackground, borderBottomColor: theme.cardBorder }]}>
-                <View style={[styles.issueIdBadge, { borderColor: theme.cardBorder }]}>
+                <View style={[styles.issueIdBadge, isDesktop && styles.issueIdBadgeDesktop, { borderColor: theme.cardBorder }]}>
                     <Text style={[styles.issueIdText, { color: theme.ink }]}>#{issue.number}</Text>
                 </View>
                 <TouchableOpacity
@@ -100,7 +100,7 @@ export function IssueCard({
                                 />
                                 {!isDesktop ? (
                                     <Text style={[styles.userNameBrutalist, styles.userNameMobile, { color: theme.ink }]} numberOfLines={1}>
-                                        {issue.user.login.toUpperCase()} <Text style={styles.repoNameBrutalist}>· {repoLabel}</Text>
+                                        {issue.user.login.toUpperCase()} <Text style={styles.repoNameMobile}>· {repoLabel.split('/').pop()}</Text>
                                     </Text>
                                 ) : (
                                     <View style={styles.userMetaBrutalist}>
@@ -235,11 +235,17 @@ const styles = StyleSheet.create({
     },
     issueIdBadge: {
         position: 'absolute',
-        top: 24,
-        right: 24,
+        top: 12,
+        right: 12,
         borderWidth: 1,
         borderColor: '#000000',
         borderRadius: 50,
+        paddingVertical: 4,
+        paddingHorizontal: 10,
+    },
+    issueIdBadgeDesktop: {
+        top: 24,
+        right: 24,
         paddingVertical: 6,
         paddingHorizontal: 14,
     },
@@ -283,6 +289,7 @@ const styles = StyleSheet.create({
     },
     cardHeaderMobile: {
         padding: 12,
+        paddingRight: 70,
     },
     cardBodyMobile: {
         padding: 12,
@@ -322,6 +329,12 @@ const styles = StyleSheet.create({
         fontWeight: '300',
         fontSize: 13,
         color: '#555555',
+    },
+    repoNameMobile: {
+        fontWeight: '300',
+        fontSize: 12,
+        color: '#555555',
+        textTransform: 'none',
     },
     labelsBrutalist: {
         flexDirection: 'row',
