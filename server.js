@@ -26,20 +26,24 @@ app.use(sessionMiddleware());
 // OAuth callback relay — GitHub redirects here, server relays code to Expo frontend
 // (GitHub App only knows about port 3000; Expo runs on 8081)
 app.get('/callback', (req, res) => {
-  const { code, error } = req.query;
+  const params = new URLSearchParams();
+  const code = req.query.code;
+  const state = req.query.state;
+  const error = req.query.error;
+  if (code) params.set('code', code);
+  if (state) params.set('state', state);
+  if (error) params.set('error', error || 'oauth_failed');
   const frontendUrl = process.env.EXPO_PUBLIC_FRONTEND_URL || 'http://localhost:8081';
-  if (code) {
-    res.redirect(`${frontendUrl}?code=${code}`);
-  } else {
-    res.redirect(`${frontendUrl}?error=${error || 'oauth_failed'}`);
-  }
+  const redirectUrl = `${frontendUrl}?${params.toString()}`;
+  res.redirect(redirectUrl);
 });
 
 // OAuth token exchange — stores token server-side, returns session ID
 app.post('/api/github-token', async (req, res) => {
   console.log('📥 Token exchange request received');
   const { code } = req.body;
-  console.log('   Code:', code ? code.substring(0, 8) + '...' : 'missing');
+  const codePreview = code ? code.substring(0, 8) + '...' : 'missing';
+  console.log('   Code:', codePreview);
 
   if (!code) {
     console.log('   ❌ No code provided');
@@ -48,8 +52,10 @@ app.post('/api/github-token', async (req, res) => {
 
   const clientId = process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID;
   const clientSecret = process.env.GITHUB_CLIENT_SECRET;
-  console.log('   Client ID:', clientId ? clientId.substring(0, 8) + '...' : 'missing');
-  console.log('   Client Secret:', clientSecret ? 'set' : 'missing');
+  const clientIdPreview = clientId ? clientId.substring(0, 8) + '...' : 'missing';
+  const clientSecretStatus = clientSecret ? 'set' : 'missing';
+  console.log('   Client ID:', clientIdPreview);
+  console.log('   Client Secret:', clientSecretStatus);
 
   if (!clientId || !clientSecret) {
     console.log('   ❌ Missing credentials');
@@ -86,9 +92,9 @@ app.post('/api/github-token', async (req, res) => {
       return res.json({ session_id: sessionId });
     }
 
-    res.status(400).json({ error: 'No access token received' });
+    return res.status(400).json({ error: 'No access token received' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -132,12 +138,15 @@ app.get('/api/issues', requireSession(), async (req, res) => {
     } else {
       const queryParts = ['is:open', 'is:issue', 'assignee:@me'];
       if (labels) {
-        labels.split(',').forEach((label) => {
-          const trimmed = label.trim();
-          if (trimmed) queryParts.push(`label:"${trimmed}"`);
+        const labelList = labels.split(',');
+        labelList.forEach((label) => {
+          const trimmedLabel = label.trim();
+          if (trimmedLabel) queryParts.push(`label:"${trimmedLabel}"`);
         });
       }
-      url = `${GITHUB_API}/search/issues?q=${encodeURIComponent(queryParts.join(' '))}&per_page=100&sort=updated&order=desc`;
+      const searchQuery = queryParts.join(' ');
+      const encodedQuery = encodeURIComponent(searchQuery);
+      url = `${GITHUB_API}/search/issues?q=${encodedQuery}&per_page=100&sort=updated&order=desc`;
     }
 
     const response = await fetch(url, { headers: githubHeaders(token) });
@@ -157,10 +166,10 @@ app.get('/api/issues', requireSession(), async (req, res) => {
     // Search API wraps results in { items: [...] }
     const issues = repo ? data : data.items;
     // Filter out pull requests
-    const filtered = issues.filter((i) => !i.pull_request);
-    res.json(filtered);
+    const issuesWithoutPRs = issues.filter((i) => !i.pull_request);
+    res.json(issuesWithoutPRs);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -185,7 +194,7 @@ app.patch('/api/issues/:owner/:repo/:number', requireSession(), async (req, res)
     const data = await response.json();
     res.json(data);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -249,8 +258,9 @@ Keep it clear, actionable, and helpful for quick triage. No markdown formatting.
     let summary;
     if (response && response.data && response.data.content) {
       summary = response.data.content;
+      const summaryPreview = summary.substring(0, 100);
       console.log('\u2705 AI Summary generated successfully');
-      console.log(`   Summary preview: ${summary.substring(0, 100)}...`);
+      console.log(`   Summary preview: ${summaryPreview}...`);
     } else {
       throw new Error('No content received from Copilot');
     }
@@ -280,7 +290,7 @@ Keep it clear, actionable, and helpful for quick triage. No markdown formatting.
     // Other errors (protocol mismatch, timeouts, SDK bugs) should fall
     // through to the fallback summary so the user still gets value.
     const errorMessage = error.message.toLowerCase();
-    const isAuthError =
+    const isAuthKeyword =
       errorMessage.includes('unauthorized') ||
       errorMessage.includes('forbidden') ||
       errorMessage.includes('subscription') ||
@@ -291,7 +301,9 @@ Keep it clear, actionable, and helpful for quick triage. No markdown formatting.
     const isAuthStatusCode =
       errorMessage.includes('401') || errorMessage.includes('403');
 
-    if (isAuthError || isAuthStatusCode) {
+    const isAuthError = isAuthKeyword || isAuthStatusCode;
+
+    if (isAuthError) {
       console.log('   User may not have Copilot subscription');
       return res.status(403).json({
         error: 'Copilot access required',
@@ -323,8 +335,10 @@ function generateFallbackSummary(issue) {
 
   if (issue.body) {
     // Extract first meaningful sentence
-    const firstSentence = issue.body.split(/[.!?]\s/)[0];
-    if (firstSentence && firstSentence.length < 200) {
+    const sentences = issue.body.split(/[.!?]\s/);
+    const firstSentence = sentences[0];
+    const isShortEnough = firstSentence && firstSentence.length < 200;
+    if (isShortEnough) {
       parts.push(`\n\n${firstSentence}.`);
     }
   }
@@ -334,15 +348,6 @@ function generateFallbackSummary(issue) {
   return parts.join('');
 }
 
-// OAuth callback relay — GitHub redirects here, we forward to the frontend
-app.get('/callback', (req, res) => {
-  const params = new URLSearchParams();
-  if (req.query.code) params.set('code', req.query.code);
-  if (req.query.state) params.set('state', req.query.state);
-  if (req.query.error) params.set('error', req.query.error);
-  const frontendUrl = process.env.WEB_FRONTEND_URL || 'http://localhost:8081';
-  res.redirect(`${frontendUrl}?${params.toString()}`);
-});
 
 app.listen(PORT, async () => {
   await initCosmos();

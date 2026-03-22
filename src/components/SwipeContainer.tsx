@@ -104,13 +104,16 @@ export function SwipeContainer({
 
     const renderCard = (card: GitHubIssue | null) => {
         // Re-read from issues array so aiSummary updates are reflected
-        const issue = issues.find((i) => i.id === card?.id) || card;
+        const matchingIssue = issues.find((i) => i.id === card?.id);
+        const issue = matchingIssue || card;
         if (!issue) {
-            return <View style={[styles.cardPlaceholder, (isDesktop || isTablet) && styles.cardPlaceholderDesktop]} />;
+            const isLargeScreen = isDesktop || isTablet;
+            return <View style={[styles.cardPlaceholder, isLargeScreen && styles.cardPlaceholderDesktop]} />;
         }
         const label =
             issue.repository?.full_name ?? extractRepoPath(issue.repository_url);
-        const isCurrent = issue.id === issues[currentIndex]?.id;
+        const currentIssue = issues[currentIndex];
+        const isCurrent = issue.id === currentIssue?.id;
         return (
             <IssueCard
                 issue={issue}
@@ -154,11 +157,11 @@ export function SwipeContainer({
                         No open issues found. Try a different repo or refresh.
                     </Text>
                     <TouchableOpacity
-                        style={[styles.refreshButton, webCursor('pointer')]}
+                        style={[styles.refreshButton, { backgroundColor: theme.cardBackground }, webCursor('pointer')]}
                         onPress={onRefresh}
                     >
-                        <RefreshCw size={16} color="#000000" />
-                        <Text style={styles.refreshText}>REFRESH</Text>
+                        <RefreshCw size={16} color={theme.ink} />
+                        <Text style={[styles.refreshText, { color: theme.ink }]}>REFRESH</Text>
                     </TouchableOpacity>
                 </View>
             )}

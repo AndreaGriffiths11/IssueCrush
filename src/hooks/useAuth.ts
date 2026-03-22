@@ -25,7 +25,8 @@ export function useAuth() {
     try {
       setAuthError('');
       const apiUrl = process.env.EXPO_PUBLIC_API_URL || '';
-      const tokenResponse = await fetch(`${apiUrl}/api/github-token`, {
+      const tokenExchangeUrl = `${apiUrl}/api/github-token`;
+      const tokenResponse = await fetch(tokenExchangeUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code }),
@@ -40,7 +41,8 @@ export function useAuth() {
       const data = await tokenResponse.json();
 
       if (data.error) {
-        setAuthError(data.error_description || data.error || 'GitHub OAuth failed.');
+        const errorDescription = data.error_description || data.error || 'GitHub OAuth failed.';
+        setAuthError(errorDescription);
         return;
       }
 
@@ -55,7 +57,8 @@ export function useAuth() {
         setAuthError('No session received from server');
       }
     } catch (error) {
-      setAuthError(`Failed to connect to auth server: ${(error as Error).message}. Make sure the server is running.`);
+      const errorMessage = (error as Error).message;
+      setAuthError(`Failed to connect to auth server: ${errorMessage}. Make sure the server is running.`);
     }
     return false;
   }, []);
@@ -69,9 +72,9 @@ export function useAuth() {
       setAuthError('');
 
       if (Platform.OS === 'web') {
-        const authUrl = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=${encodeURIComponent(
-          DEFAULT_SCOPE
-        )}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`;
+        const encodedScope = encodeURIComponent(DEFAULT_SCOPE);
+        const encodedRedirectUri = encodeURIComponent(REDIRECT_URI);
+        const authUrl = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=${encodedScope}&redirect_uri=${encodedRedirectUri}`;
         if (typeof window !== 'undefined') {
           window.location.href = authUrl;
         } else {
@@ -83,15 +86,15 @@ export function useAuth() {
           preferLocalhost: false,
         });
 
-        const authUrl = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=${encodeURIComponent(
-          DEFAULT_SCOPE
-        )}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+        const encodedScope = encodeURIComponent(DEFAULT_SCOPE);
+        const encodedRedirectUri = encodeURIComponent(redirectUri);
+        const authUrl = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=${encodedScope}&redirect_uri=${encodedRedirectUri}`;
 
         const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
 
         if (result.type === 'success' && result.url) {
-          const url = new URL(result.url);
-          const code = url.searchParams.get('code');
+          const resultUrl = new URL(result.url);
+          const code = resultUrl.searchParams.get('code');
 
           if (code) {
             await exchangeCodeForToken(code);

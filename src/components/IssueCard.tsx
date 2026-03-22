@@ -57,50 +57,48 @@ export function IssueCard({
     repoLabel,
     onGetAiSummary,
 }: IssueCardProps) {
-    const { theme, isDark } = useTheme();
-
-    // Theme-aware colors for better contrast in both light and dark mode
-    const cardBackground = isDark ? theme.background : '#ffffff';
-    const textColor = isDark ? theme.text : '#000000';
-    const textSecondaryColor = isDark ? theme.textSecondary : '#555555';
-    const borderColor = isDark ? theme.border : '#000000';
+    const { theme } = useTheme();
 
     return (
-        <View style={[styles.cardBrutalist, isDesktop && styles.cardBrutalistDesktop, { backgroundColor: cardBackground, borderColor }]}>
+        <View style={[styles.cardBrutalist, isDesktop && styles.cardBrutalistDesktop, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
             {/* Card Header */}
-            <View style={[styles.cardHeaderBrutalist, { backgroundColor: cardBackground, borderBottomColor: borderColor }]}>
-                <View style={[styles.issueIdBadge, { borderColor }]}>
-                    <Text style={[styles.issueIdText, { color: textColor }]}>#{issue.number}</Text>
+            <View style={[styles.cardHeaderBrutalist, { backgroundColor: theme.cardBackground, borderBottomColor: theme.cardBorder }]}>
+                <View style={[styles.issueIdBadge, { borderColor: theme.cardBorder }]}>
+                    <Text style={[styles.issueIdText, { color: theme.ink }]}>#{issue.number}</Text>
                 </View>
                 <TouchableOpacity
                     onPress={() => openIssueLink(issue.html_url)}
                     style={[styles.headlineWrap, webCursor('pointer')]}
                     activeOpacity={0.7}
                 >
-                    <Text style={[styles.headlineBrutalist, { color: textColor }]} numberOfLines={2}>
-                        {issue.title.split(' ').map((word, i) => (
-                            <Text key={i} style={i % 3 === 0 ? [styles.headlineHeavy, { color: textColor }] : [styles.headlineLight, { color: textColor }]}>
-                                {word}{' '}
-                            </Text>
-                        ))}
+                    <Text style={styles.headlineBrutalist} numberOfLines={2}>
+                        {issue.title.split(' ').map((word, i) => {
+                            const isHeavyWord = i % 3 === 0;
+                            const wordStyle = isHeavyWord ? styles.headlineHeavy : styles.headlineLight;
+                            return (
+                                <Text key={i} style={[wordStyle, { color: theme.ink }]}>
+                                    {word}{' '}
+                                </Text>
+                            );
+                        })}
                     </Text>
-                    <ExternalLink size={20} color={textColor} style={{ marginTop: 4, opacity: 0.6 }} />
+                    <ExternalLink size={20} color={theme.ink} style={{ marginTop: 4, opacity: 0.6 }} />
                 </TouchableOpacity>
             </View>
 
             {/* Card Body */}
-            <View style={[styles.cardBodyBrutalist, styles.cardBodyContent, { backgroundColor: cardBackground }]} pointerEvents="box-none">
+            <View style={[styles.cardBodyBrutalist, styles.cardBodyContent, { backgroundColor: theme.cardBackground }]} pointerEvents="box-none">
                 {/* User row */}
                 {issue.user && (
                     <View style={styles.userRowBrutalist}>
                         <Image
                             source={{ uri: issue.user.avatar_url }}
-                            style={styles.avatarBrutalist}
+                            style={[styles.avatarBrutalist, { backgroundColor: theme.ink }]}
                             resizeMode="cover"
                         />
                         <View style={styles.userMetaBrutalist}>
-                            <Text style={[styles.userNameBrutalist, { color: textColor }]}>{issue.user.login.toUpperCase()}</Text>
-                            <Text style={[styles.repoNameBrutalist, { color: textSecondaryColor }]}>{repoLabel}</Text>
+                            <Text style={[styles.userNameBrutalist, { color: theme.ink }]}>{issue.user.login.toUpperCase()}</Text>
+                            <Text style={styles.repoNameBrutalist}>{repoLabel}</Text>
                         </View>
                     </View>
                 )}
@@ -133,11 +131,11 @@ export function IssueCard({
                 <View
                     style={[
                         styles.aiBlockBrutalist,
-                        { backgroundColor: isDark ? '#050505' : '#1a1a2e' },
+                        { backgroundColor: '#1a1a2e' },
                     ]}
                 >
-                    <View style={styles.aiStickerBadge}>
-                        <Text style={styles.aiStickerText}>AI INSIGHT</Text>
+                    <View style={[styles.aiStickerBadge, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
+                        <Text style={[styles.aiStickerText, { color: theme.ink }]}>AI INSIGHT</Text>
                     </View>
                     {issue.aiSummary ? (
                         <ScrollView
@@ -189,7 +187,6 @@ export function IssueCard({
 const styles = StyleSheet.create({
     cardBrutalist: {
         flex: 1,
-        backgroundColor: '#ffffff',
         borderRadius: 16,
         borderWidth: 2,
         borderColor: '#000000',
@@ -210,7 +207,6 @@ const styles = StyleSheet.create({
         elevation: 10,
     },
     cardHeaderBrutalist: {
-        backgroundColor: '#ffffff',
         padding: 20,
         borderBottomWidth: 2,
         borderBottomColor: '#000000',
@@ -254,7 +250,6 @@ const styles = StyleSheet.create({
         color: '#000000',
     },
     cardBodyBrutalist: {
-        backgroundColor: '#ffffff',
         flex: 1,
     },
     cardBodyContent: {
@@ -271,7 +266,6 @@ const styles = StyleSheet.create({
         width: 48,
         height: 48,
         borderRadius: 24,
-        backgroundColor: '#000000',
     },
     userMetaBrutalist: {
         flexDirection: 'column',
@@ -319,7 +313,6 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: -12,
         right: 20,
-        backgroundColor: '#ffffff',
         borderWidth: 1,
         borderColor: '#000000',
         paddingVertical: 6,

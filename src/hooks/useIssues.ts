@@ -26,10 +26,14 @@ export function useIssues(token: string | null) {
     if (!token) return;
     setLoadingIssues(true);
     try {
-      const data = await fetchIssues(token, repoFilter.trim() || undefined, labelFilter.trim() || undefined);
+      const trimmedRepo = repoFilter.trim() || undefined;
+      const trimmedLabel = labelFilter.trim() || undefined;
+      const data = await fetchIssues(token, trimmedRepo, trimmedLabel);
+      const issueCount = data.length;
+      const statusMessage = issueCount ? `Loaded ${issueCount} open issues` : 'No open issues found';
       setIssues(data);
       setCurrentIndex(0);
-      setFeedback(data.length ? `Loaded ${data.length} open issues` : 'No open issues found');
+      setFeedback(statusMessage);
     } catch (error) {
       setFeedback((error as Error).message);
     } finally {
@@ -69,10 +73,12 @@ export function useIssues(token: string | null) {
   }, [issues]);
 
   const onSwiped = useCallback((idx: number) => {
-    setCurrentIndex(idx + 1);
+    const nextIndex = idx + 1;
+    setCurrentIndex(nextIndex);
     setLoadingAiSummary(false);
 
-    if (idx === issues.length - 1) {
+    const isLastCard = idx === issues.length - 1;
+    if (isLastCard) {
       setTimeout(() => {
         confettiRef.current?.start();
       }, 300);
@@ -105,7 +111,8 @@ export function useIssues(token: string | null) {
   const handleGetAiSummary = useCallback(async () => {
     const issueIndex = currentIndex;
     const issue = issues[issueIndex];
-    if (!issue || issue.aiSummary) return;
+    const alreadyHasSummary = issue?.aiSummary;
+    if (!issue || alreadyHasSummary) return;
 
     setLoadingAiSummary(true);
     try {

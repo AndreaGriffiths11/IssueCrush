@@ -1,6 +1,5 @@
-import React, { createContext, useContext, useState } from 'react';
-import { useColorScheme } from 'react-native';
-import { lightTheme, darkTheme, Theme, ThemeMode } from './themes';
+import React, { createContext, useContext } from 'react';
+import { lightTheme, Theme, ThemeMode } from './themes';
 
 type ThemeContextType = {
   theme: Theme;
@@ -12,24 +11,15 @@ type ThemeContextType = {
 const ThemeContext = createContext<ThemeContextType>({
   theme: lightTheme,
   isDark: false,
-  themeMode: 'system',
+  themeMode: 'light',
   setThemeMode: () => {},
 });
 
 export const useTheme = () => useContext(ThemeContext);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const systemColorScheme = useColorScheme();
-  const [themeMode, setThemeMode] = useState<ThemeMode>('dark');
-
-  const isDark = themeMode === 'system'
-    ? systemColorScheme === 'dark'
-    : themeMode === 'dark';
-
-  const theme = isDark ? darkTheme : lightTheme;
-
   return (
-    <ThemeContext.Provider value={{ theme, isDark, themeMode, setThemeMode }}>
+    <ThemeContext.Provider value={{ theme: lightTheme, isDark: false, themeMode: 'light', setThemeMode: () => {} }}>
       {children}
     </ThemeContext.Provider>
   );

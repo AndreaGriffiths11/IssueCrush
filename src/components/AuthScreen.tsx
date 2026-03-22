@@ -24,7 +24,8 @@ interface AuthScreenProps {
 
 export function AuthScreen({ onLogin, authError, isDesktop, isTablet = false, screenWidth = 400 }: AuthScreenProps) {
     // Responsive brand font size
-    const brandFontSize = screenWidth < 400 ? 32 : isWeb ? 52 : 36;
+    const isNarrowScreen = screenWidth < 400;
+    const brandFontSize = isNarrowScreen ? 32 : isWeb ? 52 : 36;
 
     return (
         <ScrollView

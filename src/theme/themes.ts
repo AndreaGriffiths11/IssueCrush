@@ -29,36 +29,5 @@ export const lightTheme = {
   ink: '#0A0A0A',
 };
 
-export const darkTheme = {
-  background: '#050505',
-  backgroundSecondary: '#0a0a0a',
-  backgroundTertiary: '#222222',
-  text: '#ffffff',
-  textSecondary: '#888888',
-  textMuted: '#666666',
-  primary: '#DFFF00',
-  primaryLight: '#1a1a00',
-  danger: '#FF1493',
-  dangerLight: '#2a0a1a',
-  dangerBorder: '#FF1493',
-  success: '#4B9F5D',
-  successLight: '#0a1a0d',
-  successBorder: '#4B9F5D',
-  border: '#333333',
-  borderLight: '#222222',
-  cardBackground: '#ffffff',
-  cardBorder: '#000000',
-  inputBackground: '#111111',
-  shadow: '#000000',
-  notebookOpacity: 0,
-  notebookTint: undefined,
-  acid: '#DFFF00',
-  pink: '#FF1493',
-  forest: '#4B9F5D',
-  void: '#050505',
-  canvas: '#ffffff',
-  ink: '#000000',
-};
-
 export type Theme = typeof lightTheme;
-export type ThemeMode = 'light' | 'dark' | 'system';
+export type ThemeMode = 'light';

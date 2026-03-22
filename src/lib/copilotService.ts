@@ -41,14 +41,17 @@ export class CopilotService {
       });
 
       const data = await response.json();
+      const isUnauthorized = response.status === 401;
+      const isForbiddenCopilot = response.status === 403 && data.requiresCopilot;
 
       if (!response.ok) {
-        if (response.status === 401) {
+        if (isUnauthorized) {
           throw new Error('Session expired. Please sign in again.');
         }
-        if (response.status === 403 && data.requiresCopilot) {
+        if (isForbiddenCopilot) {
+          const copilotMessage = data.message || 'AI summaries require a GitHub Copilot subscription.';
           return {
-            summary: data.message || 'AI summaries require a GitHub Copilot subscription.',
+            summary: copilotMessage,
             requiresCopilot: true,
           };
         }

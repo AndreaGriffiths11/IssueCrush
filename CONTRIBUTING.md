@@ -109,11 +109,11 @@ IssueCrush/
 ### Running Tests
 
 ```bash
+# Run Jest test suite
+npm test
+
 # Type checking
 npx tsc --noEmit
-
-# Lint (if configured)
-npm run lint
 ```
 
 ## Style Guidelines

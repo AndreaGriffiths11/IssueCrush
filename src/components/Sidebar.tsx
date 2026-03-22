@@ -7,10 +7,9 @@ import {
     View,
 } from 'react-native';
 import Animated from 'react-native-reanimated';
-import { Check, Filter, LogOut, Moon, RefreshCw, RotateCcw, Sun, Tag, X } from 'lucide-react-native';
+import { Check, Filter, LogOut, RefreshCw, RotateCcw, Tag, X } from 'lucide-react-native';
 import { GitHubIssue } from '../api/github';
 import { useTheme } from '../theme';
-import { ThemeMode } from '../theme/themes';
 import { webCursor } from '../utils';
 
 interface SidebarProps {
@@ -22,7 +21,6 @@ interface SidebarProps {
     undoBusy: boolean;
     loadingIssues: boolean;
     progressAnimatedStyle: any;
-    themeMode: ThemeMode;
     onChangeRepoFilter: (text: string) => void;
     onChangeLabelFilter: (text: string) => void;
     onRefresh: () => void;
@@ -30,7 +28,7 @@ interface SidebarProps {
     onSwipeRight: () => void;
     onUndo: () => void;
     onSignOut: () => void;
-    onCycleTheme: () => void;
+    onShowShortcuts: () => void;
 }
 
 export function Sidebar({
@@ -42,7 +40,6 @@ export function Sidebar({
     undoBusy,
     loadingIssues,
     progressAnimatedStyle,
-    themeMode,
     onChangeRepoFilter,
     onChangeLabelFilter,
     onRefresh,
@@ -50,13 +47,14 @@ export function Sidebar({
     onSwipeRight,
     onUndo,
     onSignOut,
-    onCycleTheme,
+    onShowShortcuts,
 }: SidebarProps) {
     const { theme } = useTheme();
 
-    const progressPercent = issues.length > 0
-        ? Math.round((Math.min(currentIndex + 1, issues.length) / issues.length) * 100)
-        : 0;
+    const hasIssues = issues.length > 0;
+    const triagedCount = Math.min(currentIndex + 1, issues.length);
+    const triagedFraction = hasIssues ? triagedCount / issues.length : 0;
+    const progressPercent = Math.round(triagedFraction * 100);
 
     return (
         <View
@@ -107,14 +105,15 @@ export function Sidebar({
                     <TouchableOpacity
                         style={[
                             styles.sidebarButtonBrutalist,
+                            { backgroundColor: theme.cardBackground },
                             loadingIssues && styles.refreshButtonDisabled,
                             webCursor('pointer'),
                         ]}
                         onPress={onRefresh}
                         disabled={loadingIssues}
                     >
-                        <RefreshCw size={16} color="#000000" />
-                        <Text style={styles.sidebarButtonTextBrutalist}>REFRESH</Text>
+                        <RefreshCw size={16} color={theme.ink} />
+                        <Text style={[styles.sidebarButtonTextBrutalist, { color: theme.ink }]}>REFRESH</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -189,31 +188,18 @@ export function Sidebar({
             {/* Footer */}
             <View style={[styles.sidebarFooter, { borderColor: theme.border }]}>
                 <TouchableOpacity
-                    style={[
-                        styles.themeToggle,
-                        { backgroundColor: theme.backgroundTertiary, borderColor: theme.border },
-                        webCursor('pointer'),
-                    ]}
-                    onPress={onCycleTheme}
-                    activeOpacity={0.7}
-                >
-                    {themeMode === 'dark' ? (
-                        <Moon size={18} color={theme.primary} />
-                    ) : themeMode === 'light' ? (
-                        <Sun size={18} color={theme.primary} />
-                    ) : (
-                        <View style={{ flexDirection: 'row', gap: 2 }}>
-                            <Sun size={12} color={theme.primary} />
-                            <Moon size={12} color={theme.primary} />
-                        </View>
-                    )}
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.signOutBrutalist, webCursor('pointer')]}
+                    style={[styles.signOutBrutalist, { backgroundColor: theme.cardBackground }, webCursor('pointer')]}
                     onPress={onSignOut}
                 >
-                    <LogOut size={18} color="#000000" />
-                    <Text style={styles.signOutTextBrutalist}>Sign out</Text>
+                    <LogOut size={18} color={theme.ink} />
+                    <Text style={[styles.signOutTextBrutalist, { color: theme.ink }]}>Sign out</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.shortcutsBtn, { borderColor: theme.border }, webCursor('pointer')]}
+                    onPress={onShowShortcuts}
+                    accessibilityLabel="Keyboard shortcuts"
+                >
+                    <Text style={[styles.shortcutsBtnText, { color: theme.textMuted }]}>?</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -284,7 +270,6 @@ const styles = StyleSheet.create({
         gap: 8,
         height: 48,
         borderRadius: 50,
-        backgroundColor: '#ffffff',
     },
     refreshButtonDisabled: {
         opacity: 0.5,
@@ -292,7 +277,6 @@ const styles = StyleSheet.create({
     sidebarButtonTextBrutalist: {
         fontSize: 14,
         fontWeight: '700',
-        color: '#000000',
         textTransform: 'uppercase',
     },
     progressLabelRow: {
@@ -385,12 +369,22 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         paddingHorizontal: 16,
         borderRadius: 50,
-        backgroundColor: '#ffffff',
     },
     signOutTextBrutalist: {
-        color: '#000000',
         fontWeight: '700',
         fontSize: 13,
         textTransform: 'uppercase',
+    },
+    shortcutsBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+    },
+    shortcutsBtnText: {
+        fontSize: 18,
+        fontWeight: '700',
     },
 });

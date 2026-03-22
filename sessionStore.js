@@ -33,13 +33,14 @@ async function initCosmos() {
 
     const dbId = process.env.COSMOS_DATABASE || 'issuecrush';
     const containerId = process.env.COSMOS_CONTAINER || 'sessions';
+    const sessionTtlSeconds = Math.floor(SESSION_TTL_MS / 1000);
 
     // Create database and container if they don't exist
     const { database } = await client.databases.createIfNotExists({ id: dbId });
     const { container: c } = await database.containers.createIfNotExists({
       id: containerId,
       partitionKey: { paths: ['/id'] },
-      defaultTtl: Math.floor(SESSION_TTL_MS / 1000), // Cosmos TTL is in seconds
+      defaultTtl: sessionTtlSeconds,
     });
 
     container = c;
@@ -65,13 +66,15 @@ async function createSession(githubToken) {
 
   const sessionId = generateSessionId();
   const now = Date.now();
+  const expiresAt = now + SESSION_TTL_MS;
+  const ttlSeconds = Math.floor(SESSION_TTL_MS / 1000);
   const session = {
     id: sessionId,
     githubToken,
     createdAt: now,
-    expiresAt: now + SESSION_TTL_MS,
+    expiresAt,
     // Cosmos TTL field (seconds until expiry)
-    ttl: Math.floor(SESSION_TTL_MS / 1000),
+    ttl: ttlSeconds,
   };
 
   if (container) {
@@ -80,7 +83,7 @@ async function createSession(githubToken) {
     } catch (error) {
       if (error.code === 429) {
         // Handle rate limiting with retry-after
-        const retryAfterMs = (error.retryAfterInMs || 1000);
+        const retryAfterMs = error.retryAfterInMs || 1000;
         console.warn(`Cosmos DB rate limited, retrying after ${retryAfterMs}ms`);
         await new Promise((resolve) => setTimeout(resolve, retryAfterMs));
         await container.items.create(session);
@@ -107,7 +110,8 @@ async function getSessionToken(sessionId) {
     try {
       const { resource } = await container.item(sessionId, sessionId).read();
       if (!resource) return null;
-      if (resource.expiresAt < Date.now()) {
+      const isExpired = resource.expiresAt < Date.now();
+      if (isExpired) {
         // Expired — clean up
         await destroySession(sessionId);
         return null;
@@ -123,7 +127,8 @@ async function getSessionToken(sessionId) {
   // In-memory fallback
   const session = memoryStore.get(sessionId);
   if (!session) return null;
-  if (session.expiresAt < Date.now()) {
+  const isExpired = session.expiresAt < Date.now();
+  if (isExpired) {
     memoryStore.delete(sessionId);
     return null;
   }
@@ -157,15 +162,17 @@ async function destroySession(sessionId) {
 function sessionMiddleware() {
   return async (req, res, next) => {
     // X-Session-Token is the primary header (Authorization is intercepted by Azure SWA)
-    const sessionId =
-      req.headers['x-session-token'] ||
-      (req.headers.authorization?.startsWith('Bearer ')
-        ? req.headers.authorization.slice(7)
-        : null);
+    const sessionTokenHeader = req.headers['x-session-token'];
+    const authorizationHeader = req.headers.authorization;
+    const bearerToken = authorizationHeader?.startsWith('Bearer ')
+      ? authorizationHeader.slice(7)
+      : null;
+    const sessionId = sessionTokenHeader || bearerToken;
 
     if (sessionId) {
       const token = await getSessionToken(sessionId);
-      if (token) {
+      const hasValidSession = !!token;
+      if (hasValidSession) {
         req.githubToken = token;
         req.sessionId = sessionId;
       }

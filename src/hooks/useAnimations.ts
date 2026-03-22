@@ -100,7 +100,8 @@ export function useAnimations(theme: Theme, feedback: string, currentIndex: numb
   // Animate progress bar
   useEffect(() => {
     if (issuesLength > 0) {
-      const targetWidth = (Math.min(currentIndex + 1, issuesLength) / issuesLength) * 100;
+      const clampedIndex = Math.min(currentIndex + 1, issuesLength);
+      const targetWidth = (clampedIndex / issuesLength) * 100;
       progressWidth.value = withSpring(targetWidth, { damping: 15, stiffness: 100 });
     }
   }, [currentIndex, issuesLength]);
