@@ -225,6 +225,15 @@ npx tsc --noEmit      # Type-check without building
 
 For Azure Static Web Apps, Vercel, or similar platforms, set the environment variables in their configuration panel.
 
+## Documentation
+
+Comprehensive developer documentation available in the [`docs/`](./docs/) directory:
+
+- **[API Reference](./docs/API.md)** - Hooks, components, and services
+- **[Architecture Overview](./docs/ARCHITECTURE.md)** - System design and data flow
+- **[Deployment Guide](./docs/DEPLOYMENT.md)** - Deploy to Azure SWA or other platforms
+- **[Documentation Index](./docs/README.md)** - Complete documentation structure
+
 ## Contributing
 
 We welcome contributions! Check out the [Contributing Guide](CONTRIBUTING.md) to get started.
@@ -232,6 +241,7 @@ We welcome contributions! Check out the [Contributing Guide](CONTRIBUTING.md) to
 - Look for issues labeled `good first issue` or `help wanted`
 - Fork the repo and create a feature branch
 - Cosmos DB is **optional** for local development (sessions fall back to in-memory)
+- See [API Reference](./docs/API.md) for developer documentation
 
 ## Credits
 
