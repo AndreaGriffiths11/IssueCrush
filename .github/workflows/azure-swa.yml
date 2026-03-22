@@ -34,6 +34,9 @@ jobs:
       - name: Install API dependencies
         run: cd api && npm ci
 
+      - name: Patch vscode-jsonrpc for ESM compatibility
+        run: node scripts/patch-vscode-jsonrpc.js && node api/patch-vscode-jsonrpc.js
+
       - name: Deploy to Azure Static Web Apps
         # Dependabot PRs do not get this secret. Only deploy on push to main.
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
@@ -46,6 +49,7 @@ jobs:
           api_location: "api"
           output_location: ""
           skip_app_build: true
+          skip_api_build: true
 
   close_pull_request:
     # Optional: don't try to close SWA preview environments for Dependabot PRs
