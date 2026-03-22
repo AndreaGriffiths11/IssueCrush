@@ -6,6 +6,9 @@
   "engines": {
     "node": ">=20"
   },
+  "scripts": {
+    "postinstall": "node ../scripts/patch-vscode-jsonrpc.js"
+  },
   "dependencies": {
     "@azure/cosmos": "^4.3.1",
     "@azure/functions": "^4.7.0",
