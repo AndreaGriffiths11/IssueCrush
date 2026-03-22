@@ -7,9 +7,23 @@ export interface SummaryResult {
   requiresCopilot?: boolean;
 }
 
+/**
+ * Service for interacting with AI-powered features via GitHub Copilot SDK.
+ * 
+ * Handles health checks and issue summarization through the backend API.
+ */
 export class CopilotService {
   private backendUrl = process.env.EXPO_PUBLIC_API_URL || '';
 
+  /**
+   * Checks if the backend API is available and Copilot features are enabled.
+   * 
+   * @returns Promise resolving to object with copilotMode status
+   * @throws Error if backend is not reachable
+   * 
+   * @example
+   * const { copilotMode } = await copilotService.initialize();
+   */
   async initialize(): Promise<{ copilotMode: string }> {
     try {
       const response = await fetch(`${this.backendUrl}/api/health`);
@@ -23,6 +37,25 @@ export class CopilotService {
     }
   }
 
+  /**
+   * Generates an AI-powered summary of a GitHub issue.
+   * 
+   * Requires the user to have a GitHub Copilot subscription. The backend uses
+   * the user's GitHub token to access the Copilot SDK and generate a 2-3
+   * sentence summary for quick triage.
+   * 
+   * @param issue - GitHub issue object to summarize
+   * @returns Promise resolving to SummaryResult with summary text and metadata
+   * @throws Error if session is expired or summary generation fails
+   * 
+   * @example
+   * const result = await copilotService.summarizeIssue(issue);
+   * if (result.requiresCopilot) {
+   *   console.log("User needs Copilot subscription");
+   * } else {
+   *   console.log(result.summary);
+   * }
+   */
   async summarizeIssue(issue: GitHubIssue): Promise<SummaryResult> {
     try {
       const sessionId = await getToken();
@@ -69,4 +102,12 @@ export class CopilotService {
   }
 }
 
+/**
+ * Singleton instance of CopilotService for application-wide use.
+ * 
+ * @example
+ * import { copilotService } from './lib/copilotService';
+ * 
+ * const result = await copilotService.summarizeIssue(issue);
+ */
 export const copilotService = new CopilotService();

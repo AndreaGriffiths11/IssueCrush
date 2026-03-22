@@ -36,6 +36,27 @@ const authHeaders = (sessionId: string) => ({
   'Content-Type': 'application/json',
 });
 
+/**
+ * Fetches open GitHub issues assigned to the authenticated user.
+ * 
+ * @param sessionId - Session ID from authentication (used as X-Session-Token header)
+ * @param repoFilter - Optional repository filter (format: "owner/repo")
+ * @param labelFilter - Optional label filter (comma-separated labels)
+ * @returns Promise resolving to array of GitHub issues (pull requests excluded)
+ * @throws Error if session is expired (401), repository not found (404), or fetch fails
+ * 
+ * @example
+ * // Fetch all assigned issues
+ * const issues = await fetchIssues(sessionId);
+ * 
+ * @example
+ * // Fetch issues from a specific repository
+ * const issues = await fetchIssues(sessionId, "octocat/Hello-World");
+ * 
+ * @example
+ * // Fetch issues with specific labels
+ * const issues = await fetchIssues(sessionId, undefined, "bug,help-wanted");
+ */
 export async function fetchIssues(sessionId: string, repoFilter?: string, labelFilter?: string): Promise<GitHubIssue[]> {
   const params = new URLSearchParams();
   if (repoFilter) params.set('repo', repoFilter);
@@ -61,6 +82,23 @@ export async function fetchIssues(sessionId: string, repoFilter?: string, labelF
   return response.json();
 }
 
+/**
+ * Updates the state of a GitHub issue (open/closed).
+ * 
+ * @param sessionId - Session ID from authentication (used as X-Session-Token header)
+ * @param issue - Issue object containing number and repository_url
+ * @param state - Target state: "open" to reopen, "closed" to close
+ * @returns Promise resolving to the updated GitHub issue
+ * @throws Error if session is expired, user lacks permission, or update fails
+ * 
+ * @example
+ * // Close an issue
+ * const updated = await updateIssueState(sessionId, issue, "closed");
+ * 
+ * @example
+ * // Reopen an issue
+ * const updated = await updateIssueState(sessionId, issue, "open");
+ */
 export async function updateIssueState(
   sessionId: string,
   issue: Pick<GitHubIssue, 'number' | 'repository_url'>,
@@ -83,6 +121,16 @@ export async function updateIssueState(
   return (await response.json()) as GitHubIssue;
 }
 
+/**
+ * Extracts the repository path (owner/repo) from a GitHub API repository URL.
+ * 
+ * @param repositoryUrl - Full GitHub API URL (e.g., "https://api.github.com/repos/owner/repo")
+ * @returns Repository path in "owner/repo" format
+ * 
+ * @example
+ * extractRepoPath("https://api.github.com/repos/octocat/Hello-World")
+ * // Returns: "octocat/Hello-World"
+ */
 export function extractRepoPath(repositoryUrl: string) {
   const marker = '/repos/';
   const markerIndex = repositoryUrl.indexOf(marker);
