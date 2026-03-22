@@ -192,7 +192,7 @@ app.http('aiSummary', {
 
     try {
       const { CopilotClient, approveAll } = await import('@github/copilot-sdk');
-      client = new CopilotClient();
+      client = new CopilotClient({ githubToken: session.githubToken });
       await client.start();
       copilotSession = await client.createSession({ model: 'gpt-4.1', onPermissionRequest: approveAll });
 
