@@ -127,6 +127,16 @@ The AI summary is powered by the GitHub Copilot SDK running on your backend serv
 
 ![IssueCrush Architecture](assets/architecture-diagram.png)
 
+For detailed architecture documentation, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## API Reference
+
+Complete REST API documentation is available at [docs/API.md](docs/API.md), including:
+
+- Authentication endpoints
+- Issue management
+- AI summary generation
+- Session storage
 
 ## Project Structure
 
@@ -137,12 +147,19 @@ IssueCrush/
 ├── sessionStore.js            # Cosmos DB / in-memory session storage
 ├── AGENTS.md                  # AI agent context (project knowledge)
 ├── .agents/                   # Installed agent skills (see below)
+├── docs/                      # Technical documentation
+│   ├── README.md             # Documentation index
+│   ├── API.md                # REST API reference
+│   └── ARCHITECTURE.md       # Architecture deep dive
 ├── src/
 │   ├── api/
 │   │   └── github.ts         # GitHub API client
-│   └── lib/
-│       ├── tokenStorage.ts   # Secure token storage
-│       └── copilotService.ts # Frontend Copilot service
+│   ├── components/           # React Native UI components
+│   ├── hooks/                # Custom hooks (useAuth, useIssues, etc.)
+│   ├── lib/                  # Utilities
+│   │   ├── tokenStorage.ts   # Secure token storage
+│   │   └── copilotService.ts # Frontend Copilot service
+│   └── theme/                # Theme and styling
 ├── .env.example              # Environment template
 ├── package.json              # Dependencies and scripts
 └── README.md                 # This file
@@ -232,6 +249,7 @@ We welcome contributions! Check out the [Contributing Guide](CONTRIBUTING.md) to
 - Look for issues labeled `good first issue` or `help wanted`
 - Fork the repo and create a feature branch
 - Cosmos DB is **optional** for local development (sessions fall back to in-memory)
+- Read the [technical documentation](docs/) for architecture and API details
 
 ## Credits
 

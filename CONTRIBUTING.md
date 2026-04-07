@@ -100,11 +100,19 @@ IssueCrush/
 ├── server.js         # Express server for OAuth & AI
 ├── sessionStore.js   # Cosmos DB / in-memory session storage
 ├── src/
+│   ├── components/   # React Native UI components
+│   ├── hooks/        # Custom hooks (useAuth, useIssues, useAnimations)
 │   ├── api/          # GitHub API client
-│   └── lib/          # Utilities (token storage, Copilot service)
+│   ├── lib/          # Utilities (token storage, Copilot service)
+│   └── theme/        # Theme and styling
+├── docs/             # Technical documentation
+│   ├── API.md        # REST API reference
+│   └── ARCHITECTURE.md # Architecture deep dive
 ├── assets/           # Images and static files
 └── .github/          # GitHub templates and workflows
 ```
+
+For detailed architecture and API information, see the [docs/](docs/) directory.
 
 ### Running Tests
 
