@@ -225,6 +225,12 @@ npx tsc --noEmit      # Type-check without building
 
 For Azure Static Web Apps, Vercel, or similar platforms, set the environment variables in their configuration panel.
 
+## Documentation
+
+- **[API Reference](docs/API.md)** - Complete API endpoint documentation
+- **[Contributing Guide](CONTRIBUTING.md)** - How to contribute to the project
+- **[Code of Conduct](CODE_OF_CONDUCT.md)** - Community guidelines
+
 ## Contributing
 
 We welcome contributions! Check out the [Contributing Guide](CONTRIBUTING.md) to get started.
