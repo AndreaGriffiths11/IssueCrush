@@ -194,7 +194,7 @@ app.http('aiSummary', {
       const { CopilotClient, approveAll } = await import('@github/copilot-sdk');
       client = new CopilotClient({ githubToken: session.githubToken });
       await client.start();
-      copilotSession = await client.createSession({ model: 'gpt-4.1', onPermissionRequest: approveAll });
+      copilotSession = await client.createSession({ model: 'gpt-4o-mini', onPermissionRequest: approveAll });
 
       const prompt = `You are analyzing a GitHub issue to help a developer quickly understand it and decide how to handle it.
 

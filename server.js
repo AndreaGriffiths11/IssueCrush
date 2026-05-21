@@ -220,7 +220,7 @@ app.post('/api/ai-summary', requireSession(), async (req, res) => {
     await client.start();
 
     session = await client.createSession({
-      model: 'gpt-4.1',
+      model: 'gpt-4o-mini',
       onPermissionRequest: approveAll,
     });
 

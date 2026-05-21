@@ -1,0 +1,56 @@
+name: Copilot Setup Steps
+
+# Pre-install dependencies for the GitHub Copilot coding agent so it doesn't
+# reinstall from scratch every session. The job must be named
+# `copilot-setup-steps` for the coding agent to pick it up.
+#
+# Docs: https://docs.github.com/en/copilot/customizing-copilot/customizing-the-development-environment-for-copilot-coding-agent
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+      - package.json
+      - package-lock.json
+      - api/package.json
+      - api/package-lock.json
+      - scripts/patch-vscode-jsonrpc.js
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+      - package.json
+      - package-lock.json
+      - api/package.json
+      - api/package-lock.json
+      - scripts/patch-vscode-jsonrpc.js
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            api/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+        # postinstall runs scripts/patch-vscode-jsonrpc.js automatically
+
+      - name: Install api dependencies
+        working-directory: api
+        run: npm ci
+
+      - name: Type-check
+        run: npx tsc --noEmit

@@ -1,5 +1,10 @@
 # Copilot Instructions
 
+## Response Style
+- Code only, no explanation unless asked.
+- Bullets over paragraphs. No preamble.
+- Skip recaps of what you just did unless the user asks.
+
 ## First Steps
 Read `AGENTS.md` and `.agents.local.md` (if it exists) before starting any task.
 
