@@ -6,8 +6,8 @@ IMPORTANT: Prefer retrieval-led reasoning over pre-training-led reasoning for an
 IssueCrush - Tinder-style GitHub issue triage app. Swipe left to close issues, right to keep.
 
 ## Tech Stack
-- React Native 0.81 / React 19.1
-- Expo SDK 54
+- React Native 0.83 / React 19.2
+- Expo SDK 55
 - Azure Static Web Apps (deployment)
 - Azure Functions v4 / Node 20 / ESM (API backend)
 - Azure Cosmos DB NoSQL (session storage)
@@ -96,8 +96,8 @@ api/src/sessionStore.js (Cosmos DB session storage)
 - Pushes to `main` auto-deploy via GitHub Actions
 
 ## Docs
-- Expo SDK 54: https://docs.expo.dev
-- React Native 0.81: https://reactnative.dev/docs
+- Expo SDK 55: https://docs.expo.dev
+- React Native 0.83: https://reactnative.dev/docs
 - GitHub Copilot SDK: https://github.com/github/copilot-sdk
 - react-native-deck-swiper: https://github.com/alexbrillant/react-native-deck-swiper
 
