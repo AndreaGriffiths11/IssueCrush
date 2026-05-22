@@ -41,10 +41,14 @@
       "backgroundColor": "#050505",
       "themeColor": "#050505",
       "lang": "en",
-      "categories": ["developer-tools", "productivity"]
+      "categories": [
+        "developer-tools",
+        "productivity"
+      ]
     },
     "plugins": [
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-web-browser"
     ]
   }
 }

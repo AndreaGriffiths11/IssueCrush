@@ -9,7 +9,7 @@
 Read `AGENTS.md` and `.agents.local.md` (if it exists) before starting any task.
 
 ## Project
-IssueCrush — Tinder-style GitHub issue triage. Swipe left to close, right to keep. React Native + Expo SDK 54, TypeScript 5.9.
+IssueCrush — Tinder-style GitHub issue triage. Swipe left to close, right to keep. React Native + Expo SDK 55, TypeScript 5.9.
 
 ## Architecture Boundaries
 - `App.tsx` is composition only: ThemeContext, ErrorBoundary, layout branching
