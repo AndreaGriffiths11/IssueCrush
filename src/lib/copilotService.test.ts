@@ -42,7 +42,7 @@ describe('copilotService (AAA)', () => {
       expect.objectContaining({
         method: 'POST',
         headers: expect.objectContaining({
-          Authorization: 'Bearer mock-session-id',
+          'X-Session-Token': 'mock-session-id',
         }),
       })
     );

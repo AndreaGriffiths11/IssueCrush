@@ -1,8 +1,6 @@
-const fetch = require('cross-fetch');
-const request = require('supertest');
-
 describe('server endpoints (AAA)', () => {
   let proc;
+  const baseUrl = 'http://localhost:3000';
 
   beforeAll((done) => {
     // start server as a child process so we can control shutdown
@@ -23,23 +21,34 @@ describe('server endpoints (AAA)', () => {
     if (proc && !proc.killed) proc.kill();
   });
 
+  async function postJson(path, body) {
+    const response = await fetch(`${baseUrl}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const responseBody = await response.json();
+    return { status: response.status, body: responseBody };
+  }
+
   it('GET /health returns ok (Arrange/Act/Assert)', async () => {
     // Arrange & Act
-    const res = await request('http://localhost:3000').get('/api/health');
+    const response = await fetch(`${baseUrl}/api/health`);
+    const body = await response.json();
 
     // Assert
-    expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('copilotAvailable', true);
+    expect(response.status).toBe(200);
+    expect(body).toHaveProperty('copilotAvailable', true);
   });
 
   it('POST /api/github-token without code returns 400 (Arrange/Act/Assert)', async () => {
-    const res = await request('http://localhost:3000').post('/api/github-token').send({});
+    const res = await postJson('/api/github-token', {});
     expect(res.status).toBe(400);
     expect(res.body).toHaveProperty('error');
   });
 
   it('POST /api/ai-summary without session returns 401 (Arrange/Act/Assert)', async () => {
-    const res = await request('http://localhost:3000').post('/api/ai-summary').send({});
+    const res = await postJson('/api/ai-summary', {});
     expect(res.status).toBe(401);
     expect(res.body).toHaveProperty('error');
   });

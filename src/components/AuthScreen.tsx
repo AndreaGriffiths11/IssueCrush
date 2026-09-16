@@ -2,7 +2,6 @@ import React from 'react';
 import {
     Image,
     Linking,
-    Platform,
     ScrollView,
     StyleSheet,
     Text,
@@ -10,6 +9,7 @@ import {
     View,
 } from 'react-native';
 import { Check, Heart, Sparkles, X } from 'lucide-react-native';
+import { useTheme } from '../theme';
 import { webCursor, isWeb } from '../utils';
 
 const CLIENT_ID = process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID ?? '';
@@ -23,92 +23,122 @@ interface AuthScreenProps {
 }
 
 export function AuthScreen({ onLogin, authError, isDesktop, isTablet = false, screenWidth = 400 }: AuthScreenProps) {
+    const { theme } = useTheme();
+
     // Responsive brand font size
     const isNarrowScreen = screenWidth < 400;
-    const brandFontSize = isNarrowScreen ? 32 : isWeb ? 52 : 36;
+    const brandFontSize = isNarrowScreen ? 36 : isWeb ? 56 : 40;
+    const isMobile = !isDesktop && !isTablet;
+
+    const gesturePills = [
+        {
+            key: 'close',
+            label: 'SWIPE LEFT TO CLOSE',
+            backgroundColor: theme.dangerLight,
+            color: theme.danger,
+            icon: <X size={14} color={theme.danger} strokeWidth={3} />,
+        },
+        {
+            key: 'keep',
+            label: 'SWIPE RIGHT TO KEEP',
+            backgroundColor: theme.successLight,
+            color: theme.success,
+            icon: <Check size={14} color={theme.success} strokeWidth={3} />,
+        },
+        {
+            key: 'ai',
+            label: 'AI SUMMARIES',
+            backgroundColor: theme.primaryLight,
+            color: theme.primary,
+            icon: <Sparkles size={14} color={theme.primary} strokeWidth={3} />,
+        },
+    ];
 
     return (
         <ScrollView
-            style={styles.authContainerScroll}
+            style={[styles.authContainerScroll, { backgroundColor: theme.background }]}
             contentContainerStyle={[styles.authContainer, isTablet && styles.authContainerTablet]}
             showsVerticalScrollIndicator={false}
         >
-            <View style={[styles.authCard, !isDesktop && !isTablet && styles.authCardMobile, isTablet && styles.authCardTablet]}>
-                {/* App Icon */}
-                <View style={styles.authLogoWrap}>
+            {/* Hero */}
+            <View style={styles.authHero}>
+                <View style={[styles.authLogoWrap, { borderColor: theme.cardBorder, backgroundColor: theme.cardBackground }]}>
                     <Image
                         source={require('../../assets/icon.png')}
                         style={styles.authLogo}
                         resizeMode="cover"
                     />
                 </View>
-
                 <View style={styles.authCardBrand}>
-                    <Text style={[styles.authBrandIssue, { fontSize: brandFontSize }]}>ISSUE</Text>
-                    <Text style={[styles.authBrandCrush, { fontSize: brandFontSize }]}>CRUSH</Text>
+                    <Text style={[styles.authBrandIssue, { fontSize: brandFontSize, color: theme.primary }]}>ISSUE</Text>
+                    <Text style={[styles.authBrandCrush, { fontSize: brandFontSize, color: theme.ink }]}>CRUSH</Text>
                 </View>
-
-                <Text style={styles.authCardSub}>
-                    Triage your GitHub issues with swipe gestures.{'\n'}Swipe left to close, right to keep.
+                <Text style={[styles.authTagline, { color: theme.textSecondary }]}>
+                    Triage your GitHub issues at the speed of swipe.
                 </Text>
+            </View>
 
+            {/* Login card */}
+            <View style={[
+                styles.authCard,
+                isMobile && styles.authCardMobile,
+                isTablet && styles.authCardTablet,
+                { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder },
+            ]}>
                 <TouchableOpacity
-                    style={[styles.githubButton, webCursor('pointer')]}
+                    style={[styles.githubButton, { backgroundColor: theme.ink }, webCursor('pointer')]}
                     onPress={onLogin}
+                    activeOpacity={0.85}
                 >
                     <Image
                         source={require('../../assets/github-invertocat.png')}
                         style={styles.githubBtnLogo}
                         resizeMode="contain"
                     />
-                    <Text style={styles.githubButtonText}>CONTINUE WITH GITHUB</Text>
+                    <Text style={[styles.githubButtonText, { color: theme.cardBackground }]}>CONTINUE WITH GITHUB</Text>
                 </TouchableOpacity>
 
-                <Text style={styles.authTrust}>No repo access until you grant permissions</Text>
+                <Text style={[styles.authTrust, { color: theme.textMuted }]}>
+                    No repo access until you grant permissions
+                </Text>
 
                 {/* Gesture hints */}
                 <View style={styles.authGestureGuide}>
-                    <View style={[styles.gesturePill, { backgroundColor: '#ffe6f2' }]}>
-                        <X size={14} color="#d6006e" strokeWidth={3} />
-                        <Text style={[styles.gestureLabel, { color: '#d6006e' }]}>CLOSE</Text>
-                    </View>
-                    <View style={[styles.gesturePill, { backgroundColor: '#e6ffe6' }]}>
-                        <Check size={14} color="#007A33" strokeWidth={3} />
-                        <Text style={[styles.gestureLabel, { color: '#007A33' }]}>KEEP</Text>
-                    </View>
-                    <View style={[styles.gesturePill, { backgroundColor: '#e6f0ff' }]}>
-                        <Sparkles size={14} color="#0055cc" strokeWidth={3} />
-                        <Text style={[styles.gestureLabel, { color: '#0055cc' }]}>AI SUMMARIES</Text>
-                    </View>
+                    {gesturePills.map((pill) => (
+                        <View key={pill.key} style={[styles.gesturePill, { backgroundColor: pill.backgroundColor }]}>
+                            {pill.icon}
+                            <Text style={[styles.gestureLabel, { color: pill.color }]}>{pill.label}</Text>
+                        </View>
+                    ))}
                 </View>
 
-                {/* Contribute link */}
-                <TouchableOpacity
-                    style={[styles.contributeLink, webCursor('pointer')]}
-                    onPress={() =>
-                        Linking.openURL(
-                            'https://github.com/AndreaGriffiths11/IssueCrush/blob/main/CONTRIBUTING.md'
-                        )
-                    }
-                >
-                    <Heart size={14} color="#FF4D00" />
-                    <Text style={styles.contributeLinkText}>Want to contribute?</Text>
-                </TouchableOpacity>
-
                 {!CLIENT_ID ? (
-                    <View style={styles.errorBox}>
-                        <Text style={styles.error}>
+                    <View style={[styles.errorBox, { backgroundColor: theme.dangerLight, borderColor: theme.dangerBorder }]}>
+                        <Text style={[styles.error, { color: theme.danger }]}>
                             Add EXPO_PUBLIC_GITHUB_CLIENT_ID to your env (see .env.example).
                         </Text>
                     </View>
                 ) : null}
 
                 {authError ? (
-                    <View style={styles.errorBox}>
-                        <Text style={styles.error}>{authError}</Text>
+                    <View style={[styles.errorBox, { backgroundColor: theme.dangerLight, borderColor: theme.dangerBorder }]}>
+                        <Text style={[styles.error, { color: theme.danger }]}>{authError}</Text>
                     </View>
                 ) : null}
             </View>
+
+            {/* Contribute link */}
+            <TouchableOpacity
+                style={[styles.contributeLink, webCursor('pointer')]}
+                onPress={() =>
+                    Linking.openURL(
+                        'https://github.com/AndreaGriffiths11/IssueCrush/blob/main/CONTRIBUTING.md'
+                    )
+                }
+            >
+                <Heart size={14} color={theme.primary} />
+                <Text style={[styles.contributeLinkText, { color: theme.textMuted }]}>Want to contribute?</Text>
+            </TouchableOpacity>
         </ScrollView>
     );
 }
@@ -116,81 +146,83 @@ export function AuthScreen({ onLogin, authError, isDesktop, isTablet = false, sc
 const styles = StyleSheet.create({
     authContainerScroll: {
         flex: 1,
-        backgroundColor: '#000000',
     },
     authContainer: {
         flexGrow: 1,
-        backgroundColor: '#000000',
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 20,
-        paddingVertical: 40,
+        paddingVertical: 48,
         minHeight: '100%',
-    },
-    authCard: {
-        width: '100%',
-        maxWidth: isWeb ? 520 : '100%',
-        backgroundColor: '#ffffff',
-        borderRadius: isWeb ? 24 : 20,
-        padding: isWeb ? 44 : 28,
-        gap: 20,
-        alignItems: 'center',
-    },
-    authCardMobile: {
-        padding: 24,
-        borderRadius: 0,
-        maxWidth: '100%',
-    },
-    authCardTablet: {
-        maxWidth: 520,
-        minHeight: 500,
-        justifyContent: 'center',
+        gap: 28,
     },
     authContainerTablet: {
         justifyContent: 'center',
         minHeight: '100%',
     },
+    authHero: {
+        alignItems: 'center',
+        gap: 16,
+        width: '100%',
+        maxWidth: 480,
+    },
     authLogoWrap: {
-        width: isWeb ? 120 : 100,
-        height: isWeb ? 120 : 100,
+        width: isWeb ? 112 : 96,
+        height: isWeb ? 112 : 96,
         borderRadius: isWeb ? 28 : 24,
+        borderWidth: 3,
         overflow: 'hidden',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     authLogo: {
-        width: isWeb ? 120 : 100,
-        height: isWeb ? 120 : 100,
+        width: isWeb ? 112 : 96,
+        height: isWeb ? 112 : 96,
     },
     authCardBrand: {
         flexDirection: 'row',
         alignItems: 'baseline',
-        gap: 8,
+        gap: 10,
         justifyContent: 'center',
         flexWrap: 'nowrap',
     },
     authBrandIssue: {
-        fontSize: isWeb ? 52 : 36,
         fontWeight: '900',
-        color: '#b8cc00',
         textTransform: 'uppercase',
         letterSpacing: -2,
     },
     authBrandCrush: {
-        fontSize: isWeb ? 52 : 36,
         fontWeight: '300',
-        color: '#000000',
         textTransform: 'uppercase',
         letterSpacing: -1,
     },
-    authCardSub: {
+    authTagline: {
         fontSize: 16,
         fontWeight: '400',
-        color: '#555555',
         textAlign: 'center',
         lineHeight: 24,
+        paddingHorizontal: 24,
+    },
+    authCard: {
+        width: '100%',
+        maxWidth: isWeb ? 480 : '100%',
+        borderRadius: 24,
+        borderWidth: 3,
+        padding: isWeb ? 36 : 28,
+        gap: 18,
+        alignItems: 'center',
+    },
+    authCardMobile: {
+        padding: 24,
+        borderRadius: 20,
+        maxWidth: '100%',
+    },
+    authCardTablet: {
+        maxWidth: 480,
+        justifyContent: 'center',
     },
     authTrust: {
         fontSize: 12,
-        color: '#999999',
         textAlign: 'center',
         fontWeight: '400',
     },
@@ -199,8 +231,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 14,
-        backgroundColor: '#000000',
-        paddingVertical: isWeb ? 24 : 20,
+        paddingVertical: isWeb ? 22 : 18,
         paddingHorizontal: 32,
         borderRadius: 50,
         width: '100%',
@@ -208,11 +239,11 @@ const styles = StyleSheet.create({
     githubBtnLogo: {
         width: isWeb ? 28 : 26,
         height: isWeb ? 28 : 26,
+        borderRadius: 6,
     },
     githubButtonText: {
-        color: '#ffffff',
         fontWeight: '900',
-        fontSize: isWeb ? 20 : 18,
+        fontSize: isWeb ? 18 : 16,
         textTransform: 'uppercase',
         letterSpacing: 1,
     },
@@ -220,15 +251,16 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: isWeb ? 12 : 8,
+        gap: isWeb ? 10 : 8,
         flexWrap: 'wrap',
+        marginTop: 4,
     },
     gesturePill: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 5,
-        paddingVertical: 6,
-        paddingHorizontal: 12,
+        gap: 6,
+        paddingVertical: 8,
+        paddingHorizontal: 14,
         borderRadius: 50,
     },
     gestureLabel: {
@@ -241,25 +273,23 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-        marginTop: 20,
         paddingVertical: 8,
         paddingHorizontal: 12,
     },
     contributeLinkText: {
         fontSize: 13,
         fontWeight: '500',
-        color: '#666666',
     },
     errorBox: {
-        padding: 12,
+        width: '100%',
+        padding: 14,
         borderRadius: 12,
         borderWidth: 2,
-        backgroundColor: '#1a0010',
     },
     error: {
         fontSize: 13,
         lineHeight: 18,
         fontWeight: '600',
-        color: '#ff4444',
+        textAlign: 'center',
     },
 });

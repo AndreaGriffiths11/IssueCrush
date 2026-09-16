@@ -1,5 +1,5 @@
 import 'react-native-gesture-handler';
-import React, { useEffect, useMemo, useRef, useState, useCallback, createContext, useContext, Component } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback, Component } from 'react';
 
 // Error boundary for debugging
 class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean, error: Error | null }> {
@@ -47,7 +47,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Haptics from 'expo-haptics';
 import Swiper from 'react-native-deck-swiper';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { X, Check, RotateCcw, Sparkles, ExternalLink, Github, Filter, RefreshCw, Inbox, LogOut, Heart, Tag } from 'lucide-react-native';
+import { X, Check, RotateCcw, Sparkles, ExternalLink, Github, Filter, RefreshCw, Inbox, LogOut, Heart, Tag, Sun, Moon } from 'lucide-react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -67,28 +67,12 @@ import Animated, {
 import { Agentation } from 'agentation';
 import ConfettiCannon from 'react-native-confetti-cannon';
 
-// Theme imported from ./src/theme/themes
-
-const ThemeContext = createContext<{
-  theme: Theme;
-  isDark: boolean;
-}>({
-  theme: lightTheme,
-  isDark: false,
-});
-
-const useTheme = () => useContext(ThemeContext);
-
-// Web cursor styles helper
-// Add touch-action: pan-y to prevent ScrollView interference on mobile swipe
-const webCursor = (cursor: string): any => Platform.OS === 'web' ? { cursor, touchAction: 'pan-y' } : {};
-const isWeb = Platform.OS === 'web';
-
 import { fetchIssues, GitHubIssue, updateIssueState, extractRepoPath } from './src/api/github';
 import { deleteToken, getToken, saveToken } from './src/lib/tokenStorage';
 import { copilotService } from './src/lib/copilotService';
-import { lightTheme, Theme, ThemeMode } from './src/theme/themes';
+import { ThemeProvider, useTheme } from './src/theme';
 import { getLabelColor } from './src/utils/colors';
+import { webCursor, isWeb } from './src/utils';
 import { useAuth } from './src/hooks/useAuth';
 import { useIssues } from './src/hooks/useIssues';
 import { useAnimations } from './src/hooks/useAnimations';
@@ -106,7 +90,7 @@ const REDIRECT_URI =
     : AuthSession.makeRedirectUri({ preferLocalhost: true });
 
 function AppContent() {
-  const { theme, isDark } = useTheme();
+  const { theme, isDark, toggleTheme } = useTheme();
   const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
   // Mobile check using new breakpoint < 1024px for Desktop vs Mobile layout switch
   const isDesktop = isWeb && SCREEN_WIDTH >= 1024;
@@ -180,7 +164,7 @@ function AppContent() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: token ? theme.background : '#000000' }]}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
         <StatusBar style={isDark ? 'light' : 'dark'} />
         <RNStatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
@@ -363,7 +347,16 @@ function AppContent() {
                         onPress={signOut}
                       >
                         <Text style={{ fontSize: 14 }}>↩️</Text>
-                        <Text style={styles.mobileSignOutText}>SIGN OUT</Text>
+                        <Text style={[styles.mobileSignOutText, { color: theme.ink }]}>SIGN OUT</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.mobileFooterBtn, { borderColor: theme.border, borderWidth: 1, backgroundColor: theme.cardBackground }, webCursor('pointer')]}
+                        onPress={toggleTheme}
+                        accessibilityLabel={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+                      >
+                        {isDark
+                          ? <Sun size={16} color={theme.text} />
+                          : <Moon size={16} color={theme.text} />}
                       </TouchableOpacity>
                       {lastClosed && (
                         <Animated.View style={undoAnimatedStyle}>
@@ -406,9 +399,9 @@ function AppContent() {
 export default function App() {
   return (
     <ErrorBoundary>
-      <ThemeContext.Provider value={{ theme: lightTheme, isDark: false }}>
+      <ThemeProvider>
         <AppContent />
-      </ThemeContext.Provider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }

@@ -54,15 +54,17 @@ export function SwipeContainer({
                     label: {
                         backgroundColor: theme.danger,
                         color: '#ffffff',
-                        borderWidth: 0,
-                        fontSize: 24,
+                        borderWidth: 3,
+                        borderColor: '#ffffff',
+                        fontSize: 28,
                         fontWeight: '900',
                         textAlign: 'center',
                         padding: 12,
-                        paddingHorizontal: 24,
-                        borderRadius: 50,
-                        transform: [{ rotate: '15deg' }],
+                        paddingHorizontal: 28,
+                        borderRadius: 12,
+                        transform: [{ rotate: '12deg' }],
                         textTransform: 'uppercase',
+                        letterSpacing: 3,
                     },
                     wrapper: {
                         flexDirection: 'column',
@@ -79,15 +81,17 @@ export function SwipeContainer({
                     label: {
                         backgroundColor: theme.success,
                         color: '#ffffff',
-                        borderWidth: 0,
-                        fontSize: 24,
+                        borderWidth: 3,
+                        borderColor: '#ffffff',
+                        fontSize: 28,
                         fontWeight: '900',
                         textAlign: 'center',
                         padding: 12,
-                        paddingHorizontal: 24,
-                        borderRadius: 50,
-                        transform: [{ rotate: '-15deg' }],
+                        paddingHorizontal: 28,
+                        borderRadius: 12,
+                        transform: [{ rotate: '-12deg' }],
                         textTransform: 'uppercase',
+                        letterSpacing: 3,
                     },
                     wrapper: {
                         flexDirection: 'column',
@@ -108,7 +112,7 @@ export function SwipeContainer({
         const issue = matchingIssue || card;
         if (!issue) {
             const isLargeScreen = isDesktop || isTablet;
-            return <View style={[styles.cardPlaceholder, isLargeScreen && styles.cardPlaceholderDesktop]} />;
+            return <View style={[styles.cardPlaceholder, isLargeScreen && styles.cardPlaceholderDesktop, { backgroundColor: theme.backgroundTertiary, borderColor: theme.cardBorder }]} />;
         }
         const label =
             issue.repository?.full_name ?? extractRepoPath(issue.repository_url);
@@ -138,7 +142,7 @@ export function SwipeContainer({
             {/* Loading state */}
             {loadingIssues && issues.length === 0 && (
                 <View style={styles.centeredState}>
-                    <View style={styles.loaderCard}>
+                    <View style={[styles.loaderCard, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
                         <ActivityIndicator size="large" color={theme.primary} />
                         <Text style={[styles.loaderText, { color: theme.text }]}>LOADING ISSUES</Text>
                         <Text style={[styles.loaderSubtext, { color: theme.textMuted }]}>Fetching from GitHub...</Text>
@@ -149,7 +153,7 @@ export function SwipeContainer({
             {/* Empty state */}
             {!loadingIssues && issues.length === 0 && (
                 <View style={styles.centeredState}>
-                    <View style={styles.emptyIcon}>
+                    <View style={[styles.emptyIcon, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
                         <Inbox size={40} color={theme.textMuted} />
                     </View>
                     <Text style={[styles.emptyTitle, { color: theme.text }]}>ALL CLEAR</Text>
@@ -157,7 +161,7 @@ export function SwipeContainer({
                         No open issues found. Try a different repo or refresh.
                     </Text>
                     <TouchableOpacity
-                        style={[styles.refreshButton, { backgroundColor: theme.cardBackground }, webCursor('pointer')]}
+                        style={[styles.refreshButton, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }, webCursor('pointer')]}
                         onPress={onRefresh}
                     >
                         <RefreshCw size={16} color={theme.ink} />
@@ -173,11 +177,11 @@ export function SwipeContainer({
                     {(isDesktop || isTablet) && (
                         <>
                             <View
-                                style={[styles.cardLayerPink, { backgroundColor: theme.danger }]}
+                                style={[styles.cardLayerPink, { backgroundColor: theme.danger, borderColor: theme.cardBorder }]}
                                 nativeID="card-layer-three"
                             />
                             <View
-                                style={[styles.cardLayerGreen, { backgroundColor: theme.success }]}
+                                style={[styles.cardLayerGreen, { backgroundColor: theme.success, borderColor: theme.cardBorder }]}
                                 nativeID="card-layer-two"
                             />
                         </>
@@ -250,7 +254,6 @@ const styles = StyleSheet.create({
         top: 0,
         borderRadius: 24,
         borderWidth: 3,
-        borderColor: '#000000',
         transform: [{ rotate: '-5deg' }],
         zIndex: -2,
         pointerEvents: 'none',
@@ -263,17 +266,14 @@ const styles = StyleSheet.create({
         top: 0,
         borderRadius: 24,
         borderWidth: 3,
-        borderColor: '#000000',
         transform: [{ rotate: '3deg' }],
         zIndex: -1,
         pointerEvents: 'none',
     },
     cardPlaceholder: {
         flex: 1,
-        backgroundColor: '#222',
         borderRadius: 16,
         borderWidth: 2,
-        borderColor: '#000000',
     },
     cardPlaceholderDesktop: {
         borderRadius: 24,
@@ -286,13 +286,11 @@ const styles = StyleSheet.create({
         paddingHorizontal: 32,
     },
     loaderCard: {
-        backgroundColor: '#111111',
         borderRadius: 24,
         padding: 40,
         alignItems: 'center',
         gap: 16,
-        borderWidth: 1,
-        borderColor: '#333333',
+        borderWidth: 2,
     },
     loaderText: {
         fontSize: 16,
@@ -307,12 +305,10 @@ const styles = StyleSheet.create({
         width: 96,
         height: 96,
         borderRadius: 50,
-        backgroundColor: '#111111',
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 24,
-        borderWidth: 1,
-        borderColor: '#333333',
+        borderWidth: 2,
     },
     emptyTitle: {
         fontSize: 24,
@@ -334,13 +330,13 @@ const styles = StyleSheet.create({
         gap: 8,
         paddingVertical: 14,
         paddingHorizontal: 24,
-        backgroundColor: '#ffffff',
         borderRadius: 50,
+        borderWidth: 2,
     },
     refreshText: {
-        color: '#000000',
         fontWeight: '700',
         fontSize: 14,
         textTransform: 'uppercase',
+        letterSpacing: 1,
     },
 });
