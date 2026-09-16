@@ -7,7 +7,7 @@ import {
     View,
 } from 'react-native';
 import Animated from 'react-native-reanimated';
-import { Check, Filter, LogOut, RefreshCw, RotateCcw, Tag, X } from 'lucide-react-native';
+import { Check, Filter, LogOut, RefreshCw, RotateCcw, Tag, X, Sun, Moon } from 'lucide-react-native';
 import { GitHubIssue } from '../api/github';
 import { useTheme } from '../theme';
 import { webCursor } from '../utils';
@@ -49,7 +49,7 @@ export function Sidebar({
     onSignOut,
     onShowShortcuts,
 }: SidebarProps) {
-    const { theme } = useTheme();
+    const { theme, isDark, toggleTheme } = useTheme();
 
     const hasIssues = issues.length > 0;
     const triagedCount = Math.min(currentIndex + 1, issues.length);
@@ -196,6 +196,15 @@ export function Sidebar({
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={[styles.shortcutsBtn, { borderColor: theme.border }, webCursor('pointer')]}
+                    onPress={toggleTheme}
+                    accessibilityLabel={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+                >
+                    {isDark
+                        ? <Sun size={18} color={theme.text} />
+                        : <Moon size={18} color={theme.text} />}
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.shortcutsBtn, { borderColor: theme.border }, webCursor('pointer')]}
                     onPress={onShowShortcuts}
                     accessibilityLabel="Keyboard shortcuts"
                 >
@@ -319,10 +328,10 @@ const styles = StyleSheet.create({
         borderRadius: 50,
     },
     actionBtnClose: {
-        backgroundColor: '#FF1493',
+        // backgroundColor comes from theme.danger inline
     },
     actionBtnKeep: {
-        backgroundColor: '#4B9F5D',
+        // backgroundColor comes from theme.success inline
     },
     actionBtnText: {
         fontSize: 14,

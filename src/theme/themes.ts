@@ -19,6 +19,9 @@ export const lightTheme = {
   cardBorder: '#0A0A0A',
   inputBackground: '#FFFFFF',
   shadow: '#00000022',
+  aiBackground: '#050505',
+  aiAccent: '#DFFF00',
+  aiText: '#FFFFFF',
   notebookOpacity: 0,
   notebookTint: undefined,
   acid: '#FF4D00',
@@ -29,5 +32,39 @@ export const lightTheme = {
   ink: '#0A0A0A',
 };
 
+export const darkTheme = {
+  background: '#0D0C0A',
+  backgroundSecondary: '#141311',
+  backgroundTertiary: '#1F1D19',
+  text: '#F4F1EA',
+  textSecondary: '#B9B3A6',
+  textMuted: '#7C776B',
+  primary: '#FF4D00',
+  primaryLight: '#2E1A0C',
+  danger: '#FF3B5C',
+  dangerLight: '#331016',
+  dangerBorder: '#FF3B5C',
+  success: '#35C26E',
+  successLight: '#0E2B1C',
+  successBorder: '#35C26E',
+  border: '#38342C',
+  borderLight: '#4A453A',
+  cardBackground: '#161513',
+  cardBorder: '#F4F1EA',
+  inputBackground: '#1B1A17',
+  shadow: '#000000AA',
+  aiBackground: '#000000',
+  aiAccent: '#DFFF00',
+  aiText: '#F4F1EA',
+  notebookOpacity: 0,
+  notebookTint: undefined,
+  acid: '#FF4D00',
+  pink: '#FF3B5C',
+  forest: '#35C26E',
+  void: '#0D0C0A',
+  canvas: '#161513',
+  ink: '#F4F1EA',
+};
+
 export type Theme = typeof lightTheme;
-export type ThemeMode = 'light';
+export type ThemeMode = 'light' | 'dark';
