@@ -42,6 +42,7 @@ if (process.argv.includes('--prepare-linux-x64')) {
   const copilotDir = join(__dirname, 'node_modules', '@github', 'copilot');
   const muslDir = join(__dirname, 'node_modules', '@github', 'copilot-linuxmusl-x64');
   const cliPath = join(__dirname, 'node_modules', '@github', 'copilot-linux-x64', 'copilot');
+  const binDir = join(__dirname, 'node_modules', '.bin');
 
   if (!existsSync(cliPath)) {
     throw new Error(`Copilot CLI not found at ${cliPath}`);
@@ -49,5 +50,7 @@ if (process.argv.includes('--prepare-linux-x64')) {
 
   rmSync(copilotDir, { recursive: true, force: true });
   rmSync(muslDir, { recursive: true, force: true });
+  rmSync(join(binDir, 'copilot'), { force: true });
+  rmSync(join(binDir, 'copilot-linuxmusl-x64'), { force: true });
   console.log('  ✅ Kept the Linux x64 Copilot CLI and removed unused Copilot deployment files');
 }
