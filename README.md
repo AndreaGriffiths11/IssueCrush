@@ -2,7 +2,7 @@
 
 Swipe through your GitHub issues like Tinder. Close with a left swipe, keep with a right swipe. Powered by **GitHub Copilot AI** for intelligent issue summaries.
 
-**[Try it live →](https://gray-water-08b04e810.6.azurestaticapps.net/)**
+**[Try it live →](https://gray-bush-0c5cb190f.2.azurestaticapps.net/)**
 
 ![IssueCrush Demo](assets/demo.gif)
 

@@ -91,7 +91,7 @@ api/src/sessionStore.js (Cosmos DB session storage)
 - `npx tsc --noEmit` - Type-check without building (run before committing any refactor work)
 
 ## Deployment
-- Azure SWA: `https://gray-water-08b04e810.6.azurestaticapps.net`
+- Azure SWA: `https://gray-bush-0c5cb190f.2.azurestaticapps.net`
 - Resource group: `issuecrush-rg`
 - Pushes to `main` auto-deploy via GitHub Actions
 

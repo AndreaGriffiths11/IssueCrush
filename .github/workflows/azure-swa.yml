@@ -31,6 +31,9 @@ jobs:
           # EXPO_PUBLIC_API_URL is intentionally empty for relative API paths in SWA
           EXPO_PUBLIC_API_URL: ""
 
+      - name: Copy Azure Static Web Apps configuration
+        run: cp staticwebapp.config.json dist/staticwebapp.config.json
+
       - name: Install API dependencies
         run: cd api && npm ci
 
