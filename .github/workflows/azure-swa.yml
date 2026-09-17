@@ -49,7 +49,7 @@ jobs:
           api_location: "api"
           output_location: ""
           skip_app_build: true
-          api_build_command: "node patch-vscode-jsonrpc.js || true"
+          api_build_command: "node patch-vscode-jsonrpc.js --prepare-linux-x64"
 
   close_pull_request:
     # Optional: don't try to close SWA preview environments for Dependabot PRs

@@ -1,7 +1,17 @@
 import { app } from '@azure/functions';
+import { fileURLToPath } from 'node:url';
 import { createSession, destroySession, resolveSession } from './sessionStore.js';
 
 const GITHUB_API = 'https://api.github.com';
+
+function getCopilotCliPath() {
+  try {
+    const packageName = `@github/copilot-${process.platform}-${process.arch}`;
+    return fileURLToPath(import.meta.resolve(packageName));
+  } catch {
+    return undefined;
+  }
+}
 
 const githubHeaders = (token) => ({
   Accept: 'application/vnd.github+json',
@@ -192,7 +202,7 @@ app.http('aiSummary', {
 
     try {
       const { CopilotClient, approveAll } = await import('@github/copilot-sdk');
-      client = new CopilotClient({ githubToken: session.githubToken });
+      client = new CopilotClient({ githubToken: session.githubToken, cliPath: getCopilotCliPath() });
       await client.start();
       copilotSession = await client.createSession({ model: 'gpt-4o-mini', onPermissionRequest: approveAll });
 
