@@ -11,7 +11,6 @@ export function useIssues(token: string | null) {
   const [loadingIssues, setLoadingIssues] = useState(false);
   const [loadingAiSummary, setLoadingAiSummary] = useState(false);
   const [loadingTriage, setLoadingTriage] = useState(false);
-  const [triageAvailable, setTriageAvailable] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [lastClosed, setLastClosed] = useState<GitHubIssue | null>(null);
   const [undoBusy, setUndoBusy] = useState(false);
@@ -143,8 +142,10 @@ export function useIssues(token: string | null) {
     try {
       const result = await triageService.triageIssue(issue);
 
+      // The health check normally hides the button, so reaching here means the
+      // key was rejected mid-session. Say why instead of failing silently.
       if (result.unavailable) {
-        setTriageAvailable(false);
+        setFeedback(result.message || 'Structured triage is not configured.');
         return;
       }
       if (!result.triage) return;
@@ -157,6 +158,7 @@ export function useIssues(token: string | null) {
       );
     } catch (error) {
       console.error('Triage error:', error);
+      setFeedback((error as Error).message);
     } finally {
       setLoadingTriage(false);
     }
@@ -184,7 +186,6 @@ export function useIssues(token: string | null) {
     loadingIssues,
     loadingAiSummary,
     loadingTriage,
-    triageAvailable,
     currentIndex,
     lastClosed,
     undoBusy,

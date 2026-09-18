@@ -24,8 +24,8 @@ interface IssueCardProps {
     isCurrent: boolean;
     copilotAvailable: boolean | null;
     loadingAiSummary: boolean;
-    /** False once the server reports TYPESAFE_API_KEY is not configured. */
-    triageAvailable: boolean;
+    /** null until the health check answers; false when TYPESAFE_API_KEY is not configured. */
+    triageAvailable: boolean | null;
     loadingTriage: boolean;
     /** Computed "owner/repo" label for the issue */
     repoLabel: string;
@@ -119,7 +119,7 @@ function TriageBlock({
 }: {
     issue: GitHubIssue;
     isCurrent: boolean;
-    triageAvailable: boolean;
+    triageAvailable: boolean | null;
     loadingTriage: boolean;
     onGetTriage: () => void;
 }) {
@@ -138,7 +138,10 @@ function TriageBlock({
     const hasTriage = Boolean(triage);
     const canRequestTriage = isCurrent && !loadingTriage;
 
-    if (!triageAvailable && !hasTriage) {
+    // Hide the button only once health has actually reported the key is missing.
+    // While the check is in flight (null) the button stays, matching AiBlock.
+    const triageUnavailable = triageAvailable === false;
+    if (triageUnavailable && !hasTriage) {
         return null;
     }
 

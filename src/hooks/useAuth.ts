@@ -20,6 +20,7 @@ export function useAuth() {
   const [token, setToken] = useState<string | null>(null);
   const [authError, setAuthError] = useState('');
   const [copilotAvailable, setCopilotAvailable] = useState<boolean | null>(null);
+  const [triageAvailable, setTriageAvailable] = useState<boolean | null>(null);
 
   const exchangeCodeForToken = useCallback(async (code: string) => {
     try {
@@ -131,7 +132,7 @@ export function useAuth() {
     };
     hydrate();
 
-    // Check if Copilot is available (retry up to 3 times if server isn't ready)
+    // Check which AI features the backend can serve (retry up to 3 times if server isn't ready)
     const checkCopilot = async (retries = 3) => {
       const apiUrl = process.env.EXPO_PUBLIC_API_URL || '';
       for (let i = 0; i < retries; i++) {
@@ -139,6 +140,7 @@ export function useAuth() {
           const response = await fetch(`${apiUrl}/api/health`);
           const data = await response.json();
           setCopilotAvailable(data.copilotAvailable === true);
+          setTriageAvailable(data.triageAvailable === true);
           return;
         } catch {
           if (i < retries - 1) {
@@ -147,6 +149,7 @@ export function useAuth() {
         }
       }
       setCopilotAvailable(false);
+      setTriageAvailable(false);
     };
     checkCopilot();
   }, []);
@@ -168,6 +171,7 @@ export function useAuth() {
     authError,
     setAuthError,
     copilotAvailable,
+    triageAvailable,
     startLogin,
     signOut,
   };

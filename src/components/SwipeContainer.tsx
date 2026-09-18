@@ -16,7 +16,7 @@ interface SwipeContainerProps {
     cardHeight?: number;
     copilotAvailable: boolean | null;
     loadingAiSummary: boolean;
-    triageAvailable: boolean;
+    triageAvailable: boolean | null;
     loadingTriage: boolean;
     loadingIssues: boolean;
     swiperRef: React.RefObject<Swiper<GitHubIssue> | null>;
