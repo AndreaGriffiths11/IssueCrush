@@ -18,19 +18,29 @@ const REQUEST_TIMEOUT_MS = 20000;
 function describeKeyShape(key) {
   const hasSurroundingWhitespace = key !== key.trim();
   const hasQuotes = /["']/.test(key);
-  const looksLikePlaceholder = /your_|placeholder|<|>/i.test(key);
 
   console.log(`   length:      ${key.length}`);
   console.log(`   prefix:      ${JSON.stringify(key.slice(0, 8))}...`);
   console.log(`   whitespace:  ${hasSurroundingWhitespace ? 'YES — trim it' : 'clean'}`);
   console.log(`   quotes:      ${hasQuotes ? 'YES — strip them' : 'clean'}`);
 
-  if (looksLikePlaceholder) {
-    console.log('\n   The value still looks like the .env.example placeholder.');
-  }
   if (hasSurroundingWhitespace || hasQuotes) {
     console.log('\n   Surrounding whitespace or quotes are usually a copy/paste artifact.');
   }
+}
+
+// Catch the unedited template before spending a network call on it. Without this
+// the request goes out and comes back "key rejected", which points at the wrong
+// problem entirely.
+function isPlaceholder(key) {
+  return /your_|placeholder|^<.*>$|changeme/i.test(key);
+}
+
+function reportPlaceholder() {
+  console.log('❌ TYPESAFE_API_KEY is still the .env.example placeholder.\n');
+  console.log('   Open .env and replace the placeholder on the TYPESAFE_API_KEY line');
+  console.log('   with your real key from https://typesafe.ai, then run this again.\n');
+  console.log('   Editing the file avoids shell paste and quoting problems entirely.');
 }
 
 function reportMissingKey() {
@@ -82,6 +92,11 @@ async function main() {
   const key = process.env.TYPESAFE_API_KEY;
   if (!key) {
     reportMissingKey();
+    process.exit(1);
+  }
+
+  if (isPlaceholder(key)) {
+    reportPlaceholder();
     process.exit(1);
   }
 
