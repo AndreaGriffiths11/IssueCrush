@@ -11,6 +11,7 @@ const {
   TRIAGE_TIMEOUT_MS,
   buildTriageState,
   interpretTriage,
+  parseUpstreamError,
 } = triageConfig;
 
 const GITHUB_API = 'https://api.github.com';
@@ -349,22 +350,22 @@ app.http('triage', {
 
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
-        const upstreamMessage = body.message || body.error || `TypeSafe returned ${response.status}`;
-        context.error(`Triage upstream error ${response.status}:`, upstreamMessage);
+        const { message, isAuthFailure } = parseUpstreamError(response.status, body);
+        context.error(`Triage upstream error ${response.status}:`, message);
 
-        if (response.status === 401) {
+        if (isAuthFailure) {
           return {
             status: 503,
             jsonBody: {
               error: 'Triage unavailable',
-              message: 'TYPESAFE_API_KEY was rejected. Check the key in the app settings.',
+              message: `TYPESAFE_API_KEY problem: ${message}`,
               requiresTypeSafeKey: true,
             },
           };
         }
         // 429 and 529 are retryable upstream. We surface them as-is rather than
         // retrying, so the user can simply press the button again.
-        return { status: response.status, jsonBody: { error: upstreamMessage } };
+        return { status: response.status, jsonBody: { error: message } };
       }
 
       const data = await response.json();

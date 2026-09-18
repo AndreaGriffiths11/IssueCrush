@@ -156,6 +156,33 @@ const TRIAGE_THRESHOLDS = {
 // Which recommended_action outcomes point toward closing the issue.
 const CLOSE_ACTIONS = ['stale_close', 'duplicate'];
 
+// ─── Upstream errors ────────────────────────────────────────────────────────
+
+/**
+ * Normalize a TypeSafe error response.
+ *
+ * The API nests its message: { detail: { error_type, message } }. Reading only
+ * body.message / body.error silently loses the useful text and reports a bare
+ * status code instead. Verified against the live API:
+ *   no Authorization header   -> 403 "Must supply an API key!"
+ *   Bearer <bad key>          -> 401 "Cannot authenticate with the server..."
+ *
+ * Both 401 and 403 mean the operator has to fix TYPESAFE_API_KEY. Neither is
+ * something the person swiping issues can do anything about, so callers surface
+ * them as a configuration problem rather than passing the status through.
+ */
+function parseUpstreamError(status, body) {
+  const nestedMessage = body?.detail?.message;
+  const flatMessage = body?.message || body?.error;
+  const message = nestedMessage || flatMessage || `TypeSafe returned ${status}`;
+
+  const isMissingKey = status === 403;
+  const isRejectedKey = status === 401;
+  const isAuthFailure = isMissingKey || isRejectedKey;
+
+  return { message, isAuthFailure };
+}
+
 // ─── State ──────────────────────────────────────────────────────────────────
 
 /**
@@ -313,4 +340,5 @@ module.exports = {
   CLOSE_ACTIONS,
   buildTriageState,
   interpretTriage,
+  parseUpstreamError,
 };
