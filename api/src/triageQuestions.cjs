@@ -26,6 +26,8 @@
 
 const TRIAGE_MODEL = 'jev-latest';
 
+const TYPESAFE_ENDPOINT = 'https://api.typesafe.ai/v1/systemone';
+
 // Long issue bodies cost tokens without adding judgment value.
 const MAX_BODY_CHARS = 4000;
 
@@ -155,6 +157,14 @@ const TRIAGE_THRESHOLDS = {
 
 // Which recommended_action outcomes point toward closing the issue.
 const CLOSE_ACTIONS = ['stale_close', 'duplicate'];
+
+// ─── Batch limits ───────────────────────────────────────────────────────────
+// Triage costs one API call per issue, so a deck of 100 is 100 calls. These caps
+// exist to make runaway cost structurally impossible rather than a matter of
+// remembering to be careful. Batch triage must always be user-initiated.
+
+const MAX_BATCH_SIZE = 25;
+const BATCH_CONCURRENCY = 4;
 
 // ─── Upstream errors ────────────────────────────────────────────────────────
 
@@ -331,14 +341,100 @@ function buildChips({ actionable, effort, staleness }) {
   return chips;
 }
 
+/**
+ * Run one TypeSafe request for one issue.
+ *
+ * Shared by the single and batch endpoints in both backends so there is exactly
+ * one place that knows how to build and interpret a triage call. Returns a
+ * result object rather than throwing, because the batch path needs per-issue
+ * outcomes and must not let one failure sink the whole deck.
+ */
+async function runTriage(issue, apiKey, fetchImpl = fetch) {
+  const state = buildTriageState(issue);
+
+  const response = await fetchImpl(TYPESAFE_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({ state, model: TRIAGE_MODEL, questions: TRIAGE_QUESTIONS }),
+    signal: AbortSignal.timeout(TRIAGE_TIMEOUT_MS),
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    const { message, isAuthFailure } = parseUpstreamError(response.status, body);
+    return { ok: false, status: response.status, message, isAuthFailure };
+  }
+
+  const data = await response.json();
+  return {
+    ok: true,
+    triage: interpretTriage(data.answers),
+    answers: data.answers,
+    model: data.model,
+    usage: data.usage,
+  };
+}
+
+/**
+ * Triage many issues with bounded concurrency.
+ *
+ * Caps at MAX_BATCH_SIZE and runs BATCH_CONCURRENCY at a time. A worker-pool
+ * shape rather than chunked Promise.all, so a single slow issue doesn't stall
+ * the others behind a barrier.
+ *
+ * Auth failures abort the remaining work: if the key is bad, every subsequent
+ * call fails the same way, and burning the rest of the batch to learn that
+ * costs time and quota for nothing.
+ */
+async function runTriageBatch(issues, apiKey, fetchImpl = fetch) {
+  const capped = issues.slice(0, MAX_BATCH_SIZE);
+  const results = {};
+  let authFailure = null;
+  let nextIndex = 0;
+
+  const worker = async () => {
+    while (nextIndex < capped.length && !authFailure) {
+      const index = nextIndex++;
+      const issue = capped[index];
+      try {
+        const result = await runTriage(issue, apiKey, fetchImpl);
+        if (result.isAuthFailure) {
+          authFailure = result;
+          return;
+        }
+        results[issue.id] = result.ok
+          ? { ok: true, triage: result.triage }
+          : { ok: false, message: result.message };
+      } catch (error) {
+        const isTimeout = error.name === 'TimeoutError' || error.name === 'AbortError';
+        results[issue.id] = { ok: false, message: isTimeout ? 'Timed out' : error.message };
+      }
+    }
+  };
+
+  const workerCount = Math.min(BATCH_CONCURRENCY, capped.length);
+  await Promise.all(Array.from({ length: workerCount }, worker));
+
+  return { results, authFailure, requested: issues.length, attempted: capped.length };
+}
+
 module.exports = {
   TRIAGE_MODEL,
+  TYPESAFE_ENDPOINT,
   TRIAGE_QUESTIONS,
   TRIAGE_THRESHOLDS,
   TRIAGE_TIMEOUT_MS,
   MAX_BODY_CHARS,
   CLOSE_ACTIONS,
+  MAX_BATCH_SIZE,
+  BATCH_CONCURRENCY,
   buildTriageState,
   interpretTriage,
   parseUpstreamError,
+  runTriage,
+  runTriageBatch,
 };

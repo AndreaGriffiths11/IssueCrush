@@ -107,7 +107,7 @@ function AppContent() {
     : Math.floor(cardWidth * (640 / 480));
 
   const { token, authError, setAuthError, copilotAvailable, triageAvailable, startLogin, signOut } = useAuth();
-  const { issues, loadingIssues, loadingAiSummary, loadingTriage, currentIndex, lastClosed, undoBusy, feedback, setFeedback, repoFilter, setRepoFilter, labelFilter, setLabelFilter, swiperRef, confettiRef, repoLabel, loadIssues, handleSwipeLeft, handleSwipeRight, onSwiped, handleUndo, handleGetAiSummary, handleGetTriage } = useIssues(token);
+  const { issues, visibleIssues, triagedCount, triageSort, setTriageSort, hideStale, setHideStale, triagingAll, handleTriageAll, loadingIssues, loadingAiSummary, loadingTriage, currentIndex, lastClosed, undoBusy, feedback, setFeedback, repoFilter, setRepoFilter, labelFilter, setLabelFilter, swiperRef, confettiRef, repoLabel, loadIssues, handleSwipeLeft, handleSwipeRight, onSwiped, handleUndo, handleGetAiSummary, handleGetTriage } = useIssues(token);
   const [inputFocused, setInputFocused] = useState(false);
   const { toastAnimatedStyle, progressAnimatedStyle, closeAnimatedStyle, keepAnimatedStyle, undoAnimatedStyle, handleClosePressIn, handleClosePressOut, handleKeepPressIn, handleKeepPressOut, handleUndoPressIn, handleUndoPressOut } = useAnimations(theme, feedback, currentIndex, issues.length, inputFocused);
 
@@ -174,11 +174,20 @@ function AppContent() {
             <Sidebar
               repoFilter={repoFilter}
               labelFilter={labelFilter}
-              issues={issues}
+              issues={visibleIssues}
               currentIndex={currentIndex}
               lastClosed={lastClosed}
               undoBusy={undoBusy}
               loadingIssues={loadingIssues}
+              triageAvailable={triageAvailable}
+              triagingAll={triagingAll}
+              triagedIssueCount={triagedCount}
+              totalIssueCount={issues.length}
+              triageSort={triageSort}
+              hideStale={hideStale}
+              onChangeTriageSort={setTriageSort}
+              onToggleHideStale={setHideStale}
+              onTriageAll={handleTriageAll}
               progressAnimatedStyle={progressAnimatedStyle}
               onChangeRepoFilter={setRepoFilter}
               onChangeLabelFilter={setLabelFilter}
@@ -210,7 +219,7 @@ function AppContent() {
                   isTablet={isTablet}
                   cardWidth={cardWidth}
                   cardHeight={cardHeight}
-                  issues={issues}
+                  issues={visibleIssues}
                   currentIndex={currentIndex}
                   swiperRef={swiperRef}
                   onSwipeLeft={handleSwipeLeft}

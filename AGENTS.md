@@ -56,8 +56,14 @@ api/src/sessionStore.js (Cosmos DB session storage)
 
 ### Structured Triage (TypeSafe)
 - Route through `/api/triage` — returns typed judgments, not prose
+- `/api/triage/batch` triages many at once; one API call per issue, so it is ALWAYS
+  user-initiated, capped at `MAX_BATCH_SIZE`, and never fired on load
 - Requires `TYPESAFE_API_KEY` server-side only; absent means 503 + hidden button, never a crash
 - ALL questions and thresholds live in `api/src/triageQuestions.cjs` — one file, on purpose
+- Sort/filter presentation lives in `src/lib/triageSort.ts`, kept free of react-native imports
+  so it stays unit-testable; it reads server-computed outcomes rather than re-deriving thresholds
+- `useIssues` renders `visibleIssues` (sorted/filtered), so card indices refer to THAT array —
+  update issues by `id`, never by index, or you will mutate the wrong issue
 - That file is `.cjs` and lives in `api/` because SWA deploys `api_location: "api"`. The
   extension lets CommonJS `server.js` require it and ESM `api/src/app.js` default-import it.
   Named ESM imports do NOT work against shorthand `module.exports` — destructure the default.

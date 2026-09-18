@@ -142,6 +142,24 @@ which answers typed questions with calibrated probabilities instead of generatin
 suggestion is gated at higher confidence than a keep suggestion, because closing an issue is
 destructive and keeping one is free.
 
+### Acting on the results
+
+Once issues are triaged, the sidebar can reorder and filter the deck:
+
+- **Quick wins first** — lowest `effort` score first
+- **Most stale first** — cleanup pass
+- **Ready to start first** — highest `is_actionable` probability
+- **Hide stale issues** — drops anything the model flagged stale
+
+Sorting and filtering re-read judgments that already exist. They never re-run inference, so
+changing the view costs nothing.
+
+**TRIAGE ALL** triages the loaded deck in one request. It costs **one API call per issue**, so
+it only ever runs when you press it — never automatically on load. The server caps each batch
+at 25 issues and runs 4 at a time, so an accidental large deck can't produce an unbounded bill.
+Untriaged issues always sort last and are never hidden by a filter, since absence of a judgment
+is not the same as a low score.
+
 ### Setup
 
 **Local development** — add to your `.env`:

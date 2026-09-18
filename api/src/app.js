@@ -5,14 +5,7 @@ import { createSession, destroySession, resolveSession } from './sessionStore.js
 // shorthand module.exports, so default-import and destructure.
 import triageConfig from './triageQuestions.cjs';
 
-const {
-  TRIAGE_MODEL,
-  TRIAGE_QUESTIONS,
-  TRIAGE_TIMEOUT_MS,
-  buildTriageState,
-  interpretTriage,
-  parseUpstreamError,
-} = triageConfig;
+const { MAX_BATCH_SIZE, runTriage, runTriageBatch } = triageConfig;
 
 const GITHUB_API = 'https://api.github.com';
 const TYPESAFE_API = 'https://api.typesafe.ai/v1/systemone';
@@ -305,6 +298,29 @@ Keep it clear, actionable, and helpful for quick triage. No markdown formatting.
 // ─── Structured Triage (TypeSafe System One) ─────────────────
 // Returns typed judgments the UI can act on, unlike the prose summary above.
 // All questions and thresholds live in ./triageQuestions.cjs
+function missingTriageKey(context) {
+  context.log('Triage requested but TYPESAFE_API_KEY is not set');
+  return {
+    status: 503,
+    jsonBody: {
+      error: 'Triage unavailable',
+      message: 'Structured triage requires TYPESAFE_API_KEY in the server environment.',
+      requiresTypeSafeKey: true,
+    },
+  };
+}
+
+function authFailureResponse(message) {
+  return {
+    status: 503,
+    jsonBody: {
+      error: 'Triage unavailable',
+      message: `TYPESAFE_API_KEY problem: ${message}`,
+      requiresTypeSafeKey: true,
+    },
+  };
+}
+
 app.http('triage', {
   methods: ['POST'],
   authLevel: 'anonymous',
@@ -321,66 +337,68 @@ app.http('triage', {
     }
 
     const apiKey = process.env.TYPESAFE_API_KEY;
-    if (!apiKey) {
-      context.log('Triage requested but TYPESAFE_API_KEY is not set');
-      return {
-        status: 503,
-        jsonBody: {
-          error: 'Triage unavailable',
-          message: 'Structured triage requires TYPESAFE_API_KEY in the server environment.',
-          requiresTypeSafeKey: true,
-        },
-      };
-    }
+    if (!apiKey) return missingTriageKey(context);
 
     context.log(`Running structured triage for issue #${issue.number}: ${issue.title}`);
 
     try {
-      const state = buildTriageState(issue);
+      const result = await runTriage(issue, apiKey);
 
-      const response = await fetch(TYPESAFE_API, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ state, model: TRIAGE_MODEL, questions: TRIAGE_QUESTIONS }),
-        signal: AbortSignal.timeout(TRIAGE_TIMEOUT_MS),
-      });
-
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        const { message, isAuthFailure } = parseUpstreamError(response.status, body);
-        context.error(`Triage upstream error ${response.status}:`, message);
-
-        if (isAuthFailure) {
-          return {
-            status: 503,
-            jsonBody: {
-              error: 'Triage unavailable',
-              message: `TYPESAFE_API_KEY problem: ${message}`,
-              requiresTypeSafeKey: true,
-            },
-          };
-        }
-        // 429 and 529 are retryable upstream. We surface them as-is rather than
-        // retrying, so the user can simply press the button again.
-        return { status: response.status, jsonBody: { error: message } };
+      if (!result.ok) {
+        context.error(`Triage upstream error ${result.status}:`, result.message);
+        if (result.isAuthFailure) return authFailureResponse(result.message);
+        return { status: result.status, jsonBody: { error: result.message } };
       }
 
-      const data = await response.json();
-      const triage = interpretTriage(data.answers);
-      context.log(`Triage complete: ${triage.badge.label}`);
-
-      return { jsonBody: { triage, answers: data.answers, model: data.model } };
+      context.log(`Triage complete: ${result.triage.badge.label}`);
+      return { jsonBody: { triage: result.triage, answers: result.answers, model: result.model } };
     } catch (error) {
       const isTimeout = error.name === 'TimeoutError' || error.name === 'AbortError';
       if (isTimeout) {
         context.error('Triage timed out');
         return { status: 504, jsonBody: { error: 'Triage timed out. Try again.' } };
       }
-
       context.error('Triage failed:', error.message);
+      return { status: 500, jsonBody: { error: error.message } };
+    }
+  },
+});
+
+// Batch triage — one API call per issue, so this is always user-initiated and
+// capped at MAX_BATCH_SIZE. Never call it automatically on load.
+app.http('triageBatch', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'triage/batch',
+  handler: async (request, context) => {
+    const session = await resolveSession(request);
+    if (!session) {
+      return { status: 401, jsonBody: { error: 'Session expired or invalid. Please sign in again.' } };
+    }
+
+    const { issues } = await request.json();
+    if (!Array.isArray(issues) || issues.length === 0) {
+      return { status: 400, jsonBody: { error: 'No issues provided' } };
+    }
+
+    const apiKey = process.env.TYPESAFE_API_KEY;
+    if (!apiKey) return missingTriageKey(context);
+
+    context.log(`Batch triage: ${issues.length} issues (cap ${MAX_BATCH_SIZE})`);
+
+    try {
+      const { results, authFailure, requested, attempted } = await runTriageBatch(issues, apiKey);
+
+      if (authFailure) {
+        context.error('Batch triage aborted on auth failure:', authFailure.message);
+        return authFailureResponse(authFailure.message);
+      }
+
+      const succeeded = Object.values(results).filter((r) => r.ok).length;
+      context.log(`Batch triage complete: ${succeeded}/${attempted} succeeded`);
+      return { jsonBody: { results, requested, attempted } };
+    } catch (error) {
+      context.error('Batch triage failed:', error.message);
       return { status: 500, jsonBody: { error: error.message } };
     }
   },
