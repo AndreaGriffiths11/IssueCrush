@@ -144,10 +144,30 @@ destructive and keeping one is free.
 
 ### Setup
 
+**Local development** — add to your `.env`:
+
 ```bash
-# Add to your .env — server-side only, never exposed to the client
 TYPESAFE_API_KEY=your_typesafe_api_key
 ```
+
+**Deployed app** — the key is read at runtime by the Azure Function, so it belongs in the
+Static Web App's application settings:
+
+```bash
+az staticwebapp appsettings set \
+  --name issuecrush --resource-group issuecrush-rg \
+  --setting-names TYPESAFE_API_KEY=<your-key>
+```
+
+Verify with `curl https://<your-host>/api/health` and look for `"triageAvailable": true`.
+
+> **Not a GitHub Actions secret.** A repo secret only exists while the workflow runs; the
+> deployed Function never sees it, so setting one changes nothing.
+>
+> **Never put it in the build step.** `.github/workflows/azure-swa.yml` passes
+> `EXPO_PUBLIC_GITHUB_CLIENT_ID` as a build-time env var, which is fine for a public OAuth
+> client ID. Anything added there is compiled into the client bundle and shipped to every
+> browser. An API key placed there is a public leak.
 
 Without the key the endpoint returns a clear 503, `/api/health` reports
 `triageAvailable: false`, the TRIAGE button stays hidden, and every other feature works
@@ -172,17 +192,8 @@ runtimes, no copy step.
 
 ### Deploying
 
-Triage runs in both the local Express server and Azure Functions. For the deployed app, add
-`TYPESAFE_API_KEY` to the Static Web App's application settings:
-
-```bash
-az staticwebapp appsettings set \
-  --name <your-swa-name> \
-  --setting-names TYPESAFE_API_KEY=<your-key>
-```
-
-Without it the deployed app behaves exactly like the local one: `/api/health` reports
-`triageAvailable: false`, the button stays hidden, and nothing else changes.
+Triage runs in both the local Express server and Azure Functions, sharing one config file.
+See [Setup](#setup) above for where the API key goes.
 
 ## Architecture
 
