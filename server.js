@@ -8,6 +8,7 @@ const {
   TRIAGE_TIMEOUT_MS,
   buildTriageState,
   interpretTriage,
+  parseUpstreamError,
 } = require('./api/src/triageQuestions.cjs');
 
 // Prevent unhandled errors from crashing the server
@@ -339,19 +340,19 @@ app.post('/api/triage', requireSession(), async (req, res) => {
 
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
-      const upstreamMessage = body.message || body.error || `TypeSafe returned ${response.status}`;
-      console.error(`\u274c Triage upstream error ${response.status}:`, upstreamMessage);
+      const { message, isAuthFailure } = parseUpstreamError(response.status, body);
+      console.error(`\u274c Triage upstream error ${response.status}:`, message);
 
-      if (response.status === 401) {
+      if (isAuthFailure) {
         return res.status(503).json({
           error: 'Triage unavailable',
-          message: 'TYPESAFE_API_KEY was rejected. Check the key in the server environment.',
+          message: `TYPESAFE_API_KEY problem: ${message}`,
           requiresTypeSafeKey: true
         });
       }
       // 429 and 529 are retryable upstream. We surface them as-is rather than
       // retrying, so the user can simply press the button again.
-      return res.status(response.status).json({ error: upstreamMessage });
+      return res.status(response.status).json({ error: message });
     }
 
     const data = await response.json();

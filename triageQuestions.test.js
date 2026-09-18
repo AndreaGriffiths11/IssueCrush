@@ -7,6 +7,7 @@ const {
   CLOSE_ACTIONS,
   buildTriageState,
   interpretTriage,
+  parseUpstreamError,
 } = require('./api/src/triageQuestions.cjs');
 
 // Builds a full answers payload, so each test can override just the part it cares about.
@@ -266,6 +267,78 @@ describe('buildTriageState (AAA)', () => {
     expect(state.issue.repository).toBe('unknown');
     expect(state.issue.author).toBe('unknown');
     expect(state.issue.comment_count).toBe(0);
+  });
+});
+
+describe('parseUpstreamError (AAA)', () => {
+  // These envelopes are verbatim from the live API, captured by probing
+  // https://api.typesafe.ai/v1/systemone with deliberately bad credentials.
+  const LIVE_MISSING_KEY = {
+    detail: {
+      error_type: 'authentication_error',
+      message: 'Must supply an API key! Check your request and try again.',
+    },
+  };
+  const LIVE_REJECTED_KEY = {
+    detail: {
+      error_type: 'authentication_error',
+      message: 'Cannot authenticate with the server. Please check your API key and try again.',
+    },
+  };
+
+  it('reads the nested detail.message the API actually returns (Arrange/Act/Assert)', () => {
+    // Arrange & Act
+    const result = parseUpstreamError(401, LIVE_REJECTED_KEY);
+
+    // Assert — the old body.message || body.error read lost this entirely
+    expect(result.message).toBe(
+      'Cannot authenticate with the server. Please check your API key and try again.'
+    );
+  });
+
+  it('treats a rejected key (401) as an auth failure (Arrange/Act/Assert)', () => {
+    // Arrange & Act
+    const result = parseUpstreamError(401, LIVE_REJECTED_KEY);
+
+    // Assert
+    expect(result.isAuthFailure).toBe(true);
+  });
+
+  it('treats a missing key (403) as an auth failure (Arrange/Act/Assert)', () => {
+    // Arrange & Act — 403 is what the API returns when no key reaches it at all
+    const result = parseUpstreamError(403, LIVE_MISSING_KEY);
+
+    // Assert
+    expect(result.isAuthFailure).toBe(true);
+    expect(result.message).toBe('Must supply an API key! Check your request and try again.');
+  });
+
+  it('does not treat a rate limit as an auth failure (Arrange/Act/Assert)', () => {
+    // Arrange & Act
+    const result = parseUpstreamError(429, { detail: { message: 'Rate limit exceeded' } });
+
+    // Assert — 429 is retryable, not a configuration problem
+    expect(result.isAuthFailure).toBe(false);
+    expect(result.message).toBe('Rate limit exceeded');
+  });
+
+  it('falls back to a flat message shape when present (Arrange/Act/Assert)', () => {
+    // Arrange & Act
+    const result = parseUpstreamError(422, { message: 'flat shape' });
+
+    // Assert
+    expect(result.message).toBe('flat shape');
+  });
+
+  it('falls back to the status code when the body carries nothing useful (Arrange/Act/Assert)', () => {
+    // Arrange & Act
+    const emptyBody = parseUpstreamError(529, {});
+    const missingBody = parseUpstreamError(529, undefined);
+
+    // Assert
+    expect(emptyBody.message).toBe('TypeSafe returned 529');
+    expect(missingBody.message).toBe('TypeSafe returned 529');
+    expect(emptyBody.isAuthFailure).toBe(false);
   });
 });
 
