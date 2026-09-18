@@ -8,7 +8,7 @@ const {
   TRIAGE_TIMEOUT_MS,
   buildTriageState,
   interpretTriage,
-} = require('./triageQuestions');
+} = require('./api/src/triageQuestions.cjs');
 
 // Prevent unhandled errors from crashing the server
 process.on('uncaughtException', (err) => {

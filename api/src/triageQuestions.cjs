@@ -6,7 +6,16 @@
 // answers to UI signals.
 //
 // Everything in this file is pure. No network calls, no Express, no secrets.
-// The HTTP call lives in server.js.
+// The HTTP calls live in server.js (local Express) and api/src/app.js (Azure Functions).
+//
+// Why .cjs and why it lives here: Azure SWA deploys `api_location: "api"`, so anything
+// the Functions app needs must sit inside api/. api/package.json sets "type": "module",
+// so a plain .js here would be ESM and unreachable from the CommonJS root server.
+// The .cjs extension lets both consume ONE file:
+//   server.js      (CJS)  require('./api/src/triageQuestions.cjs')
+//   api/src/app.js (ESM)  import triageConfig from './triageQuestions.cjs'
+// Named ESM imports do not work against shorthand module.exports, so the ESM side
+// default-imports and destructures.
 //
 // API contract: https://docs.typesafe.ai/api
 //   POST https://api.typesafe.ai/v1/systemone

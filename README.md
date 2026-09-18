@@ -158,18 +158,31 @@ exactly as before.
 Every question, threshold, and the policy mapping answers to UI signals lives in one file:
 
 ```
-triageQuestions.js
+api/src/triageQuestions.cjs
 ```
 
 That is deliberate. The prompts an AI system sends are the part most worth reviewing, so
 they are not scattered across handlers. Change a threshold there and nothing needs
 re-running — the judgments are unchanged, only the policy that reads them.
 
-### Known limitation
+Both backends share that one file. Azure SWA deploys `api_location: "api"`, so anything the
+Functions app needs must live inside `api/`; the `.cjs` extension lets the CommonJS root
+server `require()` it and the ESM Functions app default-import it. One source of truth, two
+runtimes, no copy step.
 
-`/api/triage` currently exists in `server.js` (the local Express server) only. It has not
-been mirrored into `api/src/app.js` (Azure Functions), so **triage is local-development only
-until that follow-up lands.** The deployed Static Web App will not serve it.
+### Deploying
+
+Triage runs in both the local Express server and Azure Functions. For the deployed app, add
+`TYPESAFE_API_KEY` to the Static Web App's application settings:
+
+```bash
+az staticwebapp appsettings set \
+  --name <your-swa-name> \
+  --setting-names TYPESAFE_API_KEY=<your-key>
+```
+
+Without it the deployed app behaves exactly like the local one: `/api/health` reports
+`triageAvailable: false`, the button stays hidden, and nothing else changes.
 
 ## Architecture
 
@@ -182,15 +195,20 @@ until that follow-up lands.** The deployed Static Web App will not serve it.
 IssueCrush/
 ├── App.tsx                    # Main app component (UI + swipe logic)
 ├── server.js                  # Express server (OAuth + AI proxy)
-├── triageQuestions.js         # TypeSafe questions, thresholds, and triage policy
 ├── sessionStore.js            # Cosmos DB / in-memory session storage
 ├── AGENTS.md                  # AI agent context (project knowledge)
 ├── .agents/                   # Installed agent skills (see below)
+├── api/
+│   └── src/
+│       ├── app.js            # Azure Functions: OAuth, issues, AI, triage
+│       ├── sessionStore.js   # Cosmos DB session storage
+│       └── triageQuestions.cjs # TypeSafe questions, thresholds, triage policy
 ├── src/
 │   ├── api/
 │   │   └── github.ts         # GitHub API client
 │   └── lib/
 │       ├── tokenStorage.ts   # Secure token storage
+│       ├── triageService.ts  # Frontend structured triage client
 │       └── copilotService.ts # Frontend Copilot service
 ├── .env.example              # Environment template
 ├── package.json              # Dependencies and scripts

@@ -7,7 +7,7 @@ const {
   CLOSE_ACTIONS,
   buildTriageState,
   interpretTriage,
-} = require('./triageQuestions');
+} = require('./api/src/triageQuestions.cjs');
 
 // Builds a full answers payload, so each test can override just the part it cares about.
 function makeAnswers(overrides = {}) {
