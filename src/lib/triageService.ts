@@ -38,6 +38,23 @@ export interface TriageResult {
   message?: string;
 }
 
+/** Per-issue outcome from a batch run. One failure does not sink the others. */
+export interface BatchTriageEntry {
+  ok: boolean;
+  triage?: IssueTriage;
+  message?: string;
+}
+
+export interface BatchTriageResult {
+  results?: Record<string, BatchTriageEntry>;
+  /** How many issues the client asked for, before the server's cap. */
+  requested?: number;
+  /** How many the server actually attempted after capping. */
+  attempted?: number;
+  unavailable?: boolean;
+  message?: string;
+}
+
 export class TriageService {
   private backendUrl = process.env.EXPO_PUBLIC_API_URL || '';
 
@@ -77,6 +94,48 @@ export class TriageService {
     }
 
     return { triage: data.triage };
+  }
+
+  /**
+   * Triage many issues in one request.
+   *
+   * Costs one API call per issue server-side, so this must only ever run from
+   * an explicit user action — never on load.
+   */
+  async triageIssues(issues: GitHubIssue[]): Promise<BatchTriageResult> {
+    const sessionId = await getToken();
+
+    if (!sessionId) {
+      throw new Error('No session available — please sign in');
+    }
+
+    const response = await fetch(`${this.backendUrl}/api/triage/batch`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Session-Token': sessionId,
+      },
+      body: JSON.stringify({ issues }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      const isUnauthorized = response.status === 401;
+      if (isUnauthorized) {
+        throw new Error('Session expired. Please sign in again.');
+      }
+
+      const isUnconfigured = response.status === 503 && data.requiresTypeSafeKey;
+      if (isUnconfigured) {
+        const unavailableMessage = data.message || 'Structured triage is not configured.';
+        return { unavailable: true, message: unavailableMessage };
+      }
+
+      throw new Error(data.error || 'Failed to triage issues');
+    }
+
+    return { results: data.results, requested: data.requested, attempted: data.attempted };
   }
 }
 

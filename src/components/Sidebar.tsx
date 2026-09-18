@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+    ActivityIndicator,
     StyleSheet,
     Text,
     TextInput,
@@ -11,6 +12,7 @@ import { Check, Filter, LogOut, RefreshCw, RotateCcw, Tag, X, Sun, Moon } from '
 import { GitHubIssue } from '../api/github';
 import { useTheme } from '../theme';
 import { webCursor } from '../utils';
+import { TRIAGE_SORTS, type TriageSortKey } from '../lib/triageSort';
 
 interface SidebarProps {
     repoFilter: string;
@@ -20,7 +22,17 @@ interface SidebarProps {
     lastClosed: GitHubIssue | null;
     undoBusy: boolean;
     loadingIssues: boolean;
+    /** null until the health check answers; false when TYPESAFE_API_KEY is absent. */
+    triageAvailable: boolean | null;
+    triagingAll: boolean;
+    triagedIssueCount: number;
+    totalIssueCount: number;
+    triageSort: TriageSortKey;
+    hideStale: boolean;
     progressAnimatedStyle: any;
+    onChangeTriageSort: (key: TriageSortKey) => void;
+    onToggleHideStale: (hide: boolean) => void;
+    onTriageAll: () => void;
     onChangeRepoFilter: (text: string) => void;
     onChangeLabelFilter: (text: string) => void;
     onRefresh: () => void;
@@ -31,6 +43,117 @@ interface SidebarProps {
     onShowShortcuts: () => void;
 }
 
+/**
+ * Deck controls driven by triage judgments.
+ *
+ * Sorting and filtering re-read scores the model already produced, so changing
+ * them costs nothing and never re-runs inference. Triage itself costs one API
+ * call per issue, which is why it is an explicit button and never automatic.
+ */
+function TriagePanel({
+    triageAvailable,
+    triagingAll,
+    triagedIssueCount,
+    totalIssueCount,
+    triageSort,
+    hideStale,
+    onChangeTriageSort,
+    onToggleHideStale,
+    onTriageAll,
+}: {
+    triageAvailable: boolean | null;
+    triagingAll: boolean;
+    triagedIssueCount: number;
+    totalIssueCount: number;
+    triageSort: TriageSortKey;
+    hideStale: boolean;
+    onChangeTriageSort: (key: TriageSortKey) => void;
+    onToggleHideStale: (hide: boolean) => void;
+    onTriageAll: () => void;
+}) {
+    const { theme } = useTheme();
+
+    const triageUnavailable = triageAvailable === false;
+    if (triageUnavailable) {
+        return null;
+    }
+
+    const allTriaged = totalIssueCount > 0 && triagedIssueCount === totalIssueCount;
+    const canTriageAll = !triagingAll && !allTriaged && totalIssueCount > 0;
+    const sortKeys = Object.keys(TRIAGE_SORTS) as TriageSortKey[];
+
+    return (
+        <View style={styles.triagePanel}>
+            <Text style={[styles.triagePanelTitle, { color: theme.textSecondary }]}>TRIAGE</Text>
+
+            <TouchableOpacity
+                style={[
+                    styles.triageAllButton,
+                    { borderColor: theme.cardBorder },
+                    webCursor(canTriageAll ? 'pointer' : 'default'),
+                ]}
+                onPress={canTriageAll ? onTriageAll : undefined}
+                disabled={!canTriageAll}
+            >
+                {triagingAll ? (
+                    <ActivityIndicator size="small" color={theme.ink} />
+                ) : (
+                    <Text style={[styles.triageAllText, { color: theme.ink }]}>
+                        {allTriaged ? `ALL ${triagedIssueCount} TRIAGED` : `TRIAGE ALL (${totalIssueCount - triagedIssueCount})`}
+                    </Text>
+                )}
+            </TouchableOpacity>
+
+            <Text style={[styles.triageHint, { color: theme.textMuted }]}>
+                One API call per issue. Runs only when you press it.
+            </Text>
+
+            <View style={styles.triageSortRow}>
+                {sortKeys.map((key) => {
+                    const isActive = triageSort === key;
+                    return (
+                        <TouchableOpacity
+                            key={key}
+                            style={[
+                                styles.triageSortChip,
+                                { borderColor: isActive ? theme.ink : theme.cardBorder },
+                                isActive && { backgroundColor: theme.backgroundTertiary },
+                                webCursor('pointer'),
+                            ]}
+                            onPress={() => onChangeTriageSort(key)}
+                        >
+                            <Text
+                                style={[
+                                    styles.triageSortChipText,
+                                    { color: isActive ? theme.ink : theme.textMuted },
+                                ]}
+                            >
+                                {TRIAGE_SORTS[key]}
+                            </Text>
+                        </TouchableOpacity>
+                    );
+                })}
+            </View>
+
+            <TouchableOpacity
+                style={[styles.triageToggle, webCursor('pointer')]}
+                onPress={() => onToggleHideStale(!hideStale)}
+            >
+                <View
+                    style={[
+                        styles.triageCheckbox,
+                        { borderColor: theme.cardBorder },
+                        hideStale && { backgroundColor: theme.ink },
+                    ]}
+                />
+                <Text style={[styles.triageToggleText, { color: theme.textSecondary }]}>
+                    Hide stale issues
+                </Text>
+            </TouchableOpacity>
+        </View>
+    );
+}
+
 export function Sidebar({
     repoFilter,
     labelFilter,
@@ -39,6 +162,15 @@ export function Sidebar({
     lastClosed,
     undoBusy,
     loadingIssues,
+    triageAvailable,
+    triagingAll,
+    triagedIssueCount,
+    totalIssueCount,
+    triageSort,
+    hideStale,
+    onChangeTriageSort,
+    onToggleHideStale,
+    onTriageAll,
     progressAnimatedStyle,
     onChangeRepoFilter,
     onChangeLabelFilter,
@@ -143,6 +275,18 @@ export function Sidebar({
                     </View>
                 )}
 
+                <TriagePanel
+                    triageAvailable={triageAvailable}
+                    triagingAll={triagingAll}
+                    triagedIssueCount={triagedIssueCount}
+                    totalIssueCount={totalIssueCount}
+                    triageSort={triageSort}
+                    hideStale={hideStale}
+                    onChangeTriageSort={onChangeTriageSort}
+                    onToggleHideStale={onToggleHideStale}
+                    onTriageAll={onTriageAll}
+                />
+
                 {/* Actions section */}
                 <View style={styles.sidebarSection}>
                     <Text style={[styles.sidebarLabel, { color: theme.textMuted }]}>ACTIONS</Text>
@@ -216,6 +360,63 @@ export function Sidebar({
 }
 
 const styles = StyleSheet.create({
+    triagePanel: {
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        gap: 10,
+    },
+    triagePanelTitle: {
+        fontSize: 11,
+        fontWeight: '900',
+        letterSpacing: 1.5,
+    },
+    triageAllButton: {
+        borderWidth: 2,
+        borderRadius: 6,
+        paddingVertical: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    triageAllText: {
+        fontSize: 12,
+        fontWeight: '900',
+        letterSpacing: 1,
+    },
+    triageHint: {
+        fontSize: 10,
+        lineHeight: 14,
+    },
+    triageSortRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 6,
+    },
+    triageSortChip: {
+        borderWidth: 1,
+        borderRadius: 50,
+        paddingVertical: 4,
+        paddingHorizontal: 9,
+    },
+    triageSortChipText: {
+        fontSize: 10,
+        fontWeight: '700',
+    },
+    triageToggle: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingVertical: 4,
+    },
+    triageCheckbox: {
+        width: 14,
+        height: 14,
+        borderWidth: 2,
+        borderRadius: 3,
+    },
+    triageToggleText: {
+        fontSize: 12,
+        fontWeight: '600',
+    },
     webSidebar: {
         width: 280,
         borderRightWidth: 1,

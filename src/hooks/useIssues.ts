@@ -1,16 +1,20 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import Swiper from 'react-native-deck-swiper';
 import { fetchIssues, GitHubIssue, updateIssueState, extractRepoPath } from '../api/github';
 import { copilotService } from '../lib/copilotService';
 import { triageService } from '../lib/triageService';
+import { sortIssuesByTriage, filterOutStale, type TriageSortKey } from '../lib/triageSort';
 
 export function useIssues(token: string | null) {
   const [issues, setIssues] = useState<GitHubIssue[]>([]);
   const [loadingIssues, setLoadingIssues] = useState(false);
   const [loadingAiSummary, setLoadingAiSummary] = useState(false);
   const [loadingTriage, setLoadingTriage] = useState(false);
+  const [triagingAll, setTriagingAll] = useState(false);
+  const [triageSort, setTriageSort] = useState<TriageSortKey>('none');
+  const [hideStale, setHideStale] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [lastClosed, setLastClosed] = useState<GitHubIssue | null>(null);
   const [undoBusy, setUndoBusy] = useState(false);
@@ -23,6 +27,21 @@ export function useIssues(token: string | null) {
 
   const repoLabel = useCallback((issue: GitHubIssue) =>
     issue.repository?.full_name ?? extractRepoPath(issue.repository_url), []);
+
+  // Deck order and visibility are derived, never stored. Sorting or filtering
+  // re-reads existing judgments and never re-runs inference.
+  //
+  // This is the array the swiper renders, so every card index below refers to
+  // it, not to `issues`. Getting that wrong would close the wrong issue.
+  const visibleIssues = useMemo(() => {
+    const withoutStale = filterOutStale(issues, hideStale);
+    return sortIssuesByTriage(withoutStale, triageSort);
+  }, [issues, hideStale, triageSort]);
+
+  const triagedCount = useMemo(
+    () => issues.filter((issue) => issue.triage).length,
+    [issues]
+  );
 
   const loadIssues = useCallback(async () => {
     if (!token) return;
@@ -48,7 +67,7 @@ export function useIssues(token: string | null) {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     }
 
-    const issue = issues[cardIndex];
+    const issue = visibleIssues[cardIndex];
     if (!issue || !token) return;
 
     setFeedback(`Closed #${issue.number} · ${repoLabel(issue)}`);
@@ -62,17 +81,17 @@ export function useIssues(token: string | null) {
       setFeedback(`Close failed: ${(error as Error).message}`);
       setLastClosed(null);
     }
-  }, [issues, token, repoLabel]);
+  }, [visibleIssues, token, repoLabel]);
 
   const handleSwipeRight = useCallback(async (cardIndex: number) => {
     if (Platform.OS !== 'web') {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
 
-    const issue = issues[cardIndex];
+    const issue = visibleIssues[cardIndex];
     if (!issue) return;
     setFeedback(`Kept open · #${issue.number}`);
-  }, [issues]);
+  }, [visibleIssues]);
 
   const onSwiped = useCallback((idx: number) => {
     const nextIndex = idx + 1;
@@ -80,13 +99,13 @@ export function useIssues(token: string | null) {
     setLoadingAiSummary(false);
     setLoadingTriage(false);
 
-    const isLastCard = idx === issues.length - 1;
+    const isLastCard = idx === visibleIssues.length - 1;
     if (isLastCard) {
       setTimeout(() => {
         confettiRef.current?.start();
       }, 300);
     }
-  }, [issues.length]);
+  }, [visibleIssues.length]);
 
   const handleUndo = useCallback(async () => {
     if (!lastClosed || !token) return;
@@ -112,17 +131,18 @@ export function useIssues(token: string | null) {
   }, [lastClosed, token]);
 
   const handleGetAiSummary = useCallback(async () => {
-    const issueIndex = currentIndex;
-    const issue = issues[issueIndex];
+    const issue = visibleIssues[currentIndex];
     const alreadyHasSummary = issue?.aiSummary;
     if (!issue || alreadyHasSummary) return;
 
     setLoadingAiSummary(true);
     try {
       const result = await copilotService.summarizeIssue(issue);
+      // Update by id, not index: the deck can be sorted or filtered, so a
+      // position in `visibleIssues` is not a position in `issues`.
       setIssues(prevIssues =>
-        prevIssues.map((item, index) =>
-          index === issueIndex ? { ...item, aiSummary: result.summary } : item
+        prevIssues.map((item) =>
+          item.id === issue.id ? { ...item, aiSummary: result.summary } : item
         )
       );
     } catch (error) {
@@ -130,11 +150,10 @@ export function useIssues(token: string | null) {
     } finally {
       setLoadingAiSummary(false);
     }
-  }, [currentIndex, issues]);
+  }, [currentIndex, visibleIssues]);
 
   const handleGetTriage = useCallback(async () => {
-    const issueIndex = currentIndex;
-    const issue = issues[issueIndex];
+    const issue = visibleIssues[currentIndex];
     const alreadyTriaged = issue?.triage;
     if (!issue || alreadyTriaged) return;
 
@@ -152,8 +171,8 @@ export function useIssues(token: string | null) {
 
       const triage = result.triage;
       setIssues(prevIssues =>
-        prevIssues.map((item, index) =>
-          index === issueIndex ? { ...item, triage } : item
+        prevIssues.map((item) =>
+          item.id === issue.id ? { ...item, triage } : item
         )
       );
     } catch (error) {
@@ -162,7 +181,44 @@ export function useIssues(token: string | null) {
     } finally {
       setLoadingTriage(false);
     }
-  }, [currentIndex, issues]);
+  }, [currentIndex, visibleIssues]);
+
+  const handleTriageAll = useCallback(async () => {
+    const untriaged = issues.filter((issue) => !issue.triage);
+    if (untriaged.length === 0) {
+      setFeedback('All loaded issues are already triaged');
+      return;
+    }
+
+    setTriagingAll(true);
+    try {
+      const result = await triageService.triageIssues(untriaged);
+
+      if (result.unavailable) {
+        setFeedback(result.message || 'Structured triage is not configured.');
+        return;
+      }
+
+      const batchResults = result.results || {};
+      setIssues((prevIssues) =>
+        prevIssues.map((item) => {
+          const entry = batchResults[String(item.id)];
+          const hasNewTriage = entry?.ok && entry.triage;
+          return hasNewTriage ? { ...item, triage: entry.triage } : item;
+        })
+      );
+
+      const succeeded = Object.values(batchResults).filter((entry) => entry.ok).length;
+      const attempted = result.attempted ?? untriaged.length;
+      const wasCapped = (result.requested ?? 0) > attempted;
+      const cappedNote = wasCapped ? ` (capped at ${attempted})` : '';
+      setFeedback(`Triaged ${succeeded}/${attempted}${cappedNote}`);
+    } catch (error) {
+      setFeedback((error as Error).message);
+    } finally {
+      setTriagingAll(false);
+    }
+  }, [issues]);
 
   // Auto-dismiss feedback
   useEffect(() => {
@@ -183,6 +239,14 @@ export function useIssues(token: string | null) {
 
   return {
     issues,
+    visibleIssues,
+    triagedCount,
+    triageSort,
+    setTriageSort,
+    hideStale,
+    setHideStale,
+    triagingAll,
+    handleTriageAll,
     loadingIssues,
     loadingAiSummary,
     loadingTriage,
