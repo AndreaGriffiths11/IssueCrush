@@ -173,6 +173,32 @@ Without the key the endpoint returns a clear 503, `/api/health` reports
 `triageAvailable: false`, the TRIAGE button stays hidden, and every other feature works
 exactly as before.
 
+### Checking the key
+
+```bash
+npm run check:triage
+```
+
+Reports whether the key is set, whether it has copy/paste damage, and whether TypeSafe
+actually accepts it. It never prints the key itself.
+
+It exists because the three failure modes look identical from inside the app but have
+completely different fixes, and TypeSafe's API distinguishes them:
+
+| result | meaning | fix |
+|---|---|---|
+| `200` | key is valid | nothing to do |
+| `401` | key reached TypeSafe and was **rejected** | wrong, inactive, or truncated key |
+| `403` | **no key reached the server** | the variable is empty or set in a different shell |
+
+To check the deployed app's copy rather than your local one:
+
+```bash
+TYPESAFE_API_KEY=$(az staticwebapp appsettings list \
+  --name issuecrush --resource-group issuecrush-rg \
+  --query "properties.TYPESAFE_API_KEY" -o tsv) npm run check:triage
+```
+
 ### Reviewing the questions
 
 Every question, threshold, and the policy mapping answers to UI signals lives in one file:

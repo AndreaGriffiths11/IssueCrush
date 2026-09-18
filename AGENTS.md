@@ -101,6 +101,7 @@ api/src/sessionStore.js (Cosmos DB session storage)
 - `npm run web-dev` - Server + web browser
 - `npm run server` - OAuth/AI server only (port 3000)
 - `npm test` - Run Jest test suite
+- `npm run check:triage` - Diagnose TYPESAFE_API_KEY configuration (never prints the key)
 - `swa start` - Azure SWA emulator (local)
 - `npx tsc --noEmit` - Type-check without building (run before committing any refactor work)
 
