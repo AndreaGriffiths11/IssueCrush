@@ -4,11 +4,14 @@ import * as Haptics from 'expo-haptics';
 import Swiper from 'react-native-deck-swiper';
 import { fetchIssues, GitHubIssue, updateIssueState, extractRepoPath } from '../api/github';
 import { copilotService } from '../lib/copilotService';
+import { triageService } from '../lib/triageService';
 
 export function useIssues(token: string | null) {
   const [issues, setIssues] = useState<GitHubIssue[]>([]);
   const [loadingIssues, setLoadingIssues] = useState(false);
   const [loadingAiSummary, setLoadingAiSummary] = useState(false);
+  const [loadingTriage, setLoadingTriage] = useState(false);
+  const [triageAvailable, setTriageAvailable] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [lastClosed, setLastClosed] = useState<GitHubIssue | null>(null);
   const [undoBusy, setUndoBusy] = useState(false);
@@ -76,6 +79,7 @@ export function useIssues(token: string | null) {
     const nextIndex = idx + 1;
     setCurrentIndex(nextIndex);
     setLoadingAiSummary(false);
+    setLoadingTriage(false);
 
     const isLastCard = idx === issues.length - 1;
     if (isLastCard) {
@@ -129,6 +133,35 @@ export function useIssues(token: string | null) {
     }
   }, [currentIndex, issues]);
 
+  const handleGetTriage = useCallback(async () => {
+    const issueIndex = currentIndex;
+    const issue = issues[issueIndex];
+    const alreadyTriaged = issue?.triage;
+    if (!issue || alreadyTriaged) return;
+
+    setLoadingTriage(true);
+    try {
+      const result = await triageService.triageIssue(issue);
+
+      if (result.unavailable) {
+        setTriageAvailable(false);
+        return;
+      }
+      if (!result.triage) return;
+
+      const triage = result.triage;
+      setIssues(prevIssues =>
+        prevIssues.map((item, index) =>
+          index === issueIndex ? { ...item, triage } : item
+        )
+      );
+    } catch (error) {
+      console.error('Triage error:', error);
+    } finally {
+      setLoadingTriage(false);
+    }
+  }, [currentIndex, issues]);
+
   // Auto-dismiss feedback
   useEffect(() => {
     if (!feedback) return;
@@ -150,6 +183,8 @@ export function useIssues(token: string | null) {
     issues,
     loadingIssues,
     loadingAiSummary,
+    loadingTriage,
+    triageAvailable,
     currentIndex,
     lastClosed,
     undoBusy,
@@ -168,5 +203,6 @@ export function useIssues(token: string | null) {
     onSwiped,
     handleUndo,
     handleGetAiSummary,
+    handleGetTriage,
   };
 }

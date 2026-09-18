@@ -52,4 +52,20 @@ describe('server endpoints (AAA)', () => {
     expect(res.status).toBe(401);
     expect(res.body).toHaveProperty('error');
   });
+
+  it('POST /api/triage without session returns 401 (Arrange/Act/Assert)', async () => {
+    const res = await postJson('/api/triage', {});
+    expect(res.status).toBe(401);
+    expect(res.body).toHaveProperty('error');
+  });
+
+  it('GET /api/health reports triage availability (Arrange/Act/Assert)', async () => {
+    // Arrange & Act
+    const response = await fetch(`${baseUrl}/api/health`);
+    const body = await response.json();
+
+    // Assert — a boolean either way, so the UI can hide the button when unconfigured
+    expect(response.status).toBe(200);
+    expect(typeof body.triageAvailable).toBe('boolean');
+  });
 });

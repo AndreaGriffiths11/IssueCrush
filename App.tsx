@@ -107,7 +107,7 @@ function AppContent() {
     : Math.floor(cardWidth * (640 / 480));
 
   const { token, authError, setAuthError, copilotAvailable, startLogin, signOut } = useAuth();
-  const { issues, loadingIssues, loadingAiSummary, currentIndex, lastClosed, undoBusy, feedback, setFeedback, repoFilter, setRepoFilter, labelFilter, setLabelFilter, swiperRef, confettiRef, repoLabel, loadIssues, handleSwipeLeft, handleSwipeRight, onSwiped, handleUndo, handleGetAiSummary } = useIssues(token);
+  const { issues, loadingIssues, loadingAiSummary, loadingTriage, triageAvailable, currentIndex, lastClosed, undoBusy, feedback, setFeedback, repoFilter, setRepoFilter, labelFilter, setLabelFilter, swiperRef, confettiRef, repoLabel, loadIssues, handleSwipeLeft, handleSwipeRight, onSwiped, handleUndo, handleGetAiSummary, handleGetTriage } = useIssues(token);
   const [inputFocused, setInputFocused] = useState(false);
   const { toastAnimatedStyle, progressAnimatedStyle, closeAnimatedStyle, keepAnimatedStyle, undoAnimatedStyle, handleClosePressIn, handleClosePressOut, handleKeepPressIn, handleKeepPressOut, handleUndoPressIn, handleUndoPressOut } = useAnimations(theme, feedback, currentIndex, issues.length, inputFocused);
 
@@ -219,8 +219,11 @@ function AppContent() {
                   repoLabel={repoLabel}
                   copilotAvailable={copilotAvailable}
                   loadingAiSummary={loadingAiSummary}
+                  triageAvailable={triageAvailable}
+                  loadingTriage={loadingTriage}
                   loadingIssues={loadingIssues}
                   onGetAiSummary={handleGetAiSummary}
+                  onGetTriage={handleGetTriage}
                   onRefresh={loadIssues}
                 />
 

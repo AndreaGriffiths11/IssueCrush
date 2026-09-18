@@ -123,6 +123,54 @@ The AI summary is powered by the GitHub Copilot SDK running on your backend serv
 - GitHub Copilot subscription or access
 - `GH_TOKEN` environment variable with Copilot access (or use `COPILOT_PAT`)
 
+## Structured Triage (Optional)
+
+The AI summary returns prose. Prose cannot be sorted, filtered, or badged. Structured triage
+returns typed judgments the UI can actually act on.
+
+Click **TRIAGE** on any issue card to get:
+
+- A **recommended action** — implement, needs info, duplicate, stale close, or no clear action
+- A **staleness** score — does this issue still reflect the project as it is today?
+- An **effort** score — how much work is the change itself?
+- An **actionable** probability — can a developer start now, or is this blocked on the reporter?
+
+These come back as one request to [TypeSafe](https://typesafe.ai)'s System One model (`jev-latest`),
+which answers typed questions with calibrated probabilities instead of generating text.
+
+**Triage never swipes for you.** It decorates the card; you still make the call. A close
+suggestion is gated at higher confidence than a keep suggestion, because closing an issue is
+destructive and keeping one is free.
+
+### Setup
+
+```bash
+# Add to your .env — server-side only, never exposed to the client
+TYPESAFE_API_KEY=your_typesafe_api_key
+```
+
+Without the key the endpoint returns a clear 503, `/api/health` reports
+`triageAvailable: false`, the TRIAGE button stays hidden, and every other feature works
+exactly as before.
+
+### Reviewing the questions
+
+Every question, threshold, and the policy mapping answers to UI signals lives in one file:
+
+```
+triageQuestions.js
+```
+
+That is deliberate. The prompts an AI system sends are the part most worth reviewing, so
+they are not scattered across handlers. Change a threshold there and nothing needs
+re-running — the judgments are unchanged, only the policy that reads them.
+
+### Known limitation
+
+`/api/triage` currently exists in `server.js` (the local Express server) only. It has not
+been mirrored into `api/src/app.js` (Azure Functions), so **triage is local-development only
+until that follow-up lands.** The deployed Static Web App will not serve it.
+
 ## Architecture
 
 ![IssueCrush Architecture](assets/architecture-diagram.png)
@@ -134,6 +182,7 @@ The AI summary is powered by the GitHub Copilot SDK running on your backend serv
 IssueCrush/
 ├── App.tsx                    # Main app component (UI + swipe logic)
 ├── server.js                  # Express server (OAuth + AI proxy)
+├── triageQuestions.js         # TypeSafe questions, thresholds, and triage policy
 ├── sessionStore.js            # Cosmos DB / in-memory session storage
 ├── AGENTS.md                  # AI agent context (project knowledge)
 ├── .agents/                   # Installed agent skills (see below)

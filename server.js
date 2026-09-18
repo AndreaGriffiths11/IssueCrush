@@ -2,6 +2,13 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { initCosmos, createSession, destroySession, sessionMiddleware, requireSession } = require('./sessionStore');
+const {
+  TRIAGE_MODEL,
+  TRIAGE_QUESTIONS,
+  TRIAGE_TIMEOUT_MS,
+  buildTriageState,
+  interpretTriage,
+} = require('./triageQuestions');
 
 // Prevent unhandled errors from crashing the server
 process.on('uncaughtException', (err) => {
@@ -14,6 +21,7 @@ process.on('unhandledRejection', (err) => {
 const app = express();
 const PORT = process.env.PORT || 3000;
 const GITHUB_API = 'https://api.github.com';
+const TYPESAFE_API = 'https://api.typesafe.ai/v1/systemone';
 
 console.log('\ud83d\ude80 IssueCrush API Server starting...');
 console.log('   AI summaries powered by GitHub Copilot SDK');
@@ -108,9 +116,11 @@ app.post('/api/logout', async (req, res) => {
 
 // Health check endpoint (mirrors Azure Functions /api/health route)
 app.get('/api/health', (req, res) => {
+  const triageAvailable = Boolean(process.env.TYPESAFE_API_KEY);
   res.json({
     status: 'ok',
     copilotAvailable: true,
+    triageAvailable,
     message: 'AI summaries powered by GitHub Copilot'
   });
 });
@@ -287,6 +297,81 @@ Keep it clear, actionable, and helpful for quick triage. No markdown formatting.
   }
 });
 
+// Structured Triage endpoint (TypeSafe System One)
+// Returns typed judgments the UI can act on, unlike the prose summary above.
+// All questions and thresholds live in ./triageQuestions.js
+app.post('/api/triage', requireSession(), async (req, res) => {
+  const { issue } = req.body;
+
+  if (!issue) {
+    console.log('\u274c Triage request missing issue data');
+    return res.status(400).json({ error: 'No issue provided' });
+  }
+
+  const apiKey = process.env.TYPESAFE_API_KEY;
+  if (!apiKey) {
+    console.log('\u26a0\ufe0f  Triage requested but TYPESAFE_API_KEY is not set');
+    return res.status(503).json({
+      error: 'Triage unavailable',
+      message: 'Structured triage requires TYPESAFE_API_KEY in the server environment.',
+      requiresTypeSafeKey: true
+    });
+  }
+
+  console.log(`\n\ud83e\uddee Running structured triage for issue #${issue.number}: ${issue.title}`);
+
+  try {
+    const state = buildTriageState(issue);
+
+    const response = await fetch(TYPESAFE_API, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        state,
+        model: TRIAGE_MODEL,
+        questions: TRIAGE_QUESTIONS,
+      }),
+      signal: AbortSignal.timeout(TRIAGE_TIMEOUT_MS),
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      const upstreamMessage = body.message || body.error || `TypeSafe returned ${response.status}`;
+      console.error(`\u274c Triage upstream error ${response.status}:`, upstreamMessage);
+
+      if (response.status === 401) {
+        return res.status(503).json({
+          error: 'Triage unavailable',
+          message: 'TYPESAFE_API_KEY was rejected. Check the key in the server environment.',
+          requiresTypeSafeKey: true
+        });
+      }
+      // 429 and 529 are retryable upstream. We surface them as-is rather than
+      // retrying, so the user can simply press the button again.
+      return res.status(response.status).json({ error: upstreamMessage });
+    }
+
+    const data = await response.json();
+    const triage = interpretTriage(data.answers);
+    console.log(`\u2705 Triage complete: ${triage.badge.label} (${data.usage?.input_tokens ?? '?'} in / ${data.usage?.output_tokens ?? '?'} out)`);
+
+    res.json({ triage, answers: data.answers, model: data.model });
+
+  } catch (error) {
+    const isTimeout = error.name === 'TimeoutError' || error.name === 'AbortError';
+    if (isTimeout) {
+      console.error('\u274c Triage timed out');
+      return res.status(504).json({ error: 'Triage timed out. Try again.' });
+    }
+
+    console.error('\u274c Triage failed:', error.message);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 // Generate a basic summary without AI
 function generateFallbackSummary(issue) {
   const parts = [];
@@ -321,5 +406,6 @@ app.listen(PORT, async () => {
   console.log(`   GET  /api/issues       - Fetch issues (proxied)`);
   console.log(`   PATCH /api/issues/:o/:r/:n - Update issue state (proxied)`);
   console.log(`   POST /api/ai-summary   - Generate AI summary (requires Copilot)`);
+  console.log(`   POST /api/triage       - Structured triage (requires TYPESAFE_API_KEY)`);
   console.log(`   GET  /health           - Health check\n`);
 });
