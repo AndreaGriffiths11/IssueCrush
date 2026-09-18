@@ -15,6 +15,7 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "test": "jest",
+    "check:triage": "node scripts/check-triage-key.js",
     "postinstall": "node scripts/patch-vscode-jsonrpc.js"
   },
   "dependencies": {
