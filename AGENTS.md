@@ -24,9 +24,10 @@ App.tsx (composition only: ThemeContext, ErrorBoundary, layout branching)
     ├── src/api/github.ts (GitHub API client)
     ├── src/lib/tokenStorage.ts (secure token storage)
     └── src/lib/copilotService.ts (AI summary frontend)
+    └── src/lib/triageService.ts (structured triage frontend)
 server.js (local Express dev server — mirrors Azure Functions locally)
 sessionStore.js (local session storage — mirrors Cosmos DB locally)
-api/src/app.js (Azure Functions: OAuth + AI proxy + issues)
+api/src/app.js (Azure Functions: OAuth + AI proxy + issues + triage)
 api/src/sessionStore.js (Cosmos DB session storage)
 ```
 
@@ -53,6 +54,17 @@ api/src/sessionStore.js (Cosmos DB session storage)
 - Requires `GH_TOKEN` or `COPILOT_PAT` in SWA app settings
 - Frontend calls copilotService.ts → Azure Function → Copilot SDK
 
+### Structured Triage (TypeSafe)
+- Route through `/api/triage` — returns typed judgments, not prose
+- Requires `TYPESAFE_API_KEY` server-side only; absent means 503 + hidden button, never a crash
+- ALL questions and thresholds live in `api/src/triageQuestions.cjs` — one file, on purpose
+- That file is `.cjs` and lives in `api/` because SWA deploys `api_location: "api"`. The
+  extension lets CommonJS `server.js` require it and ESM `api/src/app.js` default-import it.
+  Named ESM imports do NOT work against shorthand `module.exports` — destructure the default.
+- Triage never auto-swipes. It decorates the card; the human still decides.
+- Close suggestions gate at higher confidence (0.75) than keep suggestions (0.5), because
+  closing an issue is destructive and keeping one is free
+
 ### Architecture Boundaries
 - `ErrorBoundary` (class component) stays in `App.tsx` — must wrap all children
 - `ThemeContext` provider stays in `App.tsx` — root-level context
@@ -74,11 +86,13 @@ api/src/sessionStore.js (Cosmos DB session storage)
 |App.tsx|Main component: auth state, swipe UI, issue cards|
 |server.js|Local Express dev server (mirrors Azure Functions)|
 |sessionStore.js|Local session storage (mirrors Cosmos DB)|
-|api/src/app.js|Azure Functions: OAuth, issues, AI proxy endpoints|
+|api/src/app.js|Azure Functions: OAuth, issues, AI proxy, triage endpoints|
+|api/src/triageQuestions.cjs|TypeSafe questions, thresholds, triage policy (shared by both backends)|
 |api/src/sessionStore.js|Cosmos DB session CRUD + resolveSession()|
 |src/api/github.ts|fetchIssues, closeIssue, reopenIssue|
 |src/lib/tokenStorage.ts|getToken, setToken, clearToken|
 |src/lib/copilotService.ts|getAISummary frontend wrapper|
+|src/lib/triageService.ts|triageIssue frontend wrapper|
 |scripts/patch-vscode-jsonrpc.js|Postinstall: patches vscode-jsonrpc ESM exports for Copilot SDK|
 |staticwebapp.config.json|SWA routing and API config|
 

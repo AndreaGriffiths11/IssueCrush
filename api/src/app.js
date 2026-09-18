@@ -1,8 +1,20 @@
 import { app } from '@azure/functions';
 import { fileURLToPath } from 'node:url';
 import { createSession, destroySession, resolveSession } from './sessionStore.js';
+// Shared with the local Express server. Named ESM imports don't work against
+// shorthand module.exports, so default-import and destructure.
+import triageConfig from './triageQuestions.cjs';
+
+const {
+  TRIAGE_MODEL,
+  TRIAGE_QUESTIONS,
+  TRIAGE_TIMEOUT_MS,
+  buildTriageState,
+  interpretTriage,
+} = triageConfig;
 
 const GITHUB_API = 'https://api.github.com';
+const TYPESAFE_API = 'https://api.typesafe.ai/v1/systemone';
 
 function getCopilotCliPath() {
   try {
@@ -28,6 +40,7 @@ app.http('health', {
     jsonBody: {
       status: 'ok',
       copilotAvailable: true,
+      triageAvailable: Boolean(process.env.TYPESAFE_API_KEY),
       message: 'AI summaries powered by GitHub Copilot',
     },
   }),
@@ -284,6 +297,90 @@ Keep it clear, actionable, and helpful for quick triage. No markdown formatting.
       parts.push('\n\nReview the full issue details to determine next steps.');
 
       return { jsonBody: { summary: parts.join(''), fallback: true } };
+    }
+  },
+});
+
+// ─── Structured Triage (TypeSafe System One) ─────────────────
+// Returns typed judgments the UI can act on, unlike the prose summary above.
+// All questions and thresholds live in ./triageQuestions.cjs
+app.http('triage', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'triage',
+  handler: async (request, context) => {
+    const session = await resolveSession(request);
+    if (!session) {
+      return { status: 401, jsonBody: { error: 'Session expired or invalid. Please sign in again.' } };
+    }
+
+    const { issue } = await request.json();
+    if (!issue) {
+      return { status: 400, jsonBody: { error: 'No issue provided' } };
+    }
+
+    const apiKey = process.env.TYPESAFE_API_KEY;
+    if (!apiKey) {
+      context.log('Triage requested but TYPESAFE_API_KEY is not set');
+      return {
+        status: 503,
+        jsonBody: {
+          error: 'Triage unavailable',
+          message: 'Structured triage requires TYPESAFE_API_KEY in the server environment.',
+          requiresTypeSafeKey: true,
+        },
+      };
+    }
+
+    context.log(`Running structured triage for issue #${issue.number}: ${issue.title}`);
+
+    try {
+      const state = buildTriageState(issue);
+
+      const response = await fetch(TYPESAFE_API, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ state, model: TRIAGE_MODEL, questions: TRIAGE_QUESTIONS }),
+        signal: AbortSignal.timeout(TRIAGE_TIMEOUT_MS),
+      });
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        const upstreamMessage = body.message || body.error || `TypeSafe returned ${response.status}`;
+        context.error(`Triage upstream error ${response.status}:`, upstreamMessage);
+
+        if (response.status === 401) {
+          return {
+            status: 503,
+            jsonBody: {
+              error: 'Triage unavailable',
+              message: 'TYPESAFE_API_KEY was rejected. Check the key in the app settings.',
+              requiresTypeSafeKey: true,
+            },
+          };
+        }
+        // 429 and 529 are retryable upstream. We surface them as-is rather than
+        // retrying, so the user can simply press the button again.
+        return { status: response.status, jsonBody: { error: upstreamMessage } };
+      }
+
+      const data = await response.json();
+      const triage = interpretTriage(data.answers);
+      context.log(`Triage complete: ${triage.badge.label}`);
+
+      return { jsonBody: { triage, answers: data.answers, model: data.model } };
+    } catch (error) {
+      const isTimeout = error.name === 'TimeoutError' || error.name === 'AbortError';
+      if (isTimeout) {
+        context.error('Triage timed out');
+        return { status: 504, jsonBody: { error: 'Triage timed out. Try again.' } };
+      }
+
+      context.error('Triage failed:', error.message);
+      return { status: 500, jsonBody: { error: error.message } };
     }
   },
 });

@@ -123,6 +123,67 @@ The AI summary is powered by the GitHub Copilot SDK running on your backend serv
 - GitHub Copilot subscription or access
 - `GH_TOKEN` environment variable with Copilot access (or use `COPILOT_PAT`)
 
+## Structured Triage (Optional)
+
+The AI summary returns prose. Prose cannot be sorted, filtered, or badged. Structured triage
+returns typed judgments the UI can actually act on.
+
+Click **TRIAGE** on any issue card to get:
+
+- A **recommended action** — implement, needs info, duplicate, stale close, or no clear action
+- A **staleness** score — does this issue still reflect the project as it is today?
+- An **effort** score — how much work is the change itself?
+- An **actionable** probability — can a developer start now, or is this blocked on the reporter?
+
+These come back as one request to [TypeSafe](https://typesafe.ai)'s System One model (`jev-latest`),
+which answers typed questions with calibrated probabilities instead of generating text.
+
+**Triage never swipes for you.** It decorates the card; you still make the call. A close
+suggestion is gated at higher confidence than a keep suggestion, because closing an issue is
+destructive and keeping one is free.
+
+### Setup
+
+```bash
+# Add to your .env — server-side only, never exposed to the client
+TYPESAFE_API_KEY=your_typesafe_api_key
+```
+
+Without the key the endpoint returns a clear 503, `/api/health` reports
+`triageAvailable: false`, the TRIAGE button stays hidden, and every other feature works
+exactly as before.
+
+### Reviewing the questions
+
+Every question, threshold, and the policy mapping answers to UI signals lives in one file:
+
+```
+api/src/triageQuestions.cjs
+```
+
+That is deliberate. The prompts an AI system sends are the part most worth reviewing, so
+they are not scattered across handlers. Change a threshold there and nothing needs
+re-running — the judgments are unchanged, only the policy that reads them.
+
+Both backends share that one file. Azure SWA deploys `api_location: "api"`, so anything the
+Functions app needs must live inside `api/`; the `.cjs` extension lets the CommonJS root
+server `require()` it and the ESM Functions app default-import it. One source of truth, two
+runtimes, no copy step.
+
+### Deploying
+
+Triage runs in both the local Express server and Azure Functions. For the deployed app, add
+`TYPESAFE_API_KEY` to the Static Web App's application settings:
+
+```bash
+az staticwebapp appsettings set \
+  --name <your-swa-name> \
+  --setting-names TYPESAFE_API_KEY=<your-key>
+```
+
+Without it the deployed app behaves exactly like the local one: `/api/health` reports
+`triageAvailable: false`, the button stays hidden, and nothing else changes.
+
 ## Architecture
 
 ![IssueCrush Architecture](assets/architecture-diagram.png)
@@ -137,11 +198,17 @@ IssueCrush/
 ├── sessionStore.js            # Cosmos DB / in-memory session storage
 ├── AGENTS.md                  # AI agent context (project knowledge)
 ├── .agents/                   # Installed agent skills (see below)
+├── api/
+│   └── src/
+│       ├── app.js            # Azure Functions: OAuth, issues, AI, triage
+│       ├── sessionStore.js   # Cosmos DB session storage
+│       └── triageQuestions.cjs # TypeSafe questions, thresholds, triage policy
 ├── src/
 │   ├── api/
 │   │   └── github.ts         # GitHub API client
 │   └── lib/
 │       ├── tokenStorage.ts   # Secure token storage
+│       ├── triageService.ts  # Frontend structured triage client
 │       └── copilotService.ts # Frontend Copilot service
 ├── .env.example              # Environment template
 ├── package.json              # Dependencies and scripts

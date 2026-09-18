@@ -16,12 +16,15 @@ interface SwipeContainerProps {
     cardHeight?: number;
     copilotAvailable: boolean | null;
     loadingAiSummary: boolean;
+    triageAvailable: boolean | null;
+    loadingTriage: boolean;
     loadingIssues: boolean;
     swiperRef: React.RefObject<Swiper<GitHubIssue> | null>;
     onSwiped: (idx: number) => void;
     onSwipeLeft: (idx: number) => void;
     onSwipeRight: (idx: number) => void;
     onGetAiSummary: () => void;
+    onGetTriage: () => void;
     onRefresh: () => void;
     repoLabel: (issue: GitHubIssue) => string;
 }
@@ -35,12 +38,15 @@ export function SwipeContainer({
     cardHeight = 640,
     copilotAvailable,
     loadingAiSummary,
+    triageAvailable,
+    loadingTriage,
     loadingIssues,
     swiperRef,
     onSwiped,
     onSwipeLeft,
     onSwipeRight,
     onGetAiSummary,
+    onGetTriage,
     onRefresh,
     repoLabel,
 }: SwipeContainerProps) {
@@ -125,8 +131,11 @@ export function SwipeContainer({
                 isCurrent={isCurrent}
                 copilotAvailable={copilotAvailable}
                 loadingAiSummary={loadingAiSummary}
+                triageAvailable={triageAvailable}
+                loadingTriage={loadingTriage}
                 repoLabel={label}
                 onGetAiSummary={onGetAiSummary}
+                onGetTriage={onGetTriage}
             />
         );
     };

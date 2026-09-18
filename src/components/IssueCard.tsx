@@ -11,8 +11,9 @@ import {
     View,
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
-import { ExternalLink, Sparkles } from 'lucide-react-native';
+import { ExternalLink, Sparkles, Scale } from 'lucide-react-native';
 import { GitHubIssue } from '../api/github';
+import type { TriageTone } from '../lib/triageService';
 import { useTheme } from '../theme';
 import { getLabelColor, webCursor } from '../utils';
 
@@ -23,9 +24,13 @@ interface IssueCardProps {
     isCurrent: boolean;
     copilotAvailable: boolean | null;
     loadingAiSummary: boolean;
+    /** null until the health check answers; false when TYPESAFE_API_KEY is not configured. */
+    triageAvailable: boolean | null;
+    loadingTriage: boolean;
     /** Computed "owner/repo" label for the issue */
     repoLabel: string;
     onGetAiSummary: () => void;
+    onGetTriage: () => void;
 }
 
 async function openIssueLink(url: string) {
@@ -101,6 +106,92 @@ function LabelRow({ issue, isDesktop }: { issue: GitHubIssue; isDesktop: boolean
                     </Text>
                 </View>
             ))}
+        </View>
+    );
+}
+
+function TriageBlock({
+    issue,
+    isCurrent,
+    triageAvailable,
+    loadingTriage,
+    onGetTriage,
+}: {
+    issue: GitHubIssue;
+    isCurrent: boolean;
+    triageAvailable: boolean | null;
+    loadingTriage: boolean;
+    onGetTriage: () => void;
+}) {
+    const { theme } = useTheme();
+
+    // Triage decorates the card. It never swipes for the user.
+    const toneColor = (tone: TriageTone) => {
+        if (tone === 'success') return theme.success;
+        if (tone === 'danger') return theme.danger;
+        if (tone === 'warning') return theme.pink;
+        if (tone === 'muted') return theme.textMuted;
+        return theme.textSecondary;
+    };
+
+    const triage = issue.triage;
+    const hasTriage = Boolean(triage);
+    const canRequestTriage = isCurrent && !loadingTriage;
+
+    // Hide the button only once health has actually reported the key is missing.
+    // While the check is in flight (null) the button stays, matching AiBlock.
+    const triageUnavailable = triageAvailable === false;
+    if (triageUnavailable && !hasTriage) {
+        return null;
+    }
+
+    if (!hasTriage) {
+        return (
+            <TouchableOpacity
+                style={[
+                    styles.triageButton,
+                    { borderColor: theme.cardBorder },
+                    webCursor(loadingTriage ? 'default' : 'pointer'),
+                ]}
+                onPress={canRequestTriage ? onGetTriage : undefined}
+                disabled={!canRequestTriage}
+            >
+                {loadingTriage && isCurrent ? (
+                    <ActivityIndicator color={theme.ink} size="small" />
+                ) : (
+                    <>
+                        <Scale size={16} color={theme.ink} />
+                        <Text style={[styles.triageButtonText, { color: theme.ink }]}>TRIAGE</Text>
+                    </>
+                )}
+            </TouchableOpacity>
+        );
+    }
+
+    const badge = triage!.badge;
+    const chips = triage!.chips;
+
+    return (
+        <View style={styles.triageBlock}>
+            <View style={[styles.triageBadge, { borderColor: toneColor(badge.tone) }]}>
+                <Text style={[styles.triageBadgeText, { color: toneColor(badge.tone) }]}>
+                    {badge.label}
+                </Text>
+            </View>
+            {chips.length > 0 && (
+                <View style={styles.triageChips}>
+                    {chips.map((chip) => (
+                        <View
+                            key={chip.label}
+                            style={[styles.triageChip, { borderColor: toneColor(chip.tone) }]}
+                        >
+                            <Text style={[styles.triageChipText, { color: toneColor(chip.tone) }]}>
+                                {chip.label}
+                            </Text>
+                        </View>
+                    ))}
+                </View>
+            )}
         </View>
     );
 }
@@ -191,8 +282,11 @@ export function IssueCard({
     isCurrent,
     copilotAvailable,
     loadingAiSummary,
+    triageAvailable,
+    loadingTriage,
     repoLabel,
     onGetAiSummary,
+    onGetTriage,
 }: IssueCardProps) {
     const { theme } = useTheme();
 
@@ -200,6 +294,13 @@ export function IssueCard({
         <>
             <UserRow issue={issue} isDesktop={isDesktop} repoLabel={repoLabel} />
             <LabelRow issue={issue} isDesktop={isDesktop} />
+            <TriageBlock
+                issue={issue}
+                isCurrent={isCurrent}
+                triageAvailable={triageAvailable}
+                loadingTriage={loadingTriage}
+                onGetTriage={onGetTriage}
+            />
             <AiBlock
                 issue={issue}
                 isDesktop={isDesktop}
@@ -253,6 +354,54 @@ export function IssueCard({
 }
 
 const styles = StyleSheet.create({
+    triageBlock: {
+        marginBottom: 12,
+        gap: 8,
+    },
+    triageBadge: {
+        alignSelf: 'flex-start',
+        borderWidth: 2,
+        borderRadius: 6,
+        paddingVertical: 4,
+        paddingHorizontal: 10,
+    },
+    triageBadgeText: {
+        fontSize: 12,
+        fontWeight: '900',
+        letterSpacing: 1,
+    },
+    triageChips: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 6,
+    },
+    triageChip: {
+        borderWidth: 1,
+        borderRadius: 50,
+        paddingVertical: 3,
+        paddingHorizontal: 8,
+    },
+    triageChipText: {
+        fontSize: 10,
+        fontWeight: '700',
+        letterSpacing: 0.5,
+    },
+    triageButton: {
+        alignSelf: 'flex-start',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        borderWidth: 2,
+        borderRadius: 6,
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        marginBottom: 12,
+    },
+    triageButtonText: {
+        fontSize: 12,
+        fontWeight: '900',
+        letterSpacing: 1,
+    },
     cardBrutalist: {
         flex: 1,
         borderRadius: 16,

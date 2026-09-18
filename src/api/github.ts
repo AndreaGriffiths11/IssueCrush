@@ -1,6 +1,8 @@
 // All GitHub API calls are proxied through the backend server.
 // The client sends a session ID; the server uses the stored GitHub token.
 
+import type { IssueTriage } from '../lib/triageService';
+
 const BACKEND_URL = process.env.EXPO_PUBLIC_API_URL || '';
 
 export type GitHubLabel = {
@@ -23,7 +25,9 @@ export type GitHubIssue = {
   };
   pull_request?: unknown;
   aiSummary?: string;
+  triage?: IssueTriage;
   body?: string;
+  comments?: number;
   created_at?: string;
   user?: {
     login: string;
